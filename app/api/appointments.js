@@ -373,6 +373,30 @@ export default async function handler(req, res) {
 
       if (createError) {
         console.error('Supabase create appointment error:', { salon_id, client_id, error: createError });
+        // 23P01: exclusion_violation — trigger check_appointment_conflict (double-booking)
+        if (createError.code === '23P01') {
+          return res.status(409).json({ error: 'Horário indisponível' });
+        }
+        // 23505: unique_violation — double-booking via unique index
+        if (createError.code === '23505') {
+          return res.status(409).json({ error: 'Horário indisponível' });
+        }
+        // P0001: RAISE EXCEPTION sem ERRCODE (salvaguarda: trigger com mensagem de conflito)
+        if (createError.code === 'P0001' && createError.message && createError.message.includes('Conflito de agendamento')) {
+          return res.status(409).json({ error: 'Horário indisponível' });
+        }
+        // 23503: foreign_key_violation — client_id/service_id/professional_id inexistente
+        if (createError.code === '23503') {
+          return res.status(400).json({ error: 'Dados do agendamento inválidos. Recarregue a página e tente novamente.' });
+        }
+        // 23502: not_null_violation — campo obrigatório ausente
+        if (createError.code === '23502') {
+          return res.status(400).json({ error: 'Dados do agendamento incompletos.' });
+        }
+        // 23514: check_violation — valor fora de domínio permitido
+        if (createError.code === '23514') {
+          return res.status(400).json({ error: 'Dados do agendamento inválidos.' });
+        }
         return res.status(500).json({ error: 'Erro ao criar agendamento' });
       }
 

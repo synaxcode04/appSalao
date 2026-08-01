@@ -72,14 +72,16 @@ function BookingEngine({ isOpen, onClose, salonId, service, clientId, clientName
     const dayOfWeek = dateObj.getDay()
 
     // 1. Horário de funcionamento
-    const { data: workingHours } = await supabase
+    // maybeSingle retorna data: null (sem HTTP 406) quando não há linha cadastrada
+    // para o dia — o que é um caso legítimo (ex: domingo sem expediente).
+    const { data: workingHours, error: workingHoursError } = await supabase
       .from('working_hours')
       .select('*')
       .eq('salon_id', salonId)
       .eq('day_of_week', dayOfWeek)
-      .single()
+      .maybeSingle()
 
-    if (!workingHours) return // Fechado
+    if (workingHoursError || !workingHours) return // Fechado ou erro de rede
 
     // 2. Agendamentos existentes via API (cliente usa service_role, sem RLS de cliente)
     const apptBody = { action: 'list_scheduled', salon_id: salonId, appointment_date: selectedDate }
@@ -238,9 +240,12 @@ function BookingEngine({ isOpen, onClose, salonId, service, clientId, clientName
         toast.success('Horário agendado com sucesso!')
         onSuccess()
       } else {
+        const errData = await createRes.json().catch(() => ({}))
         setLoading(false)
         if (createRes.status === 409) {
           toast.error('Horário indisponível. Por favor, escolha outro horário.')
+        } else if (createRes.status >= 400 && createRes.status < 500 && errData.error) {
+          toast.error(errData.error)
         } else {
           toast.error('Não é possível agendar no momento. Entre em contato com o salão.')
         }

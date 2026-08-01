@@ -42,13 +42,14 @@ const tomorrow = (() => {
   return d.toISOString().split('T')[0]
 })()
 
-function makeChain(resolveValue) {
+function makeChain(resolveValue, resolveError = null) {
   return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     neq: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue({ data: resolveValue, error: null }),
-    then: (resolve) => resolve({ data: resolveValue, error: null }),
+    single: vi.fn().mockResolvedValue({ data: resolveValue, error: resolveError }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: resolveValue, error: resolveError }),
+    then: (resolve) => resolve({ data: resolveValue, error: resolveError }),
   }
 }
 
@@ -385,6 +386,126 @@ describe('BookingEngine — handleConfirm bloqueio de cliente inativo', () => {
       )
       const calls = toast.error.mock.calls.flat()
       expect(calls.every(msg => !msg.includes('internal server error'))).toBe(true)
+    })
+  })
+
+  it('create retorna 403 com mensagem real — exibe a mensagem do servidor, não o genérico', async () => {
+    await renderAndConfirm(async (url, opts) => {
+      const body = JSON.parse(opts?.body || '{}')
+      if (body.action === 'list_scheduled') {
+        return { ok: true, json: async () => ({ appointments: [] }) }
+      }
+      if (url.includes('client-identity')) {
+        return { ok: true, json: async () => ({ blocked: false }) }
+      }
+      if (body.action === 'create') {
+        return { ok: false, status: 403, json: async () => ({ error: 'Cliente bloqueado neste salão' }) }
+      }
+      return { ok: true, json: async () => ({}) }
+    })
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Cliente bloqueado neste salão')
+    })
+  })
+
+  it('create retorna 409 — exibe "Horário indisponível" independente do body', async () => {
+    await renderAndConfirm(async (url, opts) => {
+      const body = JSON.parse(opts?.body || '{}')
+      if (body.action === 'list_scheduled') {
+        return { ok: true, json: async () => ({ appointments: [] }) }
+      }
+      if (url.includes('client-identity')) {
+        return { ok: true, json: async () => ({ blocked: false }) }
+      }
+      if (body.action === 'create') {
+        return { ok: false, status: 409, json: async () => ({ error: 'Horário indisponível' }) }
+      }
+      return { ok: true, json: async () => ({}) }
+    })
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'Horário indisponível. Por favor, escolha outro horário.'
+      )
+    })
+  })
+
+  it('create retorna 400 com mensagem de dado inválido — exibe a mensagem do servidor', async () => {
+    await renderAndConfirm(async (url, opts) => {
+      const body = JSON.parse(opts?.body || '{}')
+      if (body.action === 'list_scheduled') {
+        return { ok: true, json: async () => ({ appointments: [] }) }
+      }
+      if (url.includes('client-identity')) {
+        return { ok: true, json: async () => ({ blocked: false }) }
+      }
+      if (body.action === 'create') {
+        return { ok: false, status: 400, json: async () => ({ error: 'Dados do agendamento inválidos. Recarregue a página e tente novamente.' }) }
+      }
+      return { ok: true, json: async () => ({}) }
+    })
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'Dados do agendamento inválidos. Recarregue a página e tente novamente.'
+      )
+    })
+  })
+})
+
+describe('BookingEngine — working_hours com maybeSingle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('dia sem expediente (maybeSingle retorna null sem erro) não gera slots', async () => {
+    // Simula domingo sem expediente: maybeSingle retorna data: null, error: null
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(null, null)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={service}
+        clientId="client1"
+        professionals={[]}
+      />
+    )
+
+    await waitFor(() => {
+      const slotButtons = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
+      expect(slotButtons.length).toBe(0)
+    })
+  })
+
+  it('erro de rede em working_hours (maybeSingle retorna error) não gera slots', async () => {
+    // Simula erro de rede: maybeSingle retorna data: null, error: { message: 'network error' }
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(null, { message: 'network error' })
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={service}
+        clientId="client1"
+        professionals={[]}
+      />
+    )
+
+    await waitFor(() => {
+      const slotButtons = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
+      expect(slotButtons.length).toBe(0)
     })
   })
 })
