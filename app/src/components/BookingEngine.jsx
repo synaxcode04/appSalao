@@ -7,6 +7,9 @@ import toast from 'react-hot-toast'
 
 const EMPTY_ARRAY = []
 
+// 0 = Domingo ... 6 = Sábado — idêntico a subscription_plan_days.
+const WEEK_DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+
 function generateTimeSlots(start, end, intervalMin) {
   const slots = []
   let [h, m] = start.split(':').map(Number)
@@ -90,6 +93,7 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
   const [loading, setLoading] = useState(false)
   const [showIdentity, setShowIdentity] = useState(false)
   const [pendingConfirm, setPendingConfirm] = useState(false)
+  const [activeSubscriptions, setActiveSubscriptions] = useState(EMPTY_ARRAY)
 
   const selectedServices = availableServices.filter(s => selectedServiceIds.includes(s.id))
   const totalDurationMinutes = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0)
@@ -121,6 +125,59 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
     setSelectedSlot(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, totalDurationMinutes, isOpen, selectedProfessional, professionals])
+
+  // Carrega assinaturas ativas do cliente neste salão — usadas só para o alerta
+  // informativo de "fora do dia do plano" (não bloqueia o agendamento).
+  useEffect(() => {
+    let mounted = true
+    if (!isOpen || !clientId || !salonId) {
+      setActiveSubscriptions(EMPTY_ARRAY)
+      return
+    }
+    const loadSubs = async () => {
+      try {
+        const res = await fetch('/api/appointments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list_client_subscriptions', salon_id: salonId, client_id: clientId })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (mounted) setActiveSubscriptions(data.subscriptions || EMPTY_ARRAY)
+        }
+      } catch (_) {
+        // Falha de rede: sem alerta (não crítico).
+      }
+    }
+    loadSubs()
+    return () => { mounted = false }
+  }, [isOpen, clientId, salonId])
+
+  // Alerta não-bloqueante: cliente tem plano que cobre um serviço selecionado, mas a
+  // data escolhida cai num dia FORA dos subscription_plan_days do plano (plano sem dias
+  // = vale todos os dias). Nesse caso o backend trata como avulso (não desconta cota).
+  const outOfPlanDayAlert = (() => {
+    if (!selectedDate || selectedServiceIds.length === 0 || activeSubscriptions.length === 0) return null
+    const dayOfWeek = new Date(selectedDate + 'T00:00:00').getDay()
+
+    const coveringSubs = activeSubscriptions.filter(sub => {
+      const planServices = sub.subscription_plans?.subscription_plan_services || []
+      return planServices.some(ps => selectedServiceIds.includes(ps.service_id))
+    })
+    if (coveringSubs.length === 0) return null
+
+    const planDaysOf = (sub) => (sub.subscription_plans?.subscription_plan_days || []).map(d => d.day_of_week)
+    const validOnDay = coveringSubs.filter(sub => {
+      const days = planDaysOf(sub)
+      return days.length === 0 || days.includes(dayOfWeek)
+    })
+    if (validOnDay.length > 0) return null // algum plano cobre este dia → desconta normalmente
+
+    // Nenhum plano cobre este dia → mostra os dias válidos (união dos planos que cobrem o serviço).
+    const daysUnion = [...new Set(coveringSubs.flatMap(planDaysOf))].sort((a, b) => a - b)
+    const daysLabel = daysUnion.length > 0 ? daysUnion.map(d => WEEK_DAY_LABELS[d]).join(', ') : 'todos os dias'
+    return `Seu plano vale apenas ${daysLabel} — este agendamento será cobrado à parte, sem descontar da cota.`
+  })()
 
   const calculateAvailableSlots = async () => {
     setAvailableSlots([])
@@ -418,6 +475,12 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
               style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '1rem', color: 'var(--text-primary)' }}
             />
           </div>
+
+          {outOfPlanDayAlert && (
+            <div style={{ marginBottom: '1.5rem', padding: '0.9rem 1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid #ffe69c' }}>
+              {outOfPlanDayAlert}
+            </div>
+          )}
 
           <div style={{ marginBottom: '2rem' }}>
             <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Horários Disponíveis:</label>

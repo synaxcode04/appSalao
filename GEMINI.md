@@ -164,12 +164,22 @@ npm run test:run  # testes (Vitest) — exit 0 é critério de conclusão
 - Nunca adicionar dependências de UI externas (Material UI, Tailwind, shadcn) sem decisão explícita — o projeto usa CSS próprio.
 - Nunca instanciar um segundo client Supabase — use o singleton em `app/src/supabase.js`.
 - Nunca usar `console.log` em código de produção.
+- Nunca conceder escrita de assinatura ao cliente via RLS/`auth.uid()` — assinar e cancelar plano do lado do cliente vai por Vercel Function `service_role` (coerente com a sessão leve do cliente, que tem `auth.uid()` sempre NULL). Escrita do dono continua via Supabase client com sessão Auth real.
+
+## Feature em desenvolvimento — Planos de assinatura
+> Decidido em 2026-08-01. Feature "Cadastro de planos de assinatura". Saiu de ideia futura para desenvolvimento. Tabelas do modelo de dados (migration em paralelo): `subscription_plans`, `subscription_plan_services`, `client_subscriptions`.
+1. **Sem integração de pagamento por ora** — "assinar" é registro administrativo. Integração com a API do Mercado Pago fica para uma feature futura SEPARADA. A tabela `client_subscriptions` foi desenhada própria justamente para acomodar um futuro `payment_status`/`gateway_ref` via `ADD COLUMN`, sem redesenho — mas esses campos NÃO existem agora.
+2. **Ciclo de cota em janela rolante de 30 dias SEM acúmulo** — a cota de cada serviço vale por um ciclo de 30 dias contados a partir da DATA DE ASSINATURA (`client_subscriptions.started_at`), NÃO por mês-calendário. Ex: assinou dia 15 → cota vale até o dia 15 do mês seguinte; reinicia a cada 30 dias contados da data de assinatura. Não há saldo cumulativo entre ciclos (ex: plano de 4 barbas/ciclo, usou 1 → o restante zera ao virar o ciclo). Implementado por contagem derivada dos agendamentos dentro do ciclo corrente, sem job de reset.
+3. **Plano é por salão** — cada salão define seus próprios planos, preços, serviços e cotas mensais. Não é entidade global entre salões.
+4. **Cancelamento pelo cliente OU pelo dono** — o sistema não automatiza nada sobre agendamentos futuros já marcados com o plano no momento do cancelamento; fica para negociação humana fora do app. O dono gerencia manualmente esses agendamentos remanescentes no painel, e o sistema não o impede de agir sobre eles após o cancelamento.
 
 ## Decisões em aberto — não implemente sem aprovação explícita
 - [ ] Visual e conteúdo da tela exibida quando a licença do salão está suspensa (`SuspendedScreen`)
 - [x] Quem pode marcar um atendimento como concluído — **ambos** (dono e cliente). Decidido em 2026-07-11.
 - [ ] Reagendamento: edita o registro existente ou cancela e cria um novo
 - [ ] Framework e cobertura mínima de testes além do Vitest já configurado
+- [x] Planos de assinatura (2026-08-01): sem integração de pagamento por ora (Mercado Pago como feature futura separada, com `client_subscriptions` extensível via `ADD COLUMN`); ciclo de cota em janela rolante de 30 dias sem acúmulo (contados da data de assinatura `client_subscriptions.started_at`, não mês-calendário; contagem derivada, sem job); plano por salão (não global); cancelamento por cliente ou dono, sem automação sobre agendamentos remanescentes (dono gerencia manualmente). Tabelas: `subscription_plans`, `subscription_plan_services`, `client_subscriptions`. Ver seção "Feature em desenvolvimento — Planos de assinatura".
+- [ ] Semântica de "dias por plano" nos planos de assinatura — ainda não definida.
 
 ---
 

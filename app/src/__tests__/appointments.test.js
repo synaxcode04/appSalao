@@ -16,12 +16,15 @@ import handler from '../../api/appointments.js'
 function makeChain(data, error = null) {
   const result = { data, error }
   const chain = {
+    _gte: null,
+    _lt: null,
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
     neq: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
-    gte: vi.fn().mockReturnThis(),
+    gte: vi.fn(function (col, val) { this._gte = { col, val }; return this }),
+    lt: vi.fn(function (col, val) { this._lt = { col, val }; return this }),
     limit: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
@@ -34,6 +37,24 @@ function makeChain(data, error = null) {
     finally: (fn) => Promise.resolve(result).finally(fn),
   }
   return chain
+}
+
+// Replica exata de computeCycleWindow do handler — para asserts determinísticos
+// independentes da data real em que o teste roda.
+function expectedCycleWindow(subscriptionDateIso) {
+  const DAY_MS = 24 * 60 * 60 * 1000
+  const CYCLE_MS = 30 * DAY_MS
+  const anchor = new Date(subscriptionDateIso)
+  anchor.setUTCHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const cyclesElapsed = Math.max(0, Math.floor((today.getTime() - anchor.getTime()) / CYCLE_MS))
+  const startMs = anchor.getTime() + cyclesElapsed * CYCLE_MS
+  const endMs = startMs + CYCLE_MS
+  return {
+    start: new Date(startMs).toISOString().slice(0, 10),
+    end: new Date(endMs).toISOString().slice(0, 10),
+  }
 }
 
 // Helper para criar req e res simulados
@@ -335,5 +356,272 @@ describe('reschedule — end_time recomputado server-side a partir de appointmen
 
     // Fallback: 10:00 + 60min = 11:00, conflita com 10:30-11:30
     expect(res.statusCode).toBe(409)
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// create — cota do plano por CICLO ROLANTE de 30 dias (não mês-calendário)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('create — cota do plano é por ciclo rolante de 30 dias da data de assinatura', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // started_at 40 dias atrás → 1 ciclo completo decorrido; o ciclo corrente começa
+  // 30 dias após a assinatura. A janela contada NÃO é o mês-calendário.
+  const startedAt = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
+
+  // A contagem de uso da cota agora faz DUAS consultas por serviço coberto:
+  //   (a) appointments.service_id direto  (b) appointment_services (join !inner)
+  // unindo appointment_ids DISTINTOS. directRows/linkedRows simulam cada uma;
+  // o handler deduplica via Set. captureDirect expõe a chain (a) para asserts de
+  // janela do ciclo (gte/lt).
+  function buildCreateClient({ directRows = [], linkedRows = [], captureDirect } = {}) {
+    let apptCall = 0
+    let asCall = 0
+    return {
+      from: (table) => {
+        if (table === 'salon_clients') return makeChain({ is_active: true })
+        if (table === 'services') return makeChain([{ id: 'svc1', name: 'Corte', duration_minutes: 60 }])
+        if (table === 'client_subscriptions') {
+          return makeChain([{ id: 'sub1', plan_id: 'plan1', started_at: startedAt, created_at: startedAt }])
+        }
+        if (table === 'subscription_plan_days') return makeChain([]) // sem restrição de dia
+        if (table === 'subscription_plan_services') {
+          return makeChain([{ plan_id: 'plan1', service_id: 'svc1', monthly_quota: 2 }])
+        }
+        if (table === 'salons') return makeChain({ owner_id: 'owner1' })
+        if (table === 'clients') return makeChain({ full_name: 'Cliente Teste' })
+        if (table === 'notifications') return makeChain(null)
+        if (table === 'appointment_services') {
+          asCall++
+          // 1ª chamada: consulta (b) de contagem via join. 2ª: insert dos serviços.
+          if (asCall === 1) return makeChain(linkedRows)
+          return makeChain(null)
+        }
+        if (table === 'appointments') {
+          apptCall++
+          if (apptCall === 1) return makeChain([]) // conflict check — sem conflito
+          if (apptCall === 2) {
+            // consulta (a) — contagem direta por service_id
+            const c = makeChain(directRows)
+            if (captureDirect) captureDirect(c)
+            return c
+          }
+          // 3ª chamada: insert do agendamento
+          return makeChain({ id: 'new-appt', salon_id: 'salon1', service_id: 'svc1', professional_id: null, appointment_date: '2026-08-02', start_time: '10:00', end_time: '11:00', status: 'scheduled' })
+        }
+        return makeChain(null)
+      },
+    }
+  }
+
+  const baseReq = {
+    action: 'create',
+    salon_id: 'salon1',
+    client_id: 'client1',
+    service_id: 'svc1',
+    appointment_date: '2026-08-02',
+    start_time: '10:00',
+  }
+
+  it('conta a cota na janela do ciclo corrente de 30 dias, não no mês-calendário', async () => {
+    let countChain = null
+    vi.mocked(createClient).mockReturnValue(
+      buildCreateClient({ directRows: [], linkedRows: [], captureDirect: (c) => { countChain = c } })
+    )
+
+    const res = makeRes()
+    await handler(makeReq({ ...baseReq }), res)
+
+    const expected = expectedCycleWindow(startedAt)
+    // As bordas gte/lt da contagem devem casar com a janela do ciclo de 30 dias.
+    expect(countChain._gte).toEqual({ col: 'appointment_date', val: expected.start })
+    expect(countChain._lt).toEqual({ col: 'appointment_date', val: expected.end })
+    // Janela tem exatamente 30 dias de largura.
+    const widthDays = (Date.parse(expected.end) - Date.parse(expected.start)) / (24 * 60 * 60 * 1000)
+    expect(widthDays).toBe(30)
+    // Cota disponível (0 de 2) → agendamento criado.
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('bloqueia com 409 quando a cota do ciclo corrente está esgotada', async () => {
+    // 2 agendamentos com o serviço como primário (appointments.service_id).
+    vi.mocked(createClient).mockReturnValue(
+      buildCreateClient({ directRows: [{ id: 'a1' }, { id: 'a2' }], linkedRows: [] })
+    )
+
+    const res = makeRes()
+    await handler(makeReq({ ...baseReq }), res)
+
+    expect(res.statusCode).toBe(409)
+    expect(res.body.error).toBe('Cota do plano esgotada para este serviço no ciclo atual')
+  })
+
+  it('permite o agendamento quando ainda há cota no ciclo (1 de 2 usados)', async () => {
+    vi.mocked(createClient).mockReturnValue(
+      buildCreateClient({ directRows: [{ id: 'a1' }], linkedRows: [] })
+    )
+
+    const res = makeRes()
+    await handler(makeReq({ ...baseReq }), res)
+
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('contabiliza serviço coberto quando aparece só em appointment_services (multi-serviço), não só em service_id', async () => {
+    // Nenhum agendamento tem o serviço como primário (directRows vazio), mas ele
+    // é a 2ª opção em 2 agendamentos multi-serviço (só em appointment_services).
+    // A cota (2) deve ser considerada ESGOTADA → 409. Contar só por service_id
+    // deixaria passar (bug de bypass).
+    vi.mocked(createClient).mockReturnValue(
+      buildCreateClient({
+        directRows: [],
+        linkedRows: [{ appointment_id: 'a1' }, { appointment_id: 'a2' }],
+      })
+    )
+
+    const res = makeRes()
+    await handler(makeReq({ ...baseReq }), res)
+
+    expect(res.statusCode).toBe(409)
+    expect(res.body.error).toBe('Cota do plano esgotada para este serviço no ciclo atual')
+  })
+
+  it('não conta em dobro o mesmo agendamento presente em service_id e appointment_services', async () => {
+    // Mesmo appointment_id 'a1' nas duas consultas (caso normal: serviço primário
+    // gravado nas duas tabelas). Deve contar 1, não 2 → com cota 2 ainda cabe → 201.
+    vi.mocked(createClient).mockReturnValue(
+      buildCreateClient({
+        directRows: [{ id: 'a1' }],
+        linkedRows: [{ appointment_id: 'a1' }],
+      })
+    )
+
+    const res = makeRes()
+    await handler(makeReq({ ...baseReq }), res)
+
+    expect(res.statusCode).toBe(201)
+  })
+
+  it('usa created_at como âncora do ciclo quando started_at é nulo', async () => {
+    let countChain = null
+    let apptCall = 0
+    let asCall = 0
+    const createdAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString()
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'salon_clients') return makeChain({ is_active: true })
+        if (table === 'services') return makeChain([{ id: 'svc1', name: 'Corte', duration_minutes: 60 }])
+        if (table === 'client_subscriptions') {
+          return makeChain([{ id: 'sub1', plan_id: 'plan1', started_at: null, created_at: createdAt }])
+        }
+        if (table === 'subscription_plan_days') return makeChain([])
+        if (table === 'subscription_plan_services') {
+          return makeChain([{ plan_id: 'plan1', service_id: 'svc1', monthly_quota: 2 }])
+        }
+        if (table === 'salons') return makeChain({ owner_id: 'owner1' })
+        if (table === 'clients') return makeChain({ full_name: 'Cliente Teste' })
+        if (table === 'notifications') return makeChain(null)
+        if (table === 'appointment_services') {
+          asCall++
+          if (asCall === 1) return makeChain([]) // contagem via join — vazio
+          return makeChain(null)
+        }
+        if (table === 'appointments') {
+          apptCall++
+          if (apptCall === 1) return makeChain([])
+          if (apptCall === 2) { countChain = makeChain([]); return countChain }
+          return makeChain({ id: 'new-appt', salon_id: 'salon1', service_id: 'svc1', professional_id: null, appointment_date: '2026-08-02', start_time: '10:00', end_time: '11:00', status: 'scheduled' })
+        }
+        return makeChain(null)
+      },
+    })
+
+    const res = makeRes()
+    await handler(makeReq({ ...baseReq }), res)
+
+    const expected = expectedCycleWindow(createdAt)
+    expect(countChain._gte).toEqual({ col: 'appointment_date', val: expected.start })
+    expect(res.statusCode).toBe(201)
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// cancel_subscription — escopo multi-tenant por salon_id (client_id é global)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('cancel_subscription — exige salon_id e valida que a assinatura pertence ao salão', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('rejeita com 400 quando salon_id não é enviado', async () => {
+    vi.mocked(createClient).mockReturnValue({ from: () => makeChain(null) })
+
+    const req = makeReq({
+      action: 'cancel_subscription',
+      subscription_id: 'sub1',
+      client_id: 'client1',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body.error).toBe('salon_id is required')
+  })
+
+  it('rejeita com 403 quando a assinatura pertence a OUTRO salão', async () => {
+    // Assinatura do mesmo client_id, mas salon_id diferente do enviado.
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'client_subscriptions') {
+          return makeChain({ id: 'sub1', salon_id: 'salon-OUTRO', client_id: 'client1', status: 'active' })
+        }
+        return makeChain(null)
+      },
+    })
+
+    const req = makeReq({
+      action: 'cancel_subscription',
+      subscription_id: 'sub1',
+      client_id: 'client1',
+      salon_id: 'salon1',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.body.error).toBe('Acesso negado')
+  })
+
+  it('cancela com 200 quando client_id e salon_id batem', async () => {
+    // Lookup usa .maybeSingle() (assinatura ativa, salão correto);
+    // o update usa .single() (registro já cancelado).
+    const updated = { id: 'sub1', salon_id: 'salon1', plan_id: 'plan1', client_id: 'client1', status: 'canceled', started_at: null, canceled_at: '2026-08-01T00:00:00Z', canceled_by: 'client' }
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'client_subscriptions') {
+          const chain = makeChain(null)
+          chain.maybeSingle = vi.fn().mockResolvedValue({ data: { id: 'sub1', salon_id: 'salon1', client_id: 'client1', status: 'active' }, error: null })
+          chain.single = vi.fn().mockResolvedValue({ data: updated, error: null })
+          return chain
+        }
+        return makeChain(null)
+      },
+    })
+
+    const req = makeReq({
+      action: 'cancel_subscription',
+      subscription_id: 'sub1',
+      client_id: 'client1',
+      salon_id: 'salon1',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.subscription.status).toBe('canceled')
   })
 })

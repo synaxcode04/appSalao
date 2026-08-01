@@ -143,6 +143,7 @@ npm run preview
 - Nunca usar políticas RLS com `WITH CHECK (true)` sem validar o `owner_id` — qualquer usuário autenticado conseguiria alterar dados de outro salão
 - Nunca criar agendamento sem verificar conflito de horário no mesmo profissional antes de inserir no banco
 - Nunca adicionar dependências de UI externas (Material UI, Tailwind, shadcn) sem decisão explícita — o projeto usa CSS próprio
+- Nunca conceder escrita de assinatura ao cliente via RLS/`auth.uid()` — assinar e cancelar plano do lado do cliente vai por Vercel Function `service_role` (coerente com a sessão leve do cliente, que tem `auth.uid()` sempre NULL). Escrita do dono continua via Supabase client com sessão Auth real.
 
 ## Guardrail — não criar estrutura nova por conta própria
 **Nunca crie pastas, arquivos de configuração (`vercel.json`, `.vercel/`, etc.) ou reestruture a árvore do projeto "para resolver" um problema, a menos que o usuário peça explicitamente.** Isso já causou um incidente real em 2026-08-01: uma tentativa de corrigir deploy criou um `vercel.json` + pasta `api/` duplicados na raiz do projeto (fora de `app/`), gerando dois projetos Vercel conflitantes e derrubando todas as rotas de API em produção (404 generalizado) até o rollback. Se a causa de um problema parecer estrutural, pare e pergunte antes de criar algo novo — proponha a mudança, não a execute direto.
@@ -150,14 +151,23 @@ npm run preview
 ## Ideias de features futuras (benchmarking concorrência)
 > Registrado em 2026-07-11, a partir de comparação com Trinks/Belasis/Booksy. Não implementar sem passar pelo orchestrator e decisão explícita.
 - Lembrete e confirmação automática de agendamento via WhatsApp (reduz no-show — dor nº1 do segmento)
-- Pacote de sessões / assinatura para cliente recorrente (ex: "4 cortes", debitado a cada agendamento)
+- ~~Pacote de sessões / assinatura para cliente recorrente (ex: "4 cortes", debitado a cada agendamento)~~ → **EM DESENVOLVIMENTO** (2026-08-01, "Cadastro de planos de assinatura"). Saiu de ideia para desenvolvimento com 4 decisões resolvidas — ver seção "Feature em desenvolvimento — Planos de assinatura" abaixo.
 - Cálculo automático de comissão por profissional (base para pagamento)
 - Avaliação/nota do salão na página pública de captação (prova social)
 - Bloqueio de horário avulso pelo profissional (folga pontual) sem editar o cadastro de working hours
 - Lista de espera: oferece automaticamente o horário liberado ao próximo cliente na fila
+
+## Feature em desenvolvimento — Planos de assinatura
+> Decidido em 2026-08-01. Feature "Cadastro de planos de assinatura". Tabelas do modelo de dados (migration em paralelo): `subscription_plans`, `subscription_plan_services`, `client_subscriptions`.
+1. **Sem integração de pagamento por ora** — "assinar" é registro administrativo. Integração com a API do Mercado Pago fica para uma feature futura SEPARADA. A tabela `client_subscriptions` foi desenhada própria justamente para acomodar um futuro `payment_status`/`gateway_ref` via `ADD COLUMN`, sem redesenho — mas esses campos NÃO existem agora.
+2. **Ciclo de cota em janela rolante de 30 dias SEM acúmulo** — a cota de cada serviço vale por um ciclo de 30 dias contados a partir da DATA DE ASSINATURA (`client_subscriptions.started_at`), NÃO por mês-calendário. Ex: assinou dia 15 → cota vale até o dia 15 do mês seguinte; reinicia a cada 30 dias contados da data de assinatura. Não há saldo cumulativo entre ciclos (ex: plano de 4 barbas/ciclo, usou 1 → o restante zera ao virar o ciclo). Implementado por contagem derivada dos agendamentos dentro do ciclo corrente, sem job de reset.
+3. **Plano é por salão** — cada salão define seus próprios planos, preços, serviços e cotas mensais. Não é entidade global entre salões.
+4. **Cancelamento pelo cliente OU pelo dono** — o sistema não automatiza nada sobre agendamentos futuros já marcados com o plano no momento do cancelamento; fica para negociação humana fora do app. O dono gerencia manualmente esses agendamentos remanescentes no painel, e o sistema não o impede de agir sobre eles após o cancelamento.
 
 ## Decisões em aberto
 - [x] Visual e conteúdo da tela exibida quando a licença do salão está suspensa — resolvido em 2026-08-01: extraído o texto/UI já existente inline em OwnerLayout e SalonLayout para o componente compartilhado `SuspendedScreen`, sem criar copy ou design novo (não é uma decisão de copy nova, apenas centralização do que já existia).
 - [x] Quem pode marcar um atendimento como concluído — **ambos** (dono e cliente). Decidido em 2026-07-11.
 - [ ] Reagendamento: edita o registro existente ou cancela e cria um novo
 - [ ] Framework e cobertura mínima de testes (Vitest ainda não configurado)
+- [x] Planos de assinatura (2026-08-01): sem integração de pagamento por ora (Mercado Pago como feature futura separada, com `client_subscriptions` extensível via `ADD COLUMN`); ciclo de cota em janela rolante de 30 dias sem acúmulo (contados da data de assinatura `client_subscriptions.started_at`, não mês-calendário; contagem derivada, sem job); plano por salão (não global); cancelamento por cliente ou dono, sem automação sobre agendamentos remanescentes (dono gerencia manualmente). Tabelas: `subscription_plans`, `subscription_plan_services`, `client_subscriptions`. Ver seção "Feature em desenvolvimento — Planos de assinatura".
+- [ ] Semântica de "dias por plano" nos planos de assinatura — ainda não definida.

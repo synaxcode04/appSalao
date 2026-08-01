@@ -19,6 +19,52 @@ function minutesToTime(minutes) {
 }
 
 /**
+ * Calcula a janela do CICLO CORRENTE de 30 dias de uma assinatura, a partir da
+ * sua data de assinatura (started_at, ou created_at como fallback).
+ *
+ * Regra de negócio: a cota do plano NÃO é por mês-calendário. Ela reinicia a
+ * cada 30 dias contados da data de assinatura, sem acúmulo entre ciclos.
+ *   cyclesElapsed      = floor((hoje - dataAssinatura) / 30 dias)
+ *   inicioCicloCorrente = dataAssinatura + cyclesElapsed * 30 dias
+ *   fimCicloCorrente    = inicioCicloCorrente + 30 dias
+ *
+ * Timezone / borda de data: `appointment_date` é uma coluna DATE ("YYYY-MM-DD",
+ * sem hora nem fuso). Para evitar off-by-one, tudo é calculado em UTC de forma
+ * consistente: reduzimos tanto a data de assinatura (timestamptz) quanto "hoje"
+ * à meia-noite UTC do respectivo dia-calendário, e derivamos as bordas como
+ * strings "YYYY-MM-DD" via toISOString(). Como só somamos múltiplos exatos de
+ * 30 dias a meia-noites UTC, não há resíduo de horário — as bordas caem sempre
+ * em meia-noite UTC e a string de data é exata.
+ *
+ * @param {string} subscriptionDateIso - started_at (ou created_at) — ISO timestamptz
+ * @returns {{ start: string, end: string }} bordas [start, end) como "YYYY-MM-DD"
+ */
+function computeCycleWindow(subscriptionDateIso) {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const CYCLE_MS = 30 * DAY_MS;
+
+  // Meia-noite UTC do dia-calendário da assinatura.
+  const anchor = new Date(subscriptionDateIso);
+  anchor.setUTCHours(0, 0, 0, 0);
+
+  // Meia-noite UTC de hoje.
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  // Ciclos completos decorridos desde a assinatura (nunca negativo: se a data de
+  // assinatura estiver no futuro por qualquer inconsistência, usa o ciclo 0).
+  const cyclesElapsed = Math.max(0, Math.floor((today.getTime() - anchor.getTime()) / CYCLE_MS));
+
+  const startMs = anchor.getTime() + cyclesElapsed * CYCLE_MS;
+  const endMs = startMs + CYCLE_MS;
+
+  return {
+    start: new Date(startMs).toISOString().slice(0, 10),
+    end: new Date(endMs).toISOString().slice(0, 10),
+  };
+}
+
+/**
  * Verifica se há conflito de horário entre [start, end] e agendamentos existentes.
  * @param {Array} existingAppointments - Agendamentos já no banco com status='scheduled'
  * @param {string} startTime - "HH:MM"
@@ -115,6 +161,23 @@ function validateInput(action, body) {
     if (!body.salon_id) return 'salon_id is required';
   }
 
+  if (action === 'subscribe') {
+    if (!body.salon_id) return 'salon_id is required';
+    if (!body.client_id) return 'client_id is required';
+    if (!body.plan_id) return 'plan_id is required';
+  }
+
+  if (action === 'cancel_subscription') {
+    if (!body.subscription_id) return 'subscription_id is required';
+    if (!body.client_id) return 'client_id is required';
+    if (!body.salon_id) return 'salon_id is required';
+  }
+
+  if (action === 'list_client_subscriptions') {
+    if (!body.salon_id) return 'salon_id is required';
+    if (!body.client_id) return 'client_id is required';
+  }
+
   return null;
 }
 
@@ -138,7 +201,9 @@ export default async function handler(req, res) {
     rating,
     comment,
     id,
-    exclude_id
+    exclude_id,
+    plan_id,
+    subscription_id
   } = req.body;
 
   // Validar ação
@@ -153,7 +218,10 @@ export default async function handler(req, res) {
     'create_review',
     'mark_notifications_read',
     'list_notifications',
-    'get_salon_contact'
+    'get_salon_contact',
+    'subscribe',
+    'cancel_subscription',
+    'list_client_subscriptions'
   ];
 
   if (!action || !validActions.includes(action)) {
@@ -381,6 +449,183 @@ export default async function handler(req, res) {
 
       if (hasConflict(existingAppointments, start_time, computedEndTime)) {
         return res.status(409).json({ error: 'Horário indisponível' });
+      }
+
+      // 4b. Checagem de cota de plano de assinatura (retrocompatível — só bloqueia
+      // quando o agendamento é coberto por um plano ativo do cliente NESTE salão).
+      //
+      // Retrocompatibilidade: se o cliente não tem assinatura ativa cobrindo o
+      // serviço, o agendamento segue normal (pago avulso) — nada é bloqueado.
+      //
+      // OPEN: não existe coluna `appointments.subscription_id` para vincular
+      // explicitamente o agendamento à assinatura consumida (guardrail de estrutura
+      // nova impede criá-la aqui). Por isso o vínculo é DETECTADO por plano ativo
+      // que cobre o serviço, não gravado. O frontend pode enviar `subscription_id`
+      // opcional (Fase 3); hoje ele apenas restringe a detecção àquela assinatura.
+      // Se for necessário débito/marcação persistente do consumo por assinatura,
+      // será preciso decidir e adicionar a coluna via migration — PARAR e confirmar.
+      {
+        // Busca assinaturas ativas do cliente NESTE salão (isolamento por salon_id).
+        let activeSubsQuery = supabase
+          .from('client_subscriptions')
+          .select('id, plan_id, started_at, created_at')
+          .eq('salon_id', salon_id)
+          .eq('client_id', client_id)
+          .eq('status', 'active');
+        // Se o frontend indicou a assinatura explicitamente, restringe a ela.
+        if (subscription_id) {
+          activeSubsQuery = activeSubsQuery.eq('id', subscription_id);
+        }
+        const { data: activeSubs, error: activeSubsError } = await activeSubsQuery;
+
+        if (activeSubsError) {
+          console.error('Supabase create active subscriptions lookup error:', { salon_id, client_id, error: activeSubsError });
+          return res.status(500).json({ error: 'Erro ao validar assinatura' });
+        }
+
+        if (activeSubs && activeSubs.length > 0) {
+          const activePlanIds = activeSubs.map(s => s.plan_id);
+
+          // Mapa plan_id → data de assinatura (âncora do ciclo de 30 dias).
+          // Cada plan_id ativo mapeia a exatamente UMA assinatura ativa (índice
+          // único parcial por client_id+salon_id+plan_id). started_at é o padrão;
+          // created_at é fallback se started_at vier nulo.
+          const anchorByPlan = {};
+          for (const s of activeSubs) {
+            anchorByPlan[s.plan_id] = s.started_at || s.created_at;
+          }
+
+          // Dia da semana da data agendada (0=Domingo ... 6=Sábado, igual a
+          // working_hours e subscription_plan_days). appointment_date é uma DATE
+          // pura "YYYY-MM-DD"; o append de 'T00:00:00' força interpretação em
+          // horário LOCAL (não UTC), evitando shift de fuso que jogaria a data
+          // para o dia anterior. getDay() então devolve o dia correto.
+          const scheduledDayOfWeek = new Date(appointment_date + 'T00:00:00').getDay();
+
+          // Dias permitidos por plano ativo. Regra (subscription_plan_days):
+          //   - plano SEM nenhuma linha → sem restrição, vale todos os dias.
+          //   - plano COM linhas → só cobre se o dia agendado constar entre elas.
+          // Planos que não cobrem esse dia são descartados da checagem de cota
+          // (agendamento segue como avulso — nunca é bloqueado por isso).
+          const { data: planDays, error: planDaysError } = await supabase
+            .from('subscription_plan_days')
+            .select('plan_id, day_of_week')
+            .eq('salon_id', salon_id)
+            .in('plan_id', activePlanIds);
+
+          if (planDaysError) {
+            console.error('Supabase create plan days lookup error:', { salon_id, error: planDaysError });
+            return res.status(500).json({ error: 'Erro ao validar dias do plano' });
+          }
+
+          // Mapa plan_id → set de dias permitidos (só para planos que têm restrição).
+          const allowedDaysByPlan = {};
+          for (const pd of planDays || []) {
+            (allowedDaysByPlan[pd.plan_id] = allowedDaysByPlan[pd.plan_id] || new Set()).add(pd.day_of_week);
+          }
+
+          // Planos elegíveis neste dia: sem restrição, OU com o dia entre os permitidos.
+          const eligiblePlanIds = activePlanIds.filter(pid => {
+            const days = allowedDaysByPlan[pid];
+            return !days || days.has(scheduledDayOfWeek);
+          });
+
+          // Nenhum plano cobre esse dia → agendamento avulso, pula a checagem de cota.
+          if (eligiblePlanIds.length === 0) {
+            // (não bloqueia — segue o fluxo normal de inserção)
+          } else {
+
+          // Serviços deste agendamento cobertos por algum plano ativo ELEGÍVEL
+          // NESTE dia, com sua cota.
+          const { data: coveredServices, error: coveredError } = await supabase
+            .from('subscription_plan_services')
+            .select('plan_id, service_id, monthly_quota')
+            .eq('salon_id', salon_id)
+            .in('plan_id', eligiblePlanIds)
+            .in('service_id', serviceIds);
+
+          if (coveredError) {
+            console.error('Supabase create plan services lookup error:', { salon_id, error: coveredError });
+            return res.status(500).json({ error: 'Erro ao validar cota do plano' });
+          }
+
+          if (coveredServices && coveredServices.length > 0) {
+            // A cota é por CICLO ROLANTE de 30 dias contado da data de assinatura
+            // de CADA plano (não mês-calendário, sem acúmulo). Cada plano tem sua
+            // própria âncora, portanto sua própria janela — calculada por linha
+            // (plan_id, service_id). Semanticamente `monthly_quota` é "cota por
+            // ciclo de 30 dias" (a coluna mantém o nome por compatibilidade).
+            //
+            // Conservador: se QUALQUER plano que cobre este serviço estiver com a
+            // cota esgotada dentro da SUA janela de ciclo corrente, o agendamento
+            // é bloqueado (o mais restritivo prevalece).
+            for (const cs of coveredServices) {
+              const anchorIso = anchorByPlan[cs.plan_id];
+              // Sem âncora (não deveria ocorrer — todo plano coberto veio de uma
+              // assinatura ativa) → pula por segurança, não bloqueia.
+              if (!anchorIso) continue;
+
+              const { start: cycleStart, end: cycleEnd } = computeCycleWindow(anchorIso);
+
+              // Contagem de uso do serviço coberto no ciclo. Um serviço pode ser
+              // consumido de DUAS formas: gravado direto em `appointments.service_id`
+              // (sempre serviceIds[0]) OU apenas como linha em `appointment_services`
+              // (serviços em posição 1+ de um agendamento multi-serviço). Contar só
+              // por `service_id` permitia burlar a cota colocando o serviço do plano
+              // como 2ª opção. Como o PostgREST não faz OR entre a coluna direta e o
+              // join, fazemos DUAS consultas e unimos os appointment_ids DISTINTOS —
+              // um Set garante que o mesmo agendamento (que aparece nas duas quando
+              // o serviço é o primário) nunca seja contado em dobro. salon_id +
+              // client_id + status scheduled + janela do ciclo são invariantes em
+              // ambas as consultas.
+
+              // (a) Agendamentos onde o serviço é o primário (appointments.service_id).
+              const { data: directRows, error: directError } = await supabase
+                .from('appointments')
+                .select('id')
+                .eq('salon_id', salon_id)
+                .eq('client_id', client_id)
+                .eq('service_id', cs.service_id)
+                .eq('status', 'scheduled')
+                .gte('appointment_date', cycleStart)
+                .lt('appointment_date', cycleEnd);
+
+              if (directError) {
+                console.error('Supabase create quota direct count error:', { salon_id, client_id, service_id: cs.service_id, plan_id: cs.plan_id, error: directError });
+                return res.status(500).json({ error: 'Erro ao validar cota do plano' });
+              }
+
+              // (b) Agendamentos onde o serviço aparece em appointment_services
+              // (inclui posições 1+). Join !inner com appointments aplica os mesmos
+              // filtros de cliente/status/janela do ciclo. appointment_services já
+              // tem salon_id próprio (invariante multi-tenant preservada).
+              const { data: linkedRows, error: linkedError } = await supabase
+                .from('appointment_services')
+                .select('appointment_id, appointments!inner(client_id, status, appointment_date)')
+                .eq('salon_id', salon_id)
+                .eq('service_id', cs.service_id)
+                .eq('appointments.client_id', client_id)
+                .eq('appointments.status', 'scheduled')
+                .gte('appointments.appointment_date', cycleStart)
+                .lt('appointments.appointment_date', cycleEnd);
+
+              if (linkedError) {
+                console.error('Supabase create quota linked count error:', { salon_id, client_id, service_id: cs.service_id, plan_id: cs.plan_id, error: linkedError });
+                return res.status(500).json({ error: 'Erro ao validar cota do plano' });
+              }
+
+              // União de appointment_ids DISTINTOS — sem dupla-contagem.
+              const consumingIds = new Set();
+              for (const r of directRows || []) consumingIds.add(r.id);
+              for (const r of linkedRows || []) consumingIds.add(r.appointment_id);
+
+              if (consumingIds.size >= cs.monthly_quota) {
+                return res.status(409).json({ error: 'Cota do plano esgotada para este serviço no ciclo atual' });
+              }
+            }
+          }
+          } // fim do else (eligiblePlanIds.length > 0)
+        }
       }
 
       // 5. Buscar owner_id do salão
@@ -881,6 +1126,199 @@ export default async function handler(req, res) {
         owner_id: salon.owner_id,
         phone: profile?.phone || null
       });
+    }
+
+    // ==========================================
+    // AÇÃO: subscribe — cliente assina um plano do salão (sem pagamento — Fase 1)
+    // ==========================================
+    if (action === 'subscribe') {
+      // 1. Validar vínculo cliente-salão e bloqueio
+      const { data: link, error: linkError } = await supabase
+        .from('salon_clients')
+        .select('is_active')
+        .eq('salon_id', salon_id)
+        .eq('client_id', client_id)
+        .maybeSingle();
+
+      if (linkError) {
+        console.error('Supabase subscribe link check error:', { salon_id, client_id, error: linkError });
+        return res.status(500).json({ error: 'Erro ao validar vínculo' });
+      }
+
+      if (!link) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      if (link.is_active === false) {
+        return res.status(403).json({ error: 'Cliente bloqueado neste salão' });
+      }
+
+      // 2. Validar que o plano pertence ao salão e está ativo
+      const { data: plan, error: planError } = await supabase
+        .from('subscription_plans')
+        .select('id, salon_id, is_active')
+        .eq('id', plan_id)
+        .eq('salon_id', salon_id)
+        .maybeSingle();
+
+      if (planError) {
+        console.error('Supabase subscribe plan lookup error:', { salon_id, plan_id, error: planError });
+        return res.status(500).json({ error: 'Erro ao validar plano' });
+      }
+
+      if (!plan) {
+        return res.status(404).json({ error: 'Plano não encontrado neste salão' });
+      }
+
+      if (plan.is_active === false) {
+        return res.status(400).json({ error: 'Plano indisponível' });
+      }
+
+      // 3. Impedir assinatura ativa duplicada do mesmo cliente no mesmo plano
+      const { data: existing, error: existingError } = await supabase
+        .from('client_subscriptions')
+        .select('id')
+        .eq('salon_id', salon_id)
+        .eq('client_id', client_id)
+        .eq('plan_id', plan_id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (existingError) {
+        console.error('Supabase subscribe existing check error:', { salon_id, client_id, plan_id, error: existingError });
+        return res.status(500).json({ error: 'Erro ao validar assinatura' });
+      }
+
+      if (existing) {
+        return res.status(409).json({ error: 'Você já possui uma assinatura ativa deste plano' });
+      }
+
+      // 4. Inserir assinatura ativa
+      const { data: subscription, error: createError } = await supabase
+        .from('client_subscriptions')
+        .insert({
+          salon_id: salon_id,
+          plan_id: plan_id,
+          client_id: client_id,
+          status: 'active'
+        })
+        .select('id, salon_id, plan_id, client_id, status, started_at, created_at')
+        .single();
+
+      if (createError) {
+        console.error('Supabase subscribe insert error:', { salon_id, client_id, plan_id, error: createError });
+        // 23505: unique_violation — corrida com o índice único parcial de assinatura ativa
+        if (createError.code === '23505') {
+          return res.status(409).json({ error: 'Você já possui uma assinatura ativa deste plano' });
+        }
+        // 23503: foreign_key_violation — client_id/plan_id/salon_id inexistente
+        if (createError.code === '23503') {
+          return res.status(400).json({ error: 'Dados da assinatura inválidos' });
+        }
+        return res.status(500).json({ error: 'Erro ao criar assinatura' });
+      }
+
+      return res.status(201).json({ subscription });
+    }
+
+    // ==========================================
+    // AÇÃO: cancel_subscription — cliente cancela sua assinatura
+    // Não cancela agendamentos futuros (decisão: negociação humana pelo dono).
+    // ==========================================
+    if (action === 'cancel_subscription') {
+      // 1. Validar posse da assinatura
+      const { data: sub, error: subError } = await supabase
+        .from('client_subscriptions')
+        .select('id, salon_id, client_id, status')
+        .eq('id', subscription_id)
+        .maybeSingle();
+
+      if (subError) {
+        console.error('Supabase cancel_subscription lookup error:', { subscription_id, error: subError });
+        return res.status(500).json({ error: 'Erro ao buscar assinatura' });
+      }
+
+      if (!sub) {
+        return res.status(404).json({ error: 'Assinatura não encontrada' });
+      }
+
+      if (sub.client_id !== client_id) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      // Escopo multi-tenant: client_id é identidade GLOBAL (o mesmo cliente pode
+      // ter assinaturas em vários salões). Sem validar o salão, um cliente poderia
+      // cancelar sua assinatura de OUTRO salão a partir do contexto deste. Exige que
+      // a assinatura pertença ao salão informado.
+      if (sub.salon_id !== salon_id) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      if (sub.status === 'canceled') {
+        return res.status(409).json({ error: 'Assinatura já cancelada' });
+      }
+
+      // 2. Cancelar (não toca em nenhum agendamento — gestão manual pelo dono)
+      const { data: updated, error: updateError } = await supabase
+        .from('client_subscriptions')
+        .update({
+          status: 'canceled',
+          canceled_at: new Date().toISOString(),
+          canceled_by: 'client'
+        })
+        .eq('id', subscription_id)
+        .select('id, salon_id, plan_id, client_id, status, started_at, canceled_at, canceled_by')
+        .single();
+
+      if (updateError) {
+        console.error('Supabase cancel_subscription update error:', { subscription_id, error: updateError });
+        return res.status(500).json({ error: 'Erro ao cancelar assinatura' });
+      }
+
+      return res.status(200).json({ subscription: updated });
+    }
+
+    // ==========================================
+    // AÇÃO: list_client_subscriptions — assinaturas ATIVAS do cliente NESTE salão
+    // (isolamento por salon_id) com plano e serviços/cotas. Alimenta a tela do cliente.
+    // ==========================================
+    if (action === 'list_client_subscriptions') {
+      // 1. Validar vínculo cliente-salão e bloqueio
+      const { data: link, error: linkError } = await supabase
+        .from('salon_clients')
+        .select('is_active')
+        .eq('salon_id', salon_id)
+        .eq('client_id', client_id)
+        .maybeSingle();
+
+      if (linkError) {
+        console.error('Supabase list_client_subscriptions link check error:', { salon_id, client_id, error: linkError });
+        return res.status(500).json({ error: 'Erro ao validar vínculo' });
+      }
+
+      if (!link) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      if (link.is_active === false) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      // 2. Buscar assinaturas ativas do cliente NESTE salão, com plano e serviços/cotas
+      const { data, error } = await supabase
+        .from('client_subscriptions')
+        .select('id, salon_id, plan_id, status, started_at, created_at, subscription_plans(id, name, description, price, is_active, subscription_plan_services(service_id, monthly_quota, services(id, name)), subscription_plan_days(day_of_week))')
+        .eq('salon_id', salon_id)
+        .eq('client_id', client_id)
+        .eq('status', 'active')
+        .order('started_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase list_client_subscriptions error:', { salon_id, client_id, error });
+        return res.status(500).json({ error: 'Erro ao buscar assinaturas' });
+      }
+
+      return res.status(200).json({ subscriptions: data || [] });
     }
   } catch (error) {
     console.error('Unexpected error in appointments handler:', {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Outlet, NavLink, useParams } from 'react-router-dom'
-import { CalendarDays, History, User, Store } from 'lucide-react'
+import { CalendarDays, History, User, Store, Package } from 'lucide-react'
 import { supabase } from '../supabase'
 import SuspendedScreen from '../components/SuspendedScreen'
 import { ClientSessionProvider, useClientSession } from '../contexts/ClientSessionContext'
@@ -31,6 +31,11 @@ function SalonLayoutInner({ salon, profile, slug }) {
           <NavLink to={`/s/${slug}/agenda`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
             <CalendarDays size={24} />
             <span>Agenda</span>
+          </NavLink>
+
+          <NavLink to={`/s/${slug}/planos`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
+            <Package size={24} />
+            <span>Planos</span>
           </NavLink>
 
           <NavLink to={`/s/${slug}/historico`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>

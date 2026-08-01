@@ -24,3 +24,8 @@ Padrões que não emergem da leitura do código.
 - ~~Visual e conteúdo do `SuspendedScreen`~~ — Resolvido 2026-08-01 — extração do texto inline existente para componente compartilhado, sem novo design.
 - Quem marca atendimento como concluído (dono, cliente ou ambos)
 - Reagendamento: editar registro existente ou cancelar + criar novo
+
+**Planos de assinatura — escrita (decisão de 2026-08-01)**
+- Feature "Cadastro de planos de assinatura". Tabelas: `subscription_plans`, `subscription_plan_services`, `client_subscriptions`.
+- Assinar/cancelar plano do lado do **cliente** vai por Vercel Function `service_role` — NUNCA via RLS/`auth.uid()`, pois o cliente usa sessão leve (`auth.uid()` sempre NULL). Escrita do **dono** (cadastro de planos, cotas, preços) continua via Supabase client com sessão Auth real.
+- Sem integração de pagamento por ora (Mercado Pago é feature futura separada; `client_subscriptions` extensível via `ADD COLUMN` para `payment_status`/`gateway_ref`). Ciclo de cota em janela rolante de 30 dias sem acúmulo (contados da data de assinatura `client_subscriptions.started_at`, não mês-calendário; contagem derivada dos agendamentos, sem job). Plano é por salão, não global. Cancelamento por cliente ou dono, sem automação sobre agendamentos remanescentes.
