@@ -75,6 +75,14 @@ As regras detalhadas ficam em `.agents/rules/` (workspace rules do Antigravity).
 | Deploy | Vercel |
 | Gráficos | Recharts |
 
+## Deploy — direto na Vercel, sem remote Git
+
+Decidido em 2026-08-01. **Este projeto não usa `git push` para disparar deploy.** Não há remote Git configurado (`git remote -v` vazio) — o deploy é feito diretamente via Vercel CLI (`vercel --prod`) ou pelo Vercel Dashboard, a partir do build local em `app/`.
+
+- Commits locais (`git commit`) são só controle de versão — não acionam nem são pré-requisito do deploy.
+- `vercel deploy`/`vercel --prod` exige **confirmação explícita do usuário** antes de ser executado (no Claude Code isso é reforçado por hook em `.claude/hooks/devops/block-vercel-deploy.sh`; aqui a restrição é soft — nível de prompt, ver GAPS conhecidos no final deste arquivo).
+- Se um agent/persona `devops` não souber o comando/ambiente exato de deploy deste projeto, deve parar e perguntar — nunca configurar remote Git novo ou inventar pipeline de CI/CD por conta própria (ver guardrail de estrutura nova).
+
 ## Estrutura de pastas
 ```
 App_salão/

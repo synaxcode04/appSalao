@@ -38,6 +38,14 @@ O mapeamento entre os dois harnesses está documentado em `.claude/knowledge/gem
 | Deploy | Vercel |
 | Gráficos | Recharts |
 
+## Deploy — direto na Vercel, sem remote Git
+
+Decidido em 2026-08-01. **Este projeto não usa `git push` para disparar deploy.** Não há remote Git configurado (`git remote -v` vazio) — o deploy é feito diretamente via Vercel CLI (`vercel --prod`) ou pelo Vercel Dashboard, a partir do build local em `app/`.
+
+- Commits locais (`git commit`) são só controle de versão — não acionam nem são pré-requisito do deploy.
+- `vercel deploy`/`vercel --prod` exige **confirmação explícita do usuário** antes de ser executado (já reforçado por hook em `.claude/hooks/devops/block-vercel-deploy.sh`, que bloqueia o comando via Bash sem essa confirmação).
+- Se um agent (ex: `devops`) não souber o comando/ambiente exato de deploy deste projeto, ele deve parar e perguntar — nunca configurar remote Git novo ou inventar pipeline de CI/CD por conta própria (ver guardrail de estrutura nova).
+
 ## Estrutura de pastas
 ```
 App_salão/
