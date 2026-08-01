@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, Scissors, Clock, LogOut, Settings, Star, Users, UserPlus, Bell, PieChart, Folder, ChevronDown, ChevronRight } from 'lucide-react'
+import { CalendarDays, Scissors, Clock, LogOut, Settings, Star, Users, UserPlus, Bell, PieChart, Folder, ChevronDown, ChevronRight, CalendarX } from 'lucide-react'
 import { supabase } from '../supabase'
 import SuspendedScreen from '../components/SuspendedScreen'
 
@@ -15,6 +15,7 @@ function OwnerLayout() {
     location.pathname.includes('/servicos') || 
     location.pathname.includes('/profissionais') || 
     location.pathname.includes('/horarios') ||
+    location.pathname.includes('/bloqueios') ||
     location.pathname.includes('/clientes')
   )
 
@@ -149,6 +150,11 @@ function OwnerLayout() {
                 <NavLink to="/painel/horarios" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
                   <Clock size={18} />
                   <span>Horários</span>
+                </NavLink>
+
+                <NavLink to="/painel/bloqueios" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
+                  <CalendarX size={18} />
+                  <span>Bloqueios</span>
                 </NavLink>
 
                 <NavLink to="/painel/clientes" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>

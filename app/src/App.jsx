@@ -11,6 +11,7 @@ import DashboardHome from './pages/owner/DashboardHome'
 import ServicesManager from './pages/owner/ServicesManager'
 import ProfessionalsManager from './pages/owner/ProfessionalsManager'
 import WorkingHoursManager from './pages/owner/WorkingHoursManager'
+import TimeBlocksManager from './pages/owner/TimeBlocksManager'
 import ClientsManager from './pages/owner/ClientsManager'
 import OwnerReviews from './pages/owner/OwnerReviews'
 import SettingsPage from './pages/owner/Settings'
@@ -90,6 +91,7 @@ function App() {
           <Route path="servicos" element={<ServicesManager />} />
           <Route path="profissionais" element={<ProfessionalsManager />} />
           <Route path="horarios" element={<WorkingHoursManager />} />
+          <Route path="bloqueios" element={<TimeBlocksManager />} />
           <Route path="clientes" element={<ClientsManager />} />
           <Route path="metricas" element={<MetricsDashboard />} />
           <Route path="avaliacoes" element={<OwnerReviews />} />

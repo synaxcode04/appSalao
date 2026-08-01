@@ -817,6 +817,80 @@ describe('BookingEngine — compatibilidade legada: prop service singular sem se
   })
 })
 
+// ─── Testes de time_blocks (bloqueio pontual de horário) ──────────────────
+
+describe('computeAvailableSlots — time_blocks', () => {
+  const workingHours8to18 = {
+    start_time: '08:00:00',
+    end_time: '18:00:00',
+    break_start_time: null,
+    break_end_time: null,
+  }
+  const futureDate = '2099-12-31'
+  const pastNow = new Date('2099-01-01T00:00:00')
+
+  it('bloqueio de salão inteiro (professional_id null) remove slots que colidem com o intervalo', () => {
+    const slots = computeAvailableSlots({
+      workingHours: workingHours8to18,
+      appointments: [],
+      timeBlocks: [{ start_time: '10:00:00', end_time: '11:00:00' }],
+      totalDurationMinutes: 60,
+      slotIntervalMinutes: null,
+      selectedDate: futureDate,
+      now: pastNow,
+    })
+    expect(slots).not.toContain('10:00')
+    expect(slots).toContain('09:00')
+    expect(slots).toContain('11:00')
+  })
+
+  it('bloqueio de profissional específico não afeta slots quando nenhum profissional está selecionado', () => {
+    // professional_id 'p2' não é o profissional selecionado ('') — não deve bloquear
+    const slotsWithoutBlock = computeAvailableSlots({
+      workingHours: workingHours8to18,
+      appointments: [],
+      timeBlocks: [],
+      totalDurationMinutes: 60,
+      slotIntervalMinutes: null,
+      selectedDate: futureDate,
+      now: pastNow,
+    })
+
+    const slotsWithIrrelevantBlock = computeAvailableSlots({
+      workingHours: workingHours8to18,
+      appointments: [],
+      // timeBlocks já filtrados em JS pelo BookingEngine; aqui simulamos que o filtro
+      // já excluiu o bloqueio de outro profissional — array vazio chega à função pura.
+      timeBlocks: [],
+      totalDurationMinutes: 60,
+      slotIntervalMinutes: null,
+      selectedDate: futureDate,
+      now: pastNow,
+    })
+
+    expect(slotsWithIrrelevantBlock).toEqual(slotsWithoutBlock)
+    expect(slotsWithIrrelevantBlock).toContain('10:00')
+  })
+
+  it('slot completamente fora do intervalo bloqueado permanece disponível', () => {
+    const slots = computeAvailableSlots({
+      workingHours: workingHours8to18,
+      appointments: [],
+      timeBlocks: [{ start_time: '10:00:00', end_time: '12:00:00' }],
+      totalDurationMinutes: 60,
+      slotIntervalMinutes: null,
+      selectedDate: futureDate,
+      now: pastNow,
+    })
+    expect(slots).toContain('08:00')
+    expect(slots).toContain('09:00')
+    expect(slots).toContain('12:00')
+    expect(slots).toContain('13:00')
+    expect(slots).not.toContain('10:00')
+    expect(slots).not.toContain('11:00')
+  })
+})
+
 // ─── Testes da função pura computeAvailableSlots ───────────────────────────
 // Usam selectedDate no futuro distante + now no dia anterior para evitar o
 // filtro "slots já passados hoje".

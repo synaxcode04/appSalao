@@ -30,7 +30,8 @@ function timeToMinutes(timeStr) {
 
 // Função pura exportável para testes Vitest — não faz fetch, recebe dados prontos.
 // now é opcional; quando omitido usa new Date() (útil em testes para fixar a hora).
-export function computeAvailableSlots({ workingHours, appointments, totalDurationMinutes, slotIntervalMinutes, selectedDate, now }) {
+// timeBlocks: array de { start_time, end_time } já filtrados para o profissional/salão relevante.
+export function computeAvailableSlots({ workingHours, appointments, timeBlocks = [], totalDurationMinutes, slotIntervalMinutes, selectedDate, now }) {
   const step = slotIntervalMinutes && slotIntervalMinutes >= 15 ? slotIntervalMinutes : totalDurationMinutes
   if (!step || step <= 0) return []
 
@@ -57,6 +58,12 @@ export function computeAvailableSlots({ workingHours, appointments, totalDuratio
       const apptStartMin = timeToMinutes(appt.start_time.substring(0, 5))
       const apptEndMin = timeToMinutes(appt.end_time.substring(0, 5))
       if (slotStartMin < apptEndMin && slotEndMin > apptStartMin) return false
+    }
+
+    for (const block of timeBlocks) {
+      const blockStartMin = timeToMinutes(block.start_time.substring(0, 5))
+      const blockEndMin = timeToMinutes(block.end_time.substring(0, 5))
+      if (slotStartMin < blockEndMin && slotEndMin > blockStartMin) return false
     }
 
     const todayStr = currentDate.toLocaleDateString('en-CA')
@@ -139,6 +146,17 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
     }
     if (existingAppointmentId) apptBody.exclude_id = existingAppointmentId
 
+    const { data: timeBlocksRaw } = await supabase
+      .from('time_blocks')
+      .select('professional_id, start_time, end_time')
+      .eq('salon_id', salonId)
+      .eq('block_date', selectedDate)
+
+    // Filtramos em JS para evitar .eq('professional_id', null) — ver convencoes-gerais.md.
+    const timeBlocks = (timeBlocksRaw || []).filter(b =>
+      b.professional_id === null || b.professional_id === selectedProfessional
+    )
+
     let appointments = []
     try {
       const apptRes = await fetch('/api/appointments', {
@@ -157,6 +175,7 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
     const freeSlots = computeAvailableSlots({
       workingHours,
       appointments,
+      timeBlocks,
       totalDurationMinutes,
       slotIntervalMinutes,
       selectedDate
