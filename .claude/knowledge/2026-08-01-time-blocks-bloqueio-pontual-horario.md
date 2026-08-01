@@ -41,7 +41,20 @@ O campo `professional_id` é nullable:
 - `app/src/layouts/OwnerLayout.jsx` — item de menu
 - `app/src/__tests__/BookingEngine.test.jsx` — teste
 
-## Pendência conhecida (fora do escopo desta feature)
+## Pendência do code-reviewer — investigada e não confirmada
 
-Reportada pelo code-reviewer: `OwnerLayout.jsx` tem um `NavLink` pré-existente com barras invertidas
-`\painel\clientes` em vez de `/painel/clientes` — tratar separadamente, não faz parte desta feature.
+O code-reviewer reportou um `NavLink` pré-existente em `OwnerLayout.jsx` com barras invertidas
+(`\painel\clientes` em vez de `/painel/clientes`). Investigação posterior (leitura completa do
+arquivo + busca por `to="\` em toda `app/src`) não encontrou nenhuma ocorrência — todos os 9
+`NavLink` já usavam `/` corretamente. Apontamento tratado como desatualizado/falso positivo;
+nenhuma correção foi necessária.
+
+## Deploy de produção
+
+Deployado junto do commit `42e6e93` (docs) em cima do commit da feature `90d26be`.
+- Pre-deploy check: 63/63 testes, 0 bloqueantes.
+- Deploy via `vercel --prod` a partir de `app/`, sem git push — deployment `dpl_EWfBb4b8LggLuwJ8US23GgZv3qaz`, status READY.
+- URL: https://appsalao-psi.vercel.app
+- Smoke test pós-deploy: 10/10 (ver `Documentos/smoke_test_result.md` e `teste_regressao/2026-08-01-deploy-time-blocks.md`).
+- Verificação manual end-to-end do bloqueio de horário (criar bloqueio → slot some para o cliente)
+  ainda pendente — não coberta por smoke test HTTP, requer teste manual no ambiente real.
