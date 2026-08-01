@@ -72,10 +72,11 @@ function validateInput(action, body) {
   if (action === 'create') {
     if (!body.salon_id) return 'salon_id is required';
     if (!body.client_id) return 'client_id is required';
-    if (!body.service_id) return 'service_id is required';
+    const hasServiceIds = Array.isArray(body.service_ids) && body.service_ids.length > 0;
+    if (!body.service_id && !hasServiceIds) return 'service_id or service_ids is required';
     if (!body.appointment_date) return 'appointment_date is required';
     if (!body.start_time) return 'start_time is required';
-    if (!body.end_time) return 'end_time is required';
+    // end_time é recomputado server-side a partir da soma das durações
     // professional_id pode ser null
   }
 
@@ -129,6 +130,7 @@ export default async function handler(req, res) {
     client_id,
     appointment_id,
     service_id,
+    service_ids,
     professional_id,
     appointment_date,
     start_time,
@@ -242,7 +244,7 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabase
         .from('appointments')
-        .select('id, salon_id, service_id, professional_id, appointment_date, start_time, end_time, status, services(id, name, duration_minutes, price), professionals(id, name)')
+        .select('id, salon_id, service_id, professional_id, appointment_date, start_time, end_time, status, services(id, name, duration_minutes, price), professionals(id, name), appointment_services(service_id, services(id, name, duration_minutes, price))')
         .eq('client_id', client_id)
         .eq('salon_id', salon_id)
         .gte('appointment_date', limitDateStr)
@@ -285,7 +287,7 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabase
         .from('appointments')
-        .select('id, appointment_date, start_time, status, services(name, price), salons(id, name, logo_url, address)')
+        .select('id, appointment_date, start_time, status, services(name, price), salons(id, name, logo_url, address), appointment_services(service_id, services(id, name, price))')
         .eq('client_id', client_id)
         .eq('salon_id', salon_id)
         .eq('status', 'completed')
@@ -303,6 +305,15 @@ export default async function handler(req, res) {
     // AÇÃO: create — criar novo agendamento
     // ==========================================
     if (action === 'create') {
+      // Normaliza service_ids: aceita array ou service_id singular (compat retroativa)
+      const serviceIds = Array.isArray(service_ids) && service_ids.length > 0
+        ? service_ids
+        : service_id ? [service_id] : [];
+
+      if (serviceIds.length === 0) {
+        return res.status(400).json({ error: 'service_id or service_ids is required' });
+      }
+
       // 1. Validar vínculo cliente-salão e bloqueio
       const { data: link, error: linkError } = await supabase
         .from('salon_clients')
@@ -324,8 +335,28 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Cliente bloqueado neste salão' });
       }
 
-      // 2. Recheca conflito de horário server-side
-      // Busca todos os agendamentos já marcados para o profissional na data
+      // 2. Validar que todos os serviços pertencem ao salão e buscar durações
+      const { data: servicesData, error: servicesError } = await supabase
+        .from('services')
+        .select('id, name, duration_minutes')
+        .in('id', serviceIds)
+        .eq('salon_id', salon_id);
+
+      if (servicesError) {
+        console.error('Supabase create services validation error:', { salon_id, error: servicesError });
+        return res.status(500).json({ error: 'Erro ao validar serviços' });
+      }
+
+      if (!servicesData || servicesData.length !== serviceIds.length) {
+        return res.status(400).json({ error: 'Serviços inválidos para este salão' });
+      }
+
+      // 3. Computar duração total e end_time server-side — não confia no cliente
+      const totalDuration = servicesData.reduce((sum, s) => sum + s.duration_minutes, 0);
+      const startMin = timeToMinutes(start_time);
+      const computedEndTime = minutesToTime(startMin + totalDuration);
+
+      // 4. Recheca conflito do BLOCO INTEIRO no mesmo profissional
       let conflictCheckQuery = supabase
         .from('appointments')
         .select('id, start_time, end_time')
@@ -342,11 +373,11 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Erro ao verificar disponibilidade' });
       }
 
-      if (hasConflict(existingAppointments, start_time, end_time)) {
+      if (hasConflict(existingAppointments, start_time, computedEndTime)) {
         return res.status(409).json({ error: 'Horário indisponível' });
       }
 
-      // 3. Buscar owner_id do salão
+      // 5. Buscar owner_id do salão
       const { data: salon, error: salonError } = await supabase
         .from('salons')
         .select('owner_id')
@@ -358,17 +389,17 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Salão não encontrado' });
       }
 
-      // 4. Inserir novo agendamento
+      // 6. Inserir agendamento com o primeiro serviço (compat retroativa)
       const { data: newAppointment, error: createError } = await supabase
         .from('appointments')
         .insert({
           salon_id: salon_id,
           client_id: client_id,
-          service_id: service_id,
+          service_id: serviceIds[0],
           professional_id: professional_id || null,
           appointment_date: appointment_date,
           start_time: start_time,
-          end_time: end_time,
+          end_time: computedEndTime,
           status: 'scheduled'
         })
         .select('id, salon_id, service_id, professional_id, appointment_date, start_time, end_time, status')
@@ -403,28 +434,43 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Erro ao criar agendamento' });
       }
 
-      // 5. Inserir notificação para o dono
-      const { data: client } = await supabase
+      // 7. Inserir N linhas em appointment_services (um por serviço selecionado)
+      // Rollback manual: se falhar, deleta o appointment recém-criado para evitar inconsistência.
+      const appointmentServicesRows = serviceIds.map(sid => ({
+        appointment_id: newAppointment.id,
+        service_id: sid,
+        salon_id: salon_id
+      }));
+
+      const { error: asError } = await supabase
+        .from('appointment_services')
+        .insert(appointmentServicesRows);
+
+      if (asError) {
+        console.error('Supabase create appointment_services error:', { appointment_id: newAppointment.id, error: asError });
+        const { error: rollbackError } = await supabase.from('appointments').delete().eq('id', newAppointment.id);
+        if (rollbackError) {
+          console.error('Supabase rollback delete failed — orphan appointment:', { appointment_id: newAppointment.id, error: rollbackError });
+        }
+        return res.status(500).json({ error: 'Erro ao registrar serviços do agendamento' });
+      }
+
+      // 8. Inserir notificação para o dono com todos os nomes de serviços
+      const { data: clientRow } = await supabase
         .from('clients')
         .select('full_name')
         .eq('id', client_id)
         .single();
 
-      const clientName = client?.full_name?.split(' ')[0] || 'Cliente';
-      const { data: service } = await supabase
-        .from('services')
-        .select('name')
-        .eq('id', service_id)
-        .single();
-
-      const serviceName = service?.name || 'Serviço';
+      const clientFirstName = clientRow?.full_name?.split(' ')[0] || 'Cliente';
+      const serviceNames = servicesData.map(s => s.name).join(', ');
       const dtParts = appointment_date.split('-');
       const dateBr = `${dtParts[2]}/${dtParts[1]}/${dtParts[0]}`;
 
       await supabase.from('notifications').insert([{
         salon_id: salon_id,
         title: 'Novo Agendamento',
-        message: `${clientName} agendou ${serviceName} para o dia ${dateBr} às ${start_time}.`
+        message: `${clientFirstName} agendou ${serviceNames} para o dia ${dateBr} às ${start_time}.`
       }]);
 
       return res.status(201).json({ appointment: newAppointment, owner_id: salon.owner_id });

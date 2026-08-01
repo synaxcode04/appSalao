@@ -327,6 +327,7 @@ function SalonDetails() {
         onClose={() => setIsBookingOpen(false)}
         salonId={salon.id}
         service={selectedService}
+        services={services}
         clientId={clientSession?.client_id ?? null}
         clientName={clientSession?.full_name || profile?.full_name || 'Cliente'}
         professionals={professionals}
