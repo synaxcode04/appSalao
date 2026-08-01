@@ -98,6 +98,14 @@ App_salão/
 └── teste_regressao/              # Todo teste de regressão manual é registrado aqui (1 arquivo por rodada)
 ```
 
+## Commit automático ao concluir tarefas
+
+Decidido em 2026-08-01. Quando uma task passar pelo fluxo do orchestrator e o **code-reviewer** retornar "Aprovado para deploy: SIM" (ou sem BLOQUEANTEs abertos), faça o **commit local automaticamente** — sem esperar o usuário pedir "pode commitar".
+
+- **Gatilho:** somente após aprovação do code-reviewer. Trabalho ainda em andamento, com pendências ou sem passar pelo review não é commitado automaticamente.
+- **Escopo do commit:** local apenas (`git commit`). **Nunca dar `git push` automaticamente** — o usuário revisa o histórico local antes de mandar pro remoto.
+- **Deploy:** continua exigindo pedido explícito do usuário. Aprovar o code-reviewer e commitar **não** dispara deploy sozinho.
+
 ## Testes de regressão
 Todo teste de regressão manual (feature nova ou correção de bug validada em produção/staging) é registrado em `teste_regressao/AAAA-MM-DD-assunto.md` — passos reproduzidos, resultado, evidência e, se FAIL, causa raiz e correção. Ver `teste_regressao/README.md`. Isso é diferente do smoke test de pré-deploy (`Documentos/smoke_test_result.md`) e da base RAG (`.claude/knowledge/`).
 
