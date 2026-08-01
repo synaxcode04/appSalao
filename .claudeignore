@@ -1,0 +1,53 @@
+# Dependências
+app/node_modules/
+
+# Build e arquivos gerados
+app/dist/
+app/dist-ssr/
+app/dev-dist/
+app/.vercel/
+
+# Segredos e variáveis de ambiente
+app/.env
+app/.env.local
+app/.env.*.local
+app/.env.production
+app/.env.staging
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Assets de mídia e logos (sem valor de contexto para o modelo)
+logo_app/
+logo_teste/
+video/
+app/public/pwa-192x192.png
+app/public/pwa-512x512.png
+app/public/favicon.ico
+app/src/assets/
+
+# Cache e logs
+app/.vite/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+
+# Editor e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.sw?
+
+# Lock files (muito grandes, sem valor de contexto)
+app/package-lock.json
+app/yarn.lock
+app/pnpm-lock.yaml
+
+# Workbox (gerado automaticamente pelo Vite PWA)
+app/dist/workbox-*.js
+app/dev-dist/workbox-*.js

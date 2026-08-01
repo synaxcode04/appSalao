@@ -1,0 +1,69 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/session-stop.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/agent-stop.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/user-prompt-submit.sh",
+            "timeout": 10000
+          }
+        ]
+      }
+    ]
+  },
+  "mcpServers": {
+    "supabase-mcp": {
+      "command": "npx",
+      "args": ["tsx", ".mcp/supabase-mcp/index.ts"],
+      "env": {
+        "SUPABASE_DB_URL": "",
+        "SUPABASE_URL": "",
+        "SUPABASE_SERVICE_ROLE_KEY": ""
+      }
+    },
+    "vercel-mcp": {
+      "command": "npx",
+      "args": ["tsx", ".mcp/vercel-mcp/index.ts"],
+      "env": {
+        "VERCEL_TOKEN": "",
+        "VERCEL_PROJECT_ID": "",
+        "VERCEL_TEAM_ID": "",
+        "VERCEL_DEPLOY_HOOK": ""
+      }
+    },
+    "onesignal-mcp": {
+      "command": "npx",
+      "args": ["tsx", ".mcp/onesignal-mcp/index.ts"],
+      "env": {
+        "ONESIGNAL_APP_ID": "",
+        "ONESIGNAL_REST_API_KEY": ""
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+-- =============================================================================
+-- payment_leads_unique_fix.sql — Índice UNIQUE em payment_leads.mp_payment_id
+-- =============================================================================
+--
+-- PROPÓSITO:
+--   Evita linhas duplicadas em payment_leads causadas por retries do Mercado
+--   Pago — o gateway pode entregar a mesma notificação de pagamento mais de
+--   uma vez. Com o índice UNIQUE, o webhook pode fazer upsert usando o
+--   parâmetro `on_conflict=mp_payment_id` do PostgREST, garantindo que cada
+--   mp_payment_id apareça no máximo uma vez na tabela.
+--
+-- NULLS:
+--   mp_payment_id é nullable. Em PostgreSQL, um índice UNIQUE permite múltiplos
+--   NULLs (cada NULL é considerado distinto), portanto linhas antigas sem
+--   mp_payment_id não são afetadas e não causarão violação de unicidade.
+--
+-- ATENÇÃO — DUPLICATAS EXISTENTES:
+--   Se já existirem duas ou mais linhas com o MESMO mp_payment_id não-nulo,
+--   o CREATE UNIQUE INDEX abaixo FALHARÁ com "could not create unique index".
+--   Antes de executar, verifique duplicatas com a query comentada abaixo e
+--   remova manualmente as linhas excedentes.
+--
+--   -- Detectar duplicatas reais:
+--   SELECT mp_payment_id, COUNT(*) AS total
+--   FROM public.payment_leads
+--   WHERE mp_payment_id IS NOT NULL
+--   GROUP BY mp_payment_id
+--   HAVING COUNT(*) > 1;
+--
+-- APLICAÇÃO:
+--   Execute este SQL manualmente no Supabase SQL Editor (Dashboard → SQL Editor).
+--   NÃO aplicar via código — seguir o mesmo fluxo de rls_fix.sql e payment_leads.sql.
+--   Este arquivo é idempotente: pode ser re-executado sem efeitos colaterais
+--   (CREATE UNIQUE INDEX IF NOT EXISTS não falha se o índice já existir).
+--
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. Índice UNIQUE em mp_payment_id
+-- -----------------------------------------------------------------------------
+
+CREATE UNIQUE INDEX IF NOT EXISTS payment_leads_mp_payment_id_key
+  ON public.payment_leads (mp_payment_id);

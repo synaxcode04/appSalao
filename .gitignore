@@ -1,0 +1,49 @@
+# Dependências
+app/node_modules/
+.claude/scripts/node_modules/
+node_modules/
+
+# Índice RAG local (regenerável via .claude/scripts/embed.ts)
+.claude/rag.db
+.claude/scripts/rag.db
+
+# Build e arquivos gerados
+app/dist/
+app/dist-ssr/
+app/dev-dist/
+app/.vercel/
+
+# Segredos e variáveis de ambiente — NUNCA commitar
+app/.env
+app/.env.local
+app/.env.*.local
+app/.env.production
+app/.env.staging
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Cache e logs
+app/.vite/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+
+# Editor e sistema operacional
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Lock file (manter apenas um; se usar npm, manter package-lock.json)
+app/yarn.lock
+app/pnpm-lock.yaml

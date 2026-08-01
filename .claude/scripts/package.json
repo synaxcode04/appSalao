@@ -1,0 +1,25 @@
+{
+  "name": "app-salao-rag",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "RAG scripts para captura de aprendizados do projeto App Salão",
+  "scripts": {
+    "summarize": "tsx summarize.ts",
+    "embed": "tsx embed.ts",
+    "search": "tsx search.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@xenova/transformers": "^2.17.2",
+    "better-sqlite3": "^12.11.1",
+    "sharp": "^0.35.3",
+    "sqlite-vec": "^0.1.6",
+    "sqlite-vec-windows-x64": "^0.1.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0"
+  }
+}

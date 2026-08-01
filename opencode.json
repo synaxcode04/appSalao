@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "model": "claude-sonnet-4-6",
+  "mcp": {
+    "supabase-mcp": {
+      "command": "npx",
+      "args": ["tsx", ".mcp/supabase-mcp/index.ts"],
+      "env": {
+        "SUPABASE_DB_URL": "",
+        "SUPABASE_URL": "",
+        "SUPABASE_SERVICE_ROLE_KEY": ""
+      }
+    },
+    "vercel-mcp": {
+      "command": "npx",
+      "args": ["tsx", ".mcp/vercel-mcp/index.ts"],
+      "env": {
+        "VERCEL_TOKEN": "",
+        "VERCEL_PROJECT_ID": "",
+        "VERCEL_TEAM_ID": "",
+        "VERCEL_DEPLOY_HOOK": ""
+      }
+    },
+    "onesignal-mcp": {
+      "command": "npx",
+      "args": ["tsx", ".mcp/onesignal-mcp/index.ts"],
+      "env": {
+        "ONESIGNAL_APP_ID": "",
+        "ONESIGNAL_REST_API_KEY": ""
+      }
+    }
+  }
+}

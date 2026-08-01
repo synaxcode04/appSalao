@@ -1,0 +1,16 @@
+description = "Implementa uma melhoria dentro do escopo do SPEC, via orchestrator, com TDD e code-review."
+prompt = """
+Implemente a melhoria descrita abaixo assumindo o papel do orchestrator (ver GEMINI.md).
+
+Melhoria: {{args}}
+
+Instruções ao orchestrator:
+1. Verifique se a melhoria está dentro do escopo do SPEC.md — se não estiver (pagamento online, app nativo, WhatsApp, multi-owner), informe o usuário e pare.
+2. Verifique se envolve alguma decisão em aberto do SPEC (tela de suspensão, quem conclui atendimento, reagendamento) — se sim, não implemente sem aprovação explícita.
+3. Crie um plano com: agent(s) envolvido(s), arquivos a criar/modificar, testes que provarão que a melhoria funciona.
+4. Para melhorias que afetam 2+ módulos, apresente o plano e aguarde confirmação antes de executar.
+5. Execute com TDD obrigatório.
+6. Acione o agent `code-reviewer` ao final.
+
+Se a descrição for vaga, faça no máximo 2 perguntas objetivas antes de prosseguir.
+"""

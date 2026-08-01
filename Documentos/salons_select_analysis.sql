@@ -1,0 +1,134 @@
+-- =============================================================================
+-- salons_select_analysis.sql — App Salão
+-- Análise da policy SELECT pública em salons e decisão sobre restrição.
+--
+-- ESTE ARQUIVO CONTÉM APENAS COMENTÁRIOS E ANÁLISE.
+-- Nenhuma alteração de schema ou policy é aplicada aqui.
+--
+-- CONCLUSÃO ANTECIPADA: LIMITAÇÃO CONHECIDA — ver seção final.
+-- =============================================================================
+
+
+-- =============================================================================
+-- CONTEXTO: policy SELECT atual em salons
+-- =============================================================================
+--
+-- schema.sql linha 198:
+--   CREATE POLICY "Salons are viewable by everyone."
+--   ON public.salons FOR SELECT USING (true);
+--
+-- Esta policy permite que qualquer chamada (autenticada ou anônima) leia
+-- qualquer linha da tabela salons.
+--
+-- O risco identificado na revisão de código:
+--   AdminDashboard.jsx lê todos os salões via .from('salons').select(...)
+--   A proteção de acesso é feita APENAS pela UI (ProtectedRoute requiredRole="admin").
+--   Um usuário com role='client' que descobrisse a rota /admin poderia fazer
+--   uma query direta ao banco (via SDK ou REST) e ler todos os salões sem
+--   autenticação de role no banco.
+
+
+-- =============================================================================
+-- ANÁLISE: o SELECT público é necessário para o fluxo /s/:slug?
+-- =============================================================================
+--
+-- SIM. Verificado em app/src/layouts/SalonLayout.jsx (linhas 37-51):
+--
+--   const [salonResult, sessionResult] = await Promise.all([
+--     supabase.from('salons').select('*').eq('id', id).single(),
+--     supabase.auth.getSession(),
+--   ])
+--
+-- Esta chamada ocorre ANTES de verificar a sessão do usuário — a intenção
+-- é resolver o salão mesmo para visitantes anônimos (cliente que recebeu o
+-- link público do salão e ainda não fez login, ou potencial cliente navegando).
+--
+-- O fluxo público /s/:slug requer:
+--   1. Leitura do salão sem auth → para exibir nome, logo, endereço, serviços.
+--   2. Leitura de services sem auth → SELECT público já preservado em rls_fix.sql.
+--   3. Leitura de working_hours sem auth → SELECT público já preservado.
+--   4. Leitura de professionals sem auth → SELECT público já preservado.
+--
+-- Dados retornados por salons.select('*') incluem: id, owner_id, name, logo_url,
+-- address, latitude, longitude, target_gender, document, created_at, is_active,
+-- status, subscription_expires_at.
+--
+-- Colunas potencialmente sensíveis expostas publicamente:
+--   - owner_id (UUID do dono — não é nome, mas vincula salão a um usuário)
+--   - document (CNPJ/CPF do salão — dado sensível de negócio)
+--   - subscription_expires_at (data de expiração de licença — dado interno)
+--   - status (estado da licença — dado interno)
+
+
+-- =============================================================================
+-- OPÇÕES AVALIADAS
+-- =============================================================================
+--
+-- OPÇÃO 1 — Manter USING (true) sem alteração [status quo]
+--   Prós: não quebra nenhum fluxo existente. Zero risco de regressão.
+--   Contras: qualquer usuário autenticado com role='client' pode listar todos
+--     os salões da plataforma via query direta ao SDK, incluindo colunas sensíveis
+--     (document, subscription_expires_at).
+--
+-- OPÇÃO 2 — Restringir SELECT a owner + admin + anon por salon_id específico
+--   Seria algo como:
+--     USING (
+--       auth.uid() IS NULL          -- anon: acesso público (necessário para /s/:slug)
+--       OR owner_id = auth.uid()    -- dono vê o próprio salão
+--       OR EXISTS (SELECT 1 FROM public.profiles p
+--                  WHERE p.id = auth.uid() AND p.role = 'admin')
+--     )
+--   Prós: remove leitura de lista completa de salões por clientes autenticados.
+--   Contras CRÍTICOS:
+--     a) auth.uid() IS NULL permite acesso anônimo completo à tabela —
+--        qualquer pessoa pode listar TODOS os salões sem login. O risco de
+--        enumeração da base toda é tão grande quanto o risco atual via client role.
+--     b) Não resolve o problema raiz: o dado sensível (document) continuaria
+--        exposto para anônimos que acessam /s/:slug (necessário para carregar o salão).
+--     c) AdminDashboard.jsx precisaria de mudança no JavaScript para funcionar
+--        com a nova policy — vedado pelas restrições deste agent.
+--
+-- OPÇÃO 3 — View pública com colunas limitadas
+--   Criar public.salons_public VIEW com apenas (id, name, logo_url, address,
+--   latitude, longitude, target_gender, status) — sem owner_id, document,
+--   subscription_expires_at — e redirecionar SalonLayout.jsx para usar a view.
+--   Prós: exposição mínima de dados no fluxo público.
+--   Contras:
+--     a) Exige mudança em SalonLayout.jsx (JavaScript) — vedado.
+--     b) Exige que OwnerLayout.jsx e AdminDashboard.jsx continuem usando a
+--        tabela direta (ou a view não teria as colunas que eles precisam).
+--     c) Não aplicável por este agent (apenas SQL sem mudança de JS).
+
+
+-- =============================================================================
+-- DECISÃO: LIMITAÇÃO CONHECIDA — nenhuma alteração aplicada
+-- =============================================================================
+--
+-- Não há correção SQL-only segura que:
+--   (a) preserve o fluxo público /s/:slug (acesso anônimo ao salão), E
+--   (b) impeça um cliente autenticado de listar todos os salões via query direta, E
+--   (c) não exija mudança em JavaScript (SalonLayout.jsx, AdminDashboard.jsx).
+--
+-- A raiz do problema é arquitetural: a mesma tabela serve dois perfis de acesso
+-- com requisitos opostos (leitura pública irrestrita vs. leitura restrita por role).
+-- A solução correta (Opção 3 — view pública) requer mudança coordenada entre
+-- SQL e JavaScript, o que está fora do escopo deste agent.
+--
+-- MITIGAÇÕES EXISTENTES QUE REDUZEM O RISCO:
+--   1. Exposição de lista de salões não é dado de outro tenant — é dado da plataforma.
+--      O risco de vazamento de dados ENTRE SALÕES (isolamento multi-tenant) já está
+--      coberto pelas correções de INSERT/UPDATE/DELETE de rls_fix.sql.
+--   2. A rota /admin no frontend requer role='admin' via ProtectedRoute — um cliente
+--      não chega à tela do AdminDashboard por fluxo normal.
+--   3. O SELECT em salons não expõe dados de clientes (appointments, profiles) —
+--      apenas metadados de negócio dos salões.
+--
+-- RECOMENDAÇÃO PARA PRÓXIMO SPRINT:
+--   Implementar Opção 3:
+--     a) Criar VIEW public.salons_public com colunas não-sensíveis.
+--     b) Atualizar SalonLayout.jsx para ler de salons_public (sem owner_id, document,
+--        subscription_expires_at).
+--     c) Restringir SELECT em salons (tabela direta) a owner_id = auth.uid() e admin.
+--     d) Mover document para tabela separada com acesso restrito ao dono.
+--
+-- =============================================================================

@@ -1,0 +1,16 @@
+description = "Investiga um bug pelo orchestrator e produz relatório de causa raiz (sem corrigir)."
+prompt = """
+Investigue o bug descrito abaixo assumindo o papel do orchestrator (ver GEMINI.md).
+
+Bug: {{args}}
+
+Instruções ao orchestrator:
+1. Identifique qual módulo do SPEC.md está afetado (Motor de Agendamento, Auth, Notificações, Licenças, Painel).
+2. Leia os arquivos relevantes do módulo — não apenas o arquivo com erro, mas o fluxo completo.
+3. Identifique a causa raiz — não o sintoma superficial.
+4. Mapeie todos os arquivos afetados (diretos e indiretos).
+5. Verifique se há testes existentes que deveriam ter capturado este bug.
+
+Produza um relatório com: Causa raiz, Arquivos afetados (papel de cada um), Impacto no SPEC (critério violado), Plano de correção (sem implementar) e Testes necessários.
+Ao final, sugira o comando: `/corrigir-bug [plano resumido]`.
+"""

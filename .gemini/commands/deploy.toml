@@ -1,0 +1,19 @@
+description = "Inicia o processo de deploy pelo orchestrator: review, build, smoke test e confirmação."
+prompt = """
+Inicie o processo de deploy assumindo o papel do orchestrator (ver GEMINI.md). Sequência obrigatória — não pule etapas.
+
+### Etapa 1 — Code Review
+Acione o agent `code-reviewer` para revisar o estado atual do código.
+- Se houver BLOQUEANTEs: pare imediatamente. Liste cada bloqueante e sugira `/analisa-bug [descrição]` para cada um. Não continue.
+- Se houver apenas IMPORTANTEs ou SUGESTÕEs: informe o usuário com a lista completa e pergunte "Deseja continuar mesmo assim?".
+- Se aprovado sem BLOQUEANTEs: prossiga.
+
+### Etapa 2 — Build e Configuração
+Delegue ao agent `devops`: confirmar `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` na Vercel; confirmar que `app/.env` não está no git; rodar `npm run build` e confirmar exit 0.
+
+### Etapa 3 — Smoke Test
+Delegue ao agent `qa`: executar os 6 critérios de aceitação do SPEC contra a URL de produção; salvar resultado em `Documentos/smoke_test_result.md`.
+
+### Etapa 4 — Confirmação Final
+Reporte: URL de produção funcional, resultado do smoke test (pass/fail por critério) e, se houver fail, o que precisa ser corrigido antes de considerar o deploy bem-sucedido.
+"""

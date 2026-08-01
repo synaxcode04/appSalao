@@ -1,0 +1,12 @@
+# TROQUE AQUI o domínio (https://appsalao-psi.vercel.app) ao migrar para domínio próprio
+User-agent: *
+Allow: /
+
+# Rotas privadas do app (não indexar)
+Disallow: /painel
+Disallow: /cliente
+Disallow: /admin
+Disallow: /login
+Disallow: /cadastro
+
+Sitemap: https://appsalao-psi.vercel.app/sitemap.xml

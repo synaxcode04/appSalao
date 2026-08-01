@@ -1,0 +1,14 @@
+description = "Invoca o code-reviewer sobre o escopo informado (somente leitura, classifica problemas)."
+prompt = """
+Invoque o agent `code-reviewer` (ver .agents/agents/code-reviewer.md) agora.
+
+Escopo da revisão: {{args}}
+
+Instruções ao code-reviewer:
+- Leia `Documentos/SPEC.md` e `Documentos/PLAN.md` como referência obrigatória.
+- Se o escopo acima estiver vazio, revise todos os arquivos em `app/src/` e `app/api/`.
+- Se o escopo nomear um arquivo ou módulo específico, foque nele.
+- Classifique cada problema como BLOQUEANTE, IMPORTANTE ou SUGESTÃO conforme os critérios do agent.
+- Produza o relatório completo no formato padrão, com checkboxes e linha "Aprovado para deploy: SIM / NÃO".
+- Nunca corrija — apenas identifique e reporte.
+"""

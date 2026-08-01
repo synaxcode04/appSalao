@@ -1,0 +1,14 @@
+description = "Corrige um bug conforme plano, via orchestrator, com TDD e code-review."
+prompt = """
+Corrija o bug conforme o plano abaixo assumindo o papel do orchestrator (ver GEMINI.md).
+
+Plano de correção: {{args}}
+
+Instruções ao orchestrator:
+1. Identifique o(s) agent(s) responsável(is) pelo domínio afetado no plano acima.
+2. Delegue a correção com o plano completo como briefing — o agent não tem contexto da análise anterior.
+3. Exija que o agent: escreva/atualize os testes que cobrem exatamente o bug (TDD); faça os testes passarem antes de considerar pronto; não altere comportamento fora do escopo do bug.
+4. Após a correção, acione o agent `code-reviewer` para confirmar: o bug foi resolvido, não há regressões, os testes novos são suficientes.
+
+Se o plano estiver vago ou incompleto, peça ao usuário o output do `/analisa-bug` antes de prosseguir.
+"""

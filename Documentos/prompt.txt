@@ -1,0 +1,19 @@
+Estou com a idéia de fazer um app para android onde o foco são salões de beleza pequenos.
+
+O dono cadastra o salão e cria um login e senha para a loja dele.
+
+ao acessar, ele cadastra inicialmente que tipo de serviço presta (unhas pé e mão, escova, progressiva, depilação e etc), quais dias da semana ele trabalha e o horário de atendimento. Especifica de quanto em quanto tempo leva entre um agendamento e outro. Exemplo: para unhas, quando marcado já reserva uma hora, progressiva são 3 horas e tal.
+
+Ao cadastrar o serviço prestado ele cadastra quantas horas ou minutos leva para fazer aquilo.
+
+Ao fazer isso, temos a versão do cliente do app. Ao se cadastrar, o cliente escolhe em qual salão da plataforma quer atendimento, o dia e já visualiza quais horários estão disponíveis. Pelo próprio app ele escolhe o horário e o tipo de serviço.
+
+Nesse instante, a proprietária recebe o alerta avisando de novo agendamento. O cliente tem a possibilidade de cancelar pelo próprio app, liberando aquele dia/horário e a proprietária também. Será possível reagendamento e tudo mais.
+
+Ao cadastrar o salão no app, o proprietário pode colocar a logo dele, para deixar com uma cara mais "exclusiva" do aplicativo.
+
+Inicialmente é isso e para a frente vamos implementando mais coisas.
+
+Gostaria que analisasse, escolha a melhor linguagem e faça para começarmos a testar, por favor.
+
+se for o caso de fazer um sistema web para testar local e depois converter para android, analise e faça o que achar melhor.

@@ -1,0 +1,16 @@
+description = "Roteia uma task de implementação pelo orchestrator (com TDD e code-review)."
+prompt = """
+Assuma o papel do orchestrator descrito em GEMINI.md / .agents/agents/orchestrator.md e roteie esta solicitação.
+
+Task solicitada: {{args}}
+
+Instruções ao orchestrator:
+1. Leia `Documentos/PLAN.md` e identifique a task correspondente ao argumento acima.
+2. Selecione o(s) agent(s) correto(s) conforme o catálogo de sub-agents.
+3. Antes de executar, apresente o plano (agent, o que vai fazer, output esperado).
+4. Execute com TDD obrigatório — testes escritos e passando (`cd app && npm run test:run` exit 0) fazem parte do critério de conclusão.
+5. Ao concluir toda a implementação, acione o agent `code-reviewer`.
+6. Só marque como concluído quando o code-reviewer retornar "Aprovado para deploy: SIM" ou sem BLOQUEANTEs abertos.
+
+Se o argumento não corresponder a nenhuma task do PLAN.md, pergunte ao usuário o que exatamente implementar.
+"""

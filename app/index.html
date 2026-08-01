@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" id="apple-title" content="Sistema de Salão">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <link rel="manifest" id="app-manifest" href="/manifest.json" />
+
+    <!-- ================= SEO ================= -->
+    <!-- TROQUE AQUI o domínio (https://appsalao-psi.vercel.app) ao migrar para domínio próprio -->
+    <title>appSalão — Sistema de agendamento online para salão de beleza</title>
+    <meta name="description" content="Sistema de agendamento online para salão de beleza. Receba agendamentos 24h por um link exclusivo, sem conflito de horário, com PWA instalável sem app store." />
+    <meta name="keywords" content="agendamento online, salão de beleza, agenda salão, link de agendamento, PWA salão, agenda online" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://appsalao-psi.vercel.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="appSalão — Sistema de agendamento online para salão de beleza" />
+    <meta property="og:description" content="Receba agendamentos 24h por um link exclusivo, sem conflito de horário. App instalável (PWA) para o seu salão de beleza, sem app store." />
+    <meta property="og:url" content="https://appsalao-psi.vercel.app/" />
+    <meta property="og:image" content="https://appsalao-psi.vercel.app/logo.png" />
+    <meta property="og:image:alt" content="Logotipo do appSalão" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="appSalão" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="appSalão — Sistema de agendamento online para salão de beleza" />
+    <meta name="twitter:description" content="Receba agendamentos 24h por um link exclusivo, sem conflito de horário. App instalável (PWA) para o seu salão de beleza." />
+    <meta name="twitter:image" content="https://appsalao-psi.vercel.app/logo.png" />
+
+    <!-- JSON-LD structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "appSalão",
+      "description": "Sistema de agendamento online para salão de beleza. Receba agendamentos 24h por um link exclusivo, sem conflito de horário, com PWA instalável sem app store.",
+      "url": "https://appsalao-psi.vercel.app/",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, PWA",
+      "offers": {
+        "@type": "Offer",
+        "price": "29.90",
+        "priceCurrency": "BRL"
+      }
+    }
+    </script>
+    <!-- =============== FIM SEO =============== -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "793a85ec-7c26-4be2-8e54-c1c94dfb4c8d",
+          allowLocalhostAsSecureOrigin: true,
+          notifyButton: {
+            enable: false,
+          },
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+# Conexões - Supabase
+
+## URL do Projeto
+https://auvjlrjbqxtrtxrlqkil.supabase.co
+
+## Chaves de API
+
+### anon public
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1dmpscmpicXh0cnR4cmxxa2lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MDc4MjMsImV4cCI6MjA5NTk4MzgyM30.P7k59bx7ak8krI4p83qwOPHcaxhdc-kijR_7oRzu5oA
+
+### service_role (secret)
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1dmpscmpicXh0cnR4cmxxa2lsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MDc4MjMsImV4cCI6MjA5NTk4MzgyM30.P7k59bx7ak8krI4p83qwOPHcaxhdc-kijR_7oRzu5oA

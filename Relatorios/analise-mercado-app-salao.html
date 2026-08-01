@@ -1,0 +1,488 @@
+<title>App Salão — Análise de Mercado e Competitividade</title>
+<style>
+:root{
+  --ink:#241b1e;
+  --paper:#faf6f3;
+  --paper-2:#f1e9e3;
+  --line:#e0d2c8;
+  --wine:#7a2e3a;
+  --wine-2:#5c1f29;
+  --gold:#b8863f;
+  --sage:#4a6350;
+  --muted:#7a6a63;
+  --good:#3f7a52;
+  --warn:#b8863f;
+  --risk:#a13d33;
+  --radius:6px;
+  --serif: 'ReportSerif', Georgia, 'Times New Roman', serif;
+  --sans: 'ReportSans', -apple-system, Segoe UI, Roboto, sans-serif;
+  --mono: 'ReportMono', 'SF Mono', Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:#efe6e1;
+    --paper:#221a1d;
+    --paper-2:#2b2124;
+    --line:#453739;
+    --wine:#d98a97;
+    --wine-2:#e8aab3;
+    --gold:#d9ac6b;
+    --sage:#8fb39c;
+    --muted:#b4a29a;
+    --good:#7fbf94;
+    --warn:#d9ac6b;
+    --risk:#e08a7d;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#efe6e1; --paper:#221a1d; --paper-2:#2b2124; --line:#453739;
+  --wine:#d98a97; --wine-2:#e8aab3; --gold:#d9ac6b; --sage:#8fb39c;
+  --muted:#b4a29a; --good:#7fbf94; --warn:#d9ac6b; --risk:#e08a7d;
+}
+:root[data-theme="light"]{
+  --ink:#241b1e; --paper:#faf6f3; --paper-2:#f1e9e3; --line:#e0d2c8;
+  --wine:#7a2e3a; --wine-2:#5c1f29; --gold:#b8863f; --sage:#4a6350;
+  --muted:#7a6a63; --good:#3f7a52; --warn:#b8863f; --risk:#a13d33;
+}
+
+@font-face{
+  font-family:'ReportSerif';
+  src: local('Georgia');
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--gold);color:var(--wine-2);}
+
+.wrap{max-width:920px;margin:0 auto;padding:4rem 1.5rem 6rem;}
+
+/* Masthead */
+.masthead{
+  border-bottom:2px solid var(--wine);
+  padding-bottom:1.75rem;
+  margin-bottom:2.5rem;
+}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:.72rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin:0 0 .9rem;
+}
+h1.title{
+  font-family:var(--serif);
+  font-weight:700;
+  font-size:clamp(2rem,5vw,3.1rem);
+  line-height:1.05;
+  margin:0 0 .6rem;
+  text-wrap:balance;
+  color:var(--wine-2);
+}
+.subtitle{
+  font-size:1.05rem;
+  color:var(--muted);
+  max-width:62ch;
+  margin:0 0 1.4rem;
+}
+.meta-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:1.75rem;
+  font-family:var(--mono);
+  font-size:.78rem;
+  color:var(--muted);
+}
+.meta-row strong{color:var(--ink);font-weight:600;}
+
+/* Section structure */
+section{margin:3.2rem 0;}
+h2.section-title{
+  font-family:var(--serif);
+  font-size:1.5rem;
+  font-weight:700;
+  color:var(--wine);
+  margin:0 0 .3rem;
+  display:flex;
+  align-items:baseline;
+  gap:.6rem;
+}
+h2.section-title .num{
+  font-family:var(--mono);
+  font-size:.85rem;
+  color:var(--gold);
+  font-weight:600;
+}
+.section-dek{
+  color:var(--muted);
+  font-size:.95rem;
+  max-width:68ch;
+  margin:0 0 1.4rem;
+}
+h3.sub{
+  font-family:var(--serif);
+  font-size:1.12rem;
+  font-weight:700;
+  color:var(--ink);
+  margin:1.6rem 0 .6rem;
+}
+p{max-width:70ch;}
+ul,ol{max-width:70ch;padding-left:1.2rem;}
+li{margin-bottom:.35rem;}
+
+/* Executive summary card */
+.exec{
+  background:var(--paper-2);
+  border-left:4px solid var(--wine);
+  border-radius:var(--radius);
+  padding:1.5rem 1.75rem;
+}
+.exec p:last-child{margin-bottom:0;}
+
+/* confidence pill */
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+  font-family:var(--mono);
+  font-size:.72rem;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  padding:.25rem .65rem;
+  border-radius:999px;
+  font-weight:600;
+}
+.pill.high{background:color-mix(in srgb, var(--good) 18%, transparent);color:var(--good);}
+.pill.med{background:color-mix(in srgb, var(--warn) 18%, transparent);color:var(--warn);}
+.pill::before{content:"●";font-size:.55rem;}
+
+/* Table wrapper */
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);margin:0 0 1rem;}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.88rem;}
+thead th{
+  background:var(--paper-2);
+  font-family:var(--mono);
+  font-size:.7rem;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:left;
+  padding:.7rem .85rem;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
+tbody td{
+  padding:.7rem .85rem;
+  border-bottom:1px solid var(--line);
+  vertical-align:top;
+}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--paper-2);}
+td.num, th.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;}
+
+/* Callout tags: strength / weakness / opportunity / threat */
+.tag{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  padding:.15rem .5rem;
+  border-radius:4px;
+  font-weight:700;
+  margin-right:.4rem;
+}
+.tag.strength{background:color-mix(in srgb, var(--good) 20%, transparent);color:var(--good);}
+.tag.weakness{background:color-mix(in srgb, var(--risk) 20%, transparent);color:var(--risk);}
+.tag.opportunity{background:color-mix(in srgb, var(--gold) 22%, transparent);color:var(--gold);}
+.tag.threat{background:color-mix(in srgb, var(--wine) 20%, transparent);color:var(--wine);}
+
+/* SWOT grid */
+.swot{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+  margin:1rem 0 1.5rem;
+}
+.swot-cell{background:var(--paper);padding:1.25rem 1.4rem;}
+.swot-cell h4{
+  font-family:var(--mono);
+  font-size:.72rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  margin:0 0 .7rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.swot-cell ul{margin:0;padding-left:1.1rem;font-size:.88rem;}
+.swot-cell li{margin-bottom:.45rem;}
+.swot-cell.s h4{color:var(--good);}
+.swot-cell.w h4{color:var(--risk);}
+.swot-cell.o h4{color:var(--gold);}
+.swot-cell.t h4{color:var(--wine);}
+@media (max-width:640px){.swot{grid-template-columns:1fr;}}
+
+/* Price ladder viz */
+.ladder{margin:1.5rem 0;}
+.ladder-row{
+  display:grid;
+  grid-template-columns:150px 1fr 90px;
+  align-items:center;
+  gap:.9rem;
+  padding:.5rem 0;
+  border-bottom:1px solid var(--line);
+  font-size:.86rem;
+}
+.ladder-row:last-child{border-bottom:none;}
+.ladder-row .name{font-weight:600;}
+.ladder-row .name small{display:block;font-weight:400;color:var(--muted);font-size:.76rem;}
+.bar-track{background:var(--paper-2);border-radius:3px;height:10px;position:relative;}
+.bar-fill{
+  position:absolute;left:0;top:0;bottom:0;
+  border-radius:3px;
+  background:var(--line-fill,var(--muted));
+}
+.ladder-row.us .bar-fill{background:var(--wine);}
+.ladder-row.us .name{color:var(--wine);}
+.ladder-row .price{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;}
+
+/* Recommendation table */
+.rec-table td:first-child{font-family:var(--mono);color:var(--gold);font-weight:700;}
+
+/* Gap box */
+.gapbox{
+  border:1px dashed var(--line);
+  border-radius:var(--radius);
+  padding:1.1rem 1.3rem;
+  font-size:.86rem;
+  color:var(--muted);
+  background:var(--paper-2);
+}
+.gapbox strong{color:var(--ink);}
+
+/* Footer */
+footer{
+  margin-top:4rem;
+  padding-top:1.5rem;
+  border-top:1px solid var(--line);
+  font-family:var(--mono);
+  font-size:.75rem;
+  color:var(--muted);
+  display:flex;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:.5rem;
+}
+
+blockquote{
+  margin:1rem 0;
+  padding:.9rem 1.2rem;
+  border-left:3px solid var(--gold);
+  background:var(--paper-2);
+  font-size:.9rem;
+  color:var(--muted);
+  max-width:68ch;
+}
+
+@media (prefers-reduced-motion:no-preference){
+  section{animation:rise .5s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+}
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <p class="eyebrow">Research Squad · Relatório de Pesquisa Estratégica</p>
+    <h1 class="title">App Salão: onde entrar num mercado de 1,3 milhão de salões</h1>
+    <p class="subtitle">Análise competitiva, de mercado e de comportamento do consumidor para embasar o lançamento do App Salão a R$29,90/mês.</p>
+    <div class="meta-row">
+      <span><strong>Data</strong> 11 jul 2026</span>
+      <span><strong>Decisão apoiada</strong> posicionamento de preço e estratégia de entrada</span>
+      <span class="pill med">Confiança média</span>
+    </div>
+  </div>
+
+  <section id="resumo">
+    <h2 class="section-title"><span class="num">01</span> Resumo executivo</h2>
+    <div class="exec">
+      <p>O mercado brasileiro de pequenos salões e barbearias é grande (+1,3 milhão de estabelecimentos, R$130+ bilhões/ano) e majoritariamente <strong>não digitalizado para agendamento</strong> — a estimativa mais citada é que cerca de 88% ainda depende do WhatsApp ou papel. Isso significa que o concorrente real do App Salão não é a Trinks ou a Fresha: é o hábito gratuito e informal que já "funciona" para o dono do salão.</p>
+      <p>R$29,90/mês posiciona o App Salão como <strong>a oferta paga mais barata do mercado</strong> entre os concorrentes com funcionalidade completa mapeados (Trinks R$65–252, Booksy ~R$99, Fresha com comissão de 20%). Isso é coerente com o perfil do comprador: 94% dos novos negócios do setor são MEI, sensíveis a preço e avessos a risco de assinatura.</p>
+      <p>A oportunidade mais clara não é "ser mais barato que a Trinks" — é <strong>ser a primeira ferramenta paga que um salão de 1–3 cadeiras adota</strong>, atacando diretamente a dor mais cara do segmento (no-show e conflito de horário, estimado em até R$12 mil/ano perdidos por salão) com um preço abaixo do risco percebido.</p>
+    </div>
+  </section>
+
+  <section id="metodologia">
+    <h2 class="section-title"><span class="num">02</span> Metodologia</h2>
+    <p class="section-dek">Pesquisa conduzida por três especialistas em paralelo — competitivo, mercado/pricing e comportamento do consumidor — com síntese final pelo Research Chief.</p>
+    <h3 class="sub">Hipóteses testadas</h3>
+    <ol>
+      <li>R$29,90/mês é competitivo frente aos players estabelecidos de agendamento para salão no Brasil.</li>
+      <li>O principal obstáculo à adoção não é preço, mas migração de um hábito gratuito e informal (WhatsApp/papel).</li>
+      <li>Existe um nicho mal atendido — salões pequenos de 1–3 profissionais — onde os concorrentes de peso ficam caros demais.</li>
+    </ol>
+    <h3 class="sub">Fontes e limitações</h3>
+    <div class="gapbox">
+      <p style="margin:0 0 .6rem"><strong>Confirmado por múltiplas fontes:</strong> tamanho do setor (SEBRAE/ABIHPEC), predomínio de MEI, preços de Trinks/Booksy/Fresha, queixas recorrentes contra a Trinks no Reclame Aqui.</p>
+      <p style="margin:0">
+        <strong>Estimativa / fonte única:</strong> % de salões ainda no WhatsApp (88%, fonte comercial Belio), perda financeira por no-show (fornecedor de software, viés comercial), preços de SalãoVIP/Agenday (não confirmados — busca esgotou cota nesta rodada), elasticidade de preço específica do segmento (não testada, apenas inferida).
+      </p>
+    </div>
+  </section>
+
+  <section id="concorrencia">
+    <h2 class="section-title"><span class="num">03</span> Panorama competitivo</h2>
+    <p class="section-dek">Nove concorrentes diretos mapeados no Brasil, com preço de entrada real (agendamento online funcional) variando de R$19,90 a R$252/mês.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Concorrente</th><th>Preço</th><th>Público</th><th>Diferencial</th><th>Fraqueza conhecida</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Trinks</strong> (líder)</td><td class="num">R$65–252/mês</td><td>Pequeno a grande</td><td>Marca, marketplace, +40 mil clientes</td><td>Reajustes frequentes, quedas de sistema, cancelamento difícil</td></tr>
+          <tr><td>Booksy</td><td class="num">~R$99–170/mês</td><td>Barbearia, autônomo</td><td>Marketplace internacional</td><td>Preço escala por profissional</td></tr>
+          <tr><td>Fresha</td><td class="num">Free + 20% comissão</td><td>Salões médios</td><td>Entrada grátis, marca global</td><td>Comissão penaliza crescimento</td></tr>
+          <tr><td>Avec / AppBarber</td><td class="num">R$64,90–369,90/mês</td><td>Pequeno a grande</td><td>Clube de assinatura do cliente final</td><td>Preço sobe forte com equipe</td></tr>
+          <tr><td>Belezzia</td><td class="num">R$89–249/mês</td><td>Estética média/grande</td><td>Completo para clínicas</td><td>Caro para operação pequena</td></tr>
+          <tr><td>Barbeiro.app</td><td class="num">Free + R$49,90/mês</td><td>Barbearia</td><td>Preço fixo, sem taxa por profissional</td><td>Marca focada só em barbearia</td></tr>
+          <tr><td>Tua Agenda</td><td class="num">A partir de R$19,90/mês</td><td>Salão pequeno</td><td>Preço de entrada mais baixo</td><td>Funcionalidades limitadas</td></tr>
+          <tr class="us-row"><td><strong>App Salão</strong></td><td class="num"><strong>R$29,90/mês</strong></td><td>Salão pequeno, 1–3 profissionais</td><td>Preço fixo, PWA, sem comissão</td><td>Marca nova, sem prova social</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub">Onde o preço se posiciona</h3>
+    <div class="ladder">
+      <div class="ladder-row"><div class="name">Trinks<small>entrada real</small></div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="price">R$ 65–252</div></div>
+      <div class="ladder-row"><div class="name">Booksy<small>c/ 1 profissional</small></div><div class="bar-track"><div class="bar-fill" style="width:39%"></div></div><div class="price">R$ 99</div></div>
+      <div class="ladder-row"><div class="name">Belezzia<small>plano básico</small></div><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><div class="price">R$ 89</div></div>
+      <div class="ladder-row"><div class="name">Avec<small>entrada</small></div><div class="bar-track"><div class="bar-fill" style="width:26%"></div></div><div class="price">R$ 64,90</div></div>
+      <div class="ladder-row"><div class="name">Barbeiro.app<small>plano Pro</small></div><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div><div class="price">R$ 49,90</div></div>
+      <div class="ladder-row us"><div class="name">App Salão</div><div class="bar-track"><div class="bar-fill" style="width:12%"></div></div><div class="price">R$ 29,90</div></div>
+      <div class="ladder-row"><div class="name">Tua Agenda<small>funcionalidade limitada</small></div><div class="bar-track"><div class="bar-fill" style="width:8%"></div></div><div class="price">R$ 19,90</div></div>
+    </div>
+    <p style="font-size:.8rem;color:var(--muted)">Barras proporcionais ao preço mensal em R$; referência visual, não escala absoluta.</p>
+  </section>
+
+  <section id="mercado">
+    <h2 class="section-title"><span class="num">04</span> Tamanho de mercado e pricing</h2>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Métrica</th><th class="num">Valor</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Estabelecimentos de beleza ativos no Brasil</td><td class="num">+1,3 milhão</td><td><span class="pill high">Confirmado</span></td></tr>
+          <tr><td>Novos negócios abertos em 2025</td><td class="num">236 mil (+18,5%)</td><td><span class="pill high">Confirmado</span></td></tr>
+          <tr><td>% MEI entre novos negócios</td><td class="num">94%</td><td><span class="pill high">Confirmado</span></td></tr>
+          <tr><td>Faturamento anual do setor</td><td class="num">R$ 130 bi+</td><td><span class="pill high">Confirmado</span></td></tr>
+          <tr><td>Salões ainda dependentes do WhatsApp</td><td class="num">~88%</td><td><span class="pill med">Estimativa</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sub">TAM · SAM · SOM (estimativa de construção lógica)</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Camada</th><th>Base</th><th class="num">Receita/ano</th></tr></thead>
+        <tbody>
+          <tr><td><strong>TAM</strong></td><td>1,3 mi estabelecimentos × R$29,90 × 12</td><td class="num">≈ R$ 466 mi</td></tr>
+          <tr><td><strong>SAM</strong></td><td>~50–60% (exclui redes/clínicas grandes)</td><td class="num">≈ R$ 269 mi</td></tr>
+          <tr><td><strong>SOM</strong> conservador</td><td>0,3% de penetração do SAM</td><td class="num">≈ R$ 807 mil</td></tr>
+          <tr><td><strong>SOM</strong> otimista</td><td>1% de penetração do SAM</td><td class="num">≈ R$ 2,7 mi</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <blockquote>Todos os valores de TAM/SAM/SOM são construções lógicas a partir de dados setoriais confirmados — não substituem uma pesquisa de mercado dedicada, mas servem como ponto de partida para modelagem financeira.</blockquote>
+  </section>
+
+  <section id="swot">
+    <h2 class="section-title"><span class="num">05</span> Forças, fraquezas, oportunidades e riscos</h2>
+    <div class="swot">
+      <div class="swot-cell s">
+        <h4><span class="tag strength">Forças</span></h4>
+        <ul>
+          <li>Preço fixo sem taxa por profissional nem comissão — raro no mercado, só o Barbeiro.app compete diretamente nisso.</li>
+          <li>PWA: instalação leve, sem loja de app, atualização instantânea.</li>
+          <li>Foco declarado em eliminar conflito de horário — dor #1 do segmento, mensurável em R$.</li>
+        </ul>
+      </div>
+      <div class="swot-cell w">
+        <h4><span class="tag weakness">Fraquezas</span></h4>
+        <ul>
+          <li>Marca nova, zero prova social, zero reviews — compra desse público é fortemente guiada por indicação de pares.</li>
+          <li>Push via PWA tem limitações conhecidas em iOS — risco de não entregar paridade prometida.</li>
+          <li>Sem funcionalidade de clube de assinatura para cliente final (diferencial da Avec).</li>
+        </ul>
+      </div>
+      <div class="swot-cell o">
+        <h4><span class="tag opportunity">Oportunidades</span></h4>
+        <ul>
+          <li>Vácuo de preço real entre "grátis informal" (WhatsApp) e "R$65+/mês" (Trinks/Belezzia/Avec) para salões de 1–3 cadeiras.</li>
+          <li>Insatisfação pública e recorrente com a Trinks (reajustes, quedas, cancelamento difícil) — base madura e migrável.</li>
+          <li>Canais de aquisição B2B pouco explorados: grupos de WhatsApp de donos de salão, comunidades SEBRAE (Inova Beleza).</li>
+        </ul>
+      </div>
+      <div class="swot-cell t">
+        <h4><span class="tag threat">Riscos</span></h4>
+        <ul>
+          <li>Barbeiro.app já ocupa o mesmo posicionamento de preço fixo, com 13 funcionalidades e foco 100% português.</li>
+          <li>Tua Agenda compete por baixo (R$19,90) se a batalha virar puramente preço.</li>
+          <li>Churn estrutural alto esperado — 94% do público é MEI, com alta taxa de fechamento de negócio independente do produto.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="consumidor">
+    <h2 class="section-title"><span class="num">06</span> Comportamento do comprador</h2>
+    <h3 class="sub">Objeção central</h3>
+    <p>"Já uso WhatsApp de graça" é a barreira real — não é comparação com outro software pago, é comparação com um hábito gratuito que "parece funcionar". O gatilho de troca mais citado é a <strong>perda de receita tangível</strong> por no-show ou double-booking, e o <strong>crescimento da equipe</strong> (ponto em que 1 recepcionista + 2–3 profissionais deixa de caber na cabeça de alguém).</p>
+    <h3 class="sub">Onde esse público está</h3>
+    <p>Instagram domina a presença do setor; TikTok/Reels crescem como canal de descoberta; grupos de WhatsApp e comunidades SEBRAE são canais B2B pouco explorados pelos concorrentes grandes.</p>
+  </section>
+
+  <section id="recomendacoes">
+    <h2 class="section-title"><span class="num">07</span> Recomendações estratégicas</h2>
+    <div class="table-scroll">
+      <table class="rec-table">
+        <thead><tr><th>Prioridade</th><th>Recomendação</th><th>Evidência</th><th>Confiança</th></tr></thead>
+        <tbody>
+          <tr><td>01</td><td>Posicionar o App Salão contra o WhatsApp/papel, não contra a Trinks — a mensagem deve quantificar a perda por no-show, não vender "tecnologia".</td><td>88% ainda usa WhatsApp; no-show custa até R$12 mil/ano por salão</td><td><span class="pill med">Média</span></td></tr>
+          <tr><td>02</td><td>Comunicar preço fixo sem taxa por profissional como diferencial explícito frente a Booksy/Avec/Belezzia.</td><td>Só Barbeiro.app tem modelo comparável no mercado mapeado</td><td><span class="pill high">Alta</span></td></tr>
+          <tr><td>03</td><td>Tornar cancelamento trivial e comunicar isso na página de vendas — ataca a maior queixa pública contra o líder de mercado.</td><td>Reclamações recorrentes de dificuldade de cancelar na Trinks (Reclame Aqui)</td><td><span class="pill high">Alta</span></td></tr>
+          <tr><td>04</td><td>Testar canais de aquisição B2B alternativos (grupos de WhatsApp de donos de salão, comunidades SEBRAE) antes de escalar mídia paga genérica.</td><td>Canais pouco explorados pelos concorrentes grandes identificados</td><td><span class="pill med">Média</span></td></tr>
+          <tr><td>05</td><td>Validar limitação de push em iOS via PWA antes de prometer paridade de notificação com apps nativos concorrentes.</td><td>Limitação técnica conhecida de PWA em iOS, não testada nesta pesquisa</td><td><span class="pill med">Média</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="lacunas">
+    <h2 class="section-title"><span class="num">08</span> O que esta pesquisa não mostra</h2>
+    <div class="gapbox">
+      <ul style="margin:0">
+        <li>Não há dado oficial (IBGE/SEBRAE) sobre a % exata de salões sem nenhum sistema pago — a estimativa de 88% vem de fonte comercial única.</li>
+        <li>Preços de SalãoVIP e Agenday não foram confirmados nesta rodada (limite de busca atingido).</li>
+        <li>Elasticidade de preço específica do segmento (R$29,90 vs. R$39,90 vs. R$49,90) não foi testada — apenas inferida por comparação de mercado.</li>
+        <li>Reviews de usuários de Booksy/Fresha/SalãoVIP em lojas de app não foram levantados por esgotamento de cota de busca.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <span>Research Squad — App Salão</span>
+    <span>Relatório gerado em 11 jul 2026</span>
+  </footer>
+
+</div>
