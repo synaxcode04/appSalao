@@ -533,6 +533,7 @@ function DashboardHome() {
           clientId={selectedAppointment.client_id}
           existingAppointmentId={selectedAppointment.id}
           onSuccess={handleRescheduleSuccess}
+          slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
         />
       )}
 

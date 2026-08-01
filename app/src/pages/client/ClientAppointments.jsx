@@ -405,6 +405,7 @@ function ClientAppointments() {
           clientName={clientSession?.full_name || profile?.full_name || 'Cliente'}
           existingAppointmentId={selectedAppointment.id}
           onSuccess={handleRescheduleSuccess}
+          slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
         />
       )}
 

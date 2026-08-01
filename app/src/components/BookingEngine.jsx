@@ -29,7 +29,7 @@ function timeToMinutes(timeStr) {
   return h * 60 + m
 }
 
-function BookingEngine({ isOpen, onClose, salonId, service, clientId, clientName = 'Cliente', professionals = EMPTY_ARRAY, existingAppointmentId = null, onSuccess, loginByPhone = null }) {
+function BookingEngine({ isOpen, onClose, salonId, service, clientId, clientName = 'Cliente', professionals = EMPTY_ARRAY, existingAppointmentId = null, onSuccess, loginByPhone = null, slotIntervalMinutes = null }) {
   const [selectedProfessional, setSelectedProfessional] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
   const [availableSlots, setAvailableSlots] = useState([])
@@ -109,7 +109,9 @@ function BookingEngine({ isOpen, onClose, salonId, service, clientId, clientName
 
     // 3. Blocos de tempo
     const serviceDuration = service.duration_minutes
-    const allSlots = generateTimeSlots(workingHours.start_time.substring(0, 5), workingHours.end_time.substring(0, 5), serviceDuration)
+    // step controla o passo de exibição dos slots; serviceDuration define a duração real do agendamento
+    const step = slotIntervalMinutes && slotIntervalMinutes >= 15 ? slotIntervalMinutes : serviceDuration
+    const allSlots = generateTimeSlots(workingHours.start_time.substring(0, 5), workingHours.end_time.substring(0, 5), step)
     const breakStart = workingHours.break_start_time ? timeToMinutes(workingHours.break_start_time.substring(0, 5)) : null
     const breakEnd = workingHours.break_end_time ? timeToMinutes(workingHours.break_end_time.substring(0, 5)) : null
 

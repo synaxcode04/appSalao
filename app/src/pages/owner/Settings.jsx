@@ -6,12 +6,16 @@ import toast from 'react-hot-toast'
 
 function SettingsPage() {
   const { salon, refreshSalon } = useOutletContext()
-  const [loading, setLoading] = useState(false)
+  const [loadingInfo, setLoadingInfo] = useState(false)
+  const [loadingInterval, setLoadingInterval] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [name, setName] = useState(salon?.name || '')
   const [address, setAddress] = useState(salon?.address || '')
   const [googleReviewLink, setGoogleReviewLink] = useState(salon?.google_review_link || '')
-  
+  const [slotInterval, setSlotInterval] = useState(
+    salon?.slot_interval_minutes != null ? String(salon.slot_interval_minutes) : ''
+  )
+
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
 
@@ -19,6 +23,16 @@ function SettingsPage() {
     if (salon && salon.owner_id) {
       fetchOwnerData()
     }
+  }, [salon])
+
+  // Ressincroniza o estado local quando o salon é atualizado externamente
+  // (ex: refreshSalon disparado por outro card), aplicando a mesma conversão
+  // usada na inicialização de cada estado.
+  useEffect(() => {
+    setName(salon?.name || '')
+    setAddress(salon?.address || '')
+    setGoogleReviewLink(salon?.google_review_link || '')
+    setSlotInterval(salon?.slot_interval_minutes != null ? String(salon.slot_interval_minutes) : '')
   }, [salon])
 
   const fetchOwnerData = async () => {
@@ -37,7 +51,7 @@ function SettingsPage() {
   const handleUpdateInfo = async (e) => {
     e.preventDefault()
     if (!salon) return
-    setLoading(true)
+    setLoadingInfo(true)
 
     let lat = salon.latitude
     let lng = salon.longitude
@@ -71,11 +85,11 @@ function SettingsPage() {
     if (updateError) {
       if (updateError.message.includes('google_review_link')) {
         toast.error('Erro: A coluna "google_review_link" não existe na tabela "salons" no Supabase. Crie-a primeiro!')
-        setLoading(false)
+        setLoadingInfo(false)
         return
       }
       toast.error('Erro ao atualizar: ' + updateError.message)
-      setLoading(false)
+      setLoadingInfo(false)
       return
     }
 
@@ -94,7 +108,30 @@ function SettingsPage() {
     await refreshSalon()
     
     toast.success('Informações atualizadas com sucesso!')
-    setLoading(false)
+    setLoadingInfo(false)
+  }
+
+  const handleUpdateSlotInterval = async (e) => {
+    e.preventDefault()
+    if (!salon) return
+    setLoadingInterval(true)
+
+    const value = slotInterval === '' ? null : parseInt(slotInterval, 10)
+
+    const { error: updateError } = await supabase
+      .from('salons')
+      .update({ slot_interval_minutes: value })
+      .eq('id', salon.id)
+
+    if (updateError) {
+      toast.error('Erro ao atualizar intervalo: ' + updateError.message)
+      setLoadingInterval(false)
+      return
+    }
+
+    await refreshSalon()
+    toast.success('Intervalo de horários atualizado com sucesso!')
+    setLoadingInterval(false)
   }
 
   const handleFileUpload = async (e) => {
@@ -311,8 +348,40 @@ function SettingsPage() {
               </p>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary" style={{ marginTop: '1rem' }}>
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
+            <button type="submit" disabled={loadingInfo} className="btn-primary" style={{ marginTop: '1rem' }}>
+              {loadingInfo ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+          </form>
+        </div>
+
+        {/* Card de Intervalo de Horários da Agenda */}
+        <div className="card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ color: 'var(--text-primary)' }}>Intervalo de Horários da Agenda</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
+            Define de quantos em quantos minutos os horários aparecem para o cliente. Deixe em Automático para usar a duração de cada serviço.
+          </p>
+          <form onSubmit={handleUpdateSlotInterval} className="auth-form" style={{ marginTop: '1rem' }}>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Intervalo</label>
+              <select
+                value={slotInterval}
+                onChange={(e) => setSlotInterval(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginTop: '0.5rem', fontFamily: 'inherit', backgroundColor: 'var(--surface-color)', color: 'var(--text-primary)' }}
+              >
+                <option value="">Automático (duração do serviço)</option>
+                <option value="15">15 minutos</option>
+                <option value="30">30 minutos</option>
+                <option value="45">45 minutos</option>
+                <option value="60">60 minutos</option>
+                <option value="75">75 minutos</option>
+                <option value="90">90 minutos</option>
+                <option value="105">105 minutos</option>
+                <option value="120">120 minutos</option>
+              </select>
+            </div>
+
+            <button type="submit" disabled={loadingInterval} className="btn-primary" style={{ marginTop: '1rem' }}>
+              {loadingInterval ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </form>
         </div>

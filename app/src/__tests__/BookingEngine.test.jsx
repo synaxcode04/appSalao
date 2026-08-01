@@ -566,3 +566,200 @@ describe('BookingEngine — working_hours com maybeSingle', () => {
     })
   })
 })
+
+describe('BookingEngine — slotIntervalMinutes desacopla passo da duração', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('slotIntervalMinutes null (fallback) com serviço 60 min → 10 slots, passo 60 min', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={{ id: 's1', name: 'Corte', duration_minutes: 60, price: 50 }}
+        clientId="client1"
+        professionals={[]}
+      />
+    )
+
+    await waitFor(() => {
+      const times = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent)).map(b => b.textContent)
+      expect(times.length).toBe(10)
+      expect(times).toContain('08:00')
+      expect(times).toContain('17:00')
+      expect(times).not.toContain('08:30')
+    })
+  })
+
+  it('slotIntervalMinutes=30, serviço 60 min → passo de 30 min, duração real 60 min, 19 slots (último início 17:00)', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={{ id: 's1', name: 'Corte', duration_minutes: 60, price: 50 }}
+        clientId="client1"
+        professionals={[]}
+        slotIntervalMinutes={30}
+      />
+    )
+
+    await waitFor(() => {
+      const times = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent)).map(b => b.textContent)
+      // passo 30 min, mas duração 60: último início válido é 17:00 (17:00+60=18:00)
+      expect(times).toContain('08:00')
+      expect(times).toContain('08:30')
+      expect(times).toContain('17:00')
+      expect(times).not.toContain('17:30') // 17:30+60=18:30 > 18:00
+      expect(times.length).toBe(19)
+    })
+  })
+
+  it('slotIntervalMinutes=15, serviço 60 min → passo de 15 min, 37 slots', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={{ id: 's1', name: 'Corte', duration_minutes: 60, price: 50 }}
+        clientId="client1"
+        professionals={[]}
+        slotIntervalMinutes={15}
+      />
+    )
+
+    await waitFor(() => {
+      const times = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent)).map(b => b.textContent)
+      expect(times).toContain('08:00')
+      expect(times).toContain('08:15')
+      expect(times).toContain('08:30')
+      expect(times).toContain('17:00')
+      expect(times).not.toContain('17:15') // 17:15+60=18:15 > 18:00
+      expect(times.length).toBe(37)
+    })
+  })
+
+  it('slotIntervalMinutes=30, serviço 60, slot ocupado 10:00–11:00 → 10:00 e 10:30 não aparecem', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    // 10:00 é bloqueado (slot 10:00–11:00 conflita com appt 10:00–11:00)
+    // 10:30 também é bloqueado (slot 10:30–11:30 conflita com appt 10:00–11:00)
+    mockFetchForSlots([{ id: 'a1', start_time: '10:00:00', end_time: '11:00:00' }])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={{ id: 's1', name: 'Corte', duration_minutes: 60, price: 50 }}
+        clientId="client1"
+        professionals={[]}
+        slotIntervalMinutes={30}
+      />
+    )
+
+    await waitFor(() => {
+      const times = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent)).map(b => b.textContent)
+      expect(times).not.toContain('10:00')
+      expect(times).not.toContain('10:30')
+      expect(times).toContain('09:00')
+      expect(times).toContain('11:00')
+    })
+  })
+
+  it('slotIntervalMinutes=30, serviço 60, break 12:00–13:00 → slots sobrepostos ao break excluídos', async () => {
+    const workingHoursWithBreak = {
+      start_time: '08:00:00',
+      end_time: '18:00:00',
+      break_start_time: '12:00:00',
+      break_end_time: '13:00:00',
+    }
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursWithBreak)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={{ id: 's1', name: 'Corte', duration_minutes: 60, price: 50 }}
+        clientId="client1"
+        professionals={[]}
+        slotIntervalMinutes={30}
+      />
+    )
+
+    await waitFor(() => {
+      const times = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent)).map(b => b.textContent)
+      // slots sobrepostos com 12:00–13:00: 11:00(11–12 ok? 11:00+60=12:00, start<breakEnd e end>breakStart → 11<13 && 12>12 → false, so 11:00 is ok)
+      // 11:30+60=12:30: start=690<780 && end=750>720 → blocked
+      // 12:00+60=13:00: start=720<780 && end=780>720 → blocked
+      // 12:30+60=13:30: start=750<780 && end=810>720 → blocked
+      expect(times).not.toContain('12:00')
+      expect(times).not.toContain('11:30')
+      expect(times).not.toContain('12:30')
+      expect(times).toContain('11:00')
+      expect(times).toContain('13:00')
+    })
+  })
+
+  it('slotIntervalMinutes=60 > serviceDuration=30 → passo maior que duração gera lacunas intencionais, 10 slots', async () => {
+    // Quando o intervalo entre slots (passo) é maior que a duração do serviço,
+    // cada slot ocupa 30 min mas o próximo só começa 60 min depois — as lacunas
+    // de 30 min entre o fim de um slot e o início do próximo são comportamento
+    // intencional: o dono configurou assim para espaçar atendimentos.
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { queryAllByRole } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={{ id: 's2', name: 'Escova', duration_minutes: 30, price: 30 }}
+        clientId="client1"
+        professionals={[]}
+        slotIntervalMinutes={60}
+      />
+    )
+
+    await waitFor(() => {
+      const times = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent)).map(b => b.textContent)
+      // passo 60 min: slots em 08:00, 09:00, ..., 17:00 → 10 slots
+      expect(times.length).toBe(10)
+      expect(times).toContain('08:00')
+      expect(times).toContain('17:00')
+      // lacunas intencionais: 08:30, 09:30, ... não são slots
+      expect(times).not.toContain('08:30')
+      expect(times).not.toContain('09:30')
+    })
+  })
+})

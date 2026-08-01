@@ -332,6 +332,7 @@ function SalonDetails() {
         professionals={professionals}
         onSuccess={handleBookingSuccess}
         loginByPhone={loginByPhone}
+        slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
       />
 
     </div>

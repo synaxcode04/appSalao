@@ -1,25 +1,25 @@
 -- =============================================================================
--- AVISO DE SEGURANÇA — LEIA ANTES DE EXECUTAR EM QUALQUER AMBIENTE
+-- NOTA SOBRE AS POLICIES RLS NESTE ARQUIVO
 -- =============================================================================
 --
--- Este arquivo cria a estrutura base do banco de dados do App Salão.
+-- Este arquivo define a estrutura base do banco de dados do App Salão.
 --
--- ATENÇÃO: AS POLICIES RLS CRIADAS AQUI SÃO INTENCIONALMENTE PERMISSIVAS
--- (contêm USING(true) e WITH CHECK(true) em tabelas de salão) e servem apenas
--- como ponto de partida estrutural.
+-- As policies RLS aqui presentes já refletem o estado CONSOLIDADO e CORRIGIDO
+-- (reconciliado com rls_fix.sql em 2026-08-01). Não há mais policies permissivas
+-- de escrita com WITH CHECK (true) ou USING (true) nas tabelas de salão.
 --
--- OBRIGATÓRIO: O arquivo Documentos/rls_fix.sql DEVE ser executado IMEDIATAMENTE
--- APÓS este schema em qualquer ambiente novo (desenvolvimento, staging, produção).
--- O rls_fix.sql substitui todas as policies permissivas por policies seguras que
--- garantem isolamento multi-tenant real (cada dono acessa apenas seus próprios
--- dados, verificado via JOIN com salons.owner_id = auth.uid()).
+-- O arquivo Documentos/rls_fix.sql continua sendo a migration IDEMPOTENTE
+-- que deve ser executada em bancos existentes (pré-consolidação). Em bancos
+-- criados a partir desta versão do schema.sql, o rls_fix.sql ainda pode ser
+-- executado sem problemas (DROP POLICY IF EXISTS garante idempotência), mas
+-- não é mais obrigatório para garantir segurança — as policies corretas já
+-- estão aqui.
 --
--- NUNCA opere um ambiente com apenas schema.sql aplicado — isso permite que
--- qualquer usuário autenticado grave dados em salões de terceiros.
---
--- Ordem de execução obrigatória:
---   1. schema.sql   (este arquivo — estrutura + policies base permissivas)
---   2. rls_fix.sql  (correção das policies + colunas adicionais em salons)
+-- Ordem de execução recomendada para ambiente novo:
+--   1. schema.sql   (este arquivo — estrutura + policies já seguras)
+--   2. rls_fix.sql  (adiciona colunas is_active/status/subscription_expires_at
+--                    em salons e cria tabelas notifications/payments se não existem)
+--   3. add_slot_interval_minutes.sql  (adiciona slot_interval_minutes em salons)
 --
 -- =============================================================================
 
@@ -49,8 +49,8 @@ CREATE TABLE public.profiles (
 -- (adicionada via rls_fix.sql) mas NÃO é a fonte de verdade do bloqueio de licença.
 -- Mantê-la é seguro; não usá-la como critério de suspensão de licença.
 --
--- Todas as três colunas são adicionadas de forma idempotente via rls_fix.sql
--- (ADD COLUMN IF NOT EXISTS). Não duplicar aqui para manter idempotência.
+-- Todas essas colunas extras são adicionadas de forma idempotente via migrations
+-- separadas (ADD COLUMN IF NOT EXISTS). Não duplicar aqui para manter idempotência.
 CREATE TABLE public.salons (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   owner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
@@ -66,6 +66,10 @@ CREATE TABLE public.salons (
   --   is_active BOOLEAN DEFAULT true NOT NULL
   --   status TEXT DEFAULT 'active'
   --   subscription_expires_at TIMESTAMPTZ
+  -- Colunas adicionadas via add_slot_interval_minutes.sql (ADD COLUMN IF NOT EXISTS):
+  --   slot_interval_minutes INTEGER DEFAULT NULL
+  --     NULL = usar duração do serviço (fallback); quando preenchido, múltiplo de 15,
+  --     mínimo 15, máximo 120. CHECK constraint: salons_slot_interval_minutes_check.
 );
 
 -- 3. Tabela services (Serviços oferecidos pelos salões)
@@ -199,35 +203,220 @@ CREATE POLICY "Salons are viewable by everyone." ON public.salons FOR SELECT USI
 CREATE POLICY "Owners can insert their salons." ON public.salons FOR INSERT WITH CHECK (auth.uid() = owner_id);
 CREATE POLICY "Owners can update their salons." ON public.salons FOR UPDATE USING (auth.uid() = owner_id);
 
+-- services: SELECT público (cliente precisa ler serviços); escrita restrita ao dono do salão.
 CREATE POLICY "Services are viewable by everyone." ON public.services FOR SELECT USING (true);
-CREATE POLICY "Anyone authenticated can insert services" ON public.services FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Anyone authenticated can update services" ON public.services FOR UPDATE TO authenticated USING (true);
 
-CREATE POLICY "Working hours are viewable by everyone." ON public.working_hours FOR SELECT USING (true);
-CREATE POLICY "Anyone authenticated can insert working hours" ON public.working_hours FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Anyone authenticated can update working hours" ON public.working_hours FOR UPDATE TO authenticated USING (true);
-
-CREATE POLICY "Professionals are viewable by everyone." ON public.professionals FOR SELECT USING (true);
-CREATE POLICY "Anyone authenticated can insert professionals" ON public.professionals FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Anyone authenticated can update professionals" ON public.professionals FOR UPDATE TO authenticated USING (true);
-
-CREATE POLICY "Appointments are viewable by everyone." ON public.appointments FOR SELECT USING (true);
-CREATE POLICY "Anyone authenticated can insert appointments" ON public.appointments FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "Anyone authenticated can update appointments" ON public.appointments FOR UPDATE TO authenticated USING (true);
-
--- Políticas para Reviews
-CREATE POLICY "Avaliações são públicas para leitura" ON public.reviews FOR SELECT USING (true);
-CREATE POLICY "Clientes podem criar avaliações" ON public.reviews FOR INSERT TO authenticated WITH CHECK (auth.uid() = client_id);
-CREATE POLICY "Proprietários podem responder avaliações" ON public.reviews FOR UPDATE USING (
-    EXISTS (
-        SELECT 1 FROM public.salons
-        WHERE salons.id = reviews.salon_id
-        AND salons.owner_id = auth.uid()
-    )
+CREATE POLICY "Owners can insert their services"
+ON public.services FOR INSERT
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = services.salon_id
+    AND s.owner_id = auth.uid()
+  )
 );
 
--- Nota: as policies de notifications são definidas em rls_fix.sql (idempotentes).
--- Não criar policies de notifications aqui para evitar conflito com os DROPs do rls_fix.sql.
+CREATE POLICY "Owners can update their services"
+ON public.services FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = services.salon_id
+    AND s.owner_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = services.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
 
--- Nota: as policies de payments são definidas em rls_fix.sql (idempotentes).
--- Não criar policies de payments aqui para evitar conflito com os DROPs do rls_fix.sql.
+CREATE POLICY "Owners can delete their services"
+ON public.services FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = services.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+-- working_hours: SELECT público (motor de agendamento do cliente precisa ler horários); escrita restrita ao dono.
+CREATE POLICY "Working hours are viewable by everyone." ON public.working_hours FOR SELECT USING (true);
+
+CREATE POLICY "Owners can insert their working hours"
+ON public.working_hours FOR INSERT
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = working_hours.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Owners can update their working hours"
+ON public.working_hours FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = working_hours.salon_id
+    AND s.owner_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = working_hours.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Owners can delete their working hours"
+ON public.working_hours FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = working_hours.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+-- professionals: SELECT público (cliente precisa ver lista de profissionais ao agendar); escrita restrita ao dono.
+CREATE POLICY "Professionals are viewable by everyone." ON public.professionals FOR SELECT USING (true);
+
+CREATE POLICY "Owners can insert their professionals"
+ON public.professionals FOR INSERT
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = professionals.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Owners can update their professionals"
+ON public.professionals FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = professionals.salon_id
+    AND s.owner_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = professionals.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Owners can delete their professionals"
+ON public.professionals FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = professionals.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+-- appointments: sem SELECT público.
+--   SELECT cliente — vê apenas os próprios agendamentos (filtro por salão é responsabilidade da app).
+--   SELECT dono — vê todos os agendamentos do seu salão.
+--   INSERT — cliente cria para si mesmo (client_id = auth.uid()).
+--   UPDATE — duas policies separadas: cliente atualiza os próprios; dono atualiza os do salão.
+--   Nota: escrita do cliente em produção passa pela Vercel Function com service_role
+--   (ver seguranca.md), portanto as policies INSERT/UPDATE do cliente aqui servem como
+--   segunda barreira e para ambiente de desenvolvimento com Auth real.
+CREATE POLICY "Clients can view their own appointments"
+ON public.appointments FOR SELECT
+USING (
+  auth.uid() IS NOT NULL
+  AND client_id = auth.uid()
+);
+
+CREATE POLICY "Owners can view their salon appointments"
+ON public.appointments FOR SELECT
+USING (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = appointments.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Clients can insert their own appointments"
+ON public.appointments FOR INSERT
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND client_id = auth.uid()
+);
+
+CREATE POLICY "Clients can update their own appointments"
+ON public.appointments FOR UPDATE
+USING (
+  auth.uid() IS NOT NULL
+  AND client_id = auth.uid()
+)
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND client_id = auth.uid()
+);
+
+CREATE POLICY "Owners can update their salon appointments"
+ON public.appointments FOR UPDATE
+USING (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = appointments.salon_id
+    AND s.owner_id = auth.uid()
+  )
+)
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = appointments.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+-- reviews: SELECT público; INSERT restrito ao próprio cliente; UPDATE restrito ao dono (para responder).
+CREATE POLICY "Reviews are publicly viewable" ON public.reviews FOR SELECT USING (true);
+
+CREATE POLICY "Clients can insert their own reviews"
+ON public.reviews FOR INSERT
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND client_id = auth.uid()
+);
+
+CREATE POLICY "Owners can reply to their salon reviews"
+ON public.reviews FOR UPDATE
+USING (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = reviews.salon_id
+    AND s.owner_id = auth.uid()
+  )
+)
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = reviews.salon_id
+    AND s.owner_id = auth.uid()
+  )
+);
+
+-- Nota: as policies de notifications e payments são definidas em rls_fix.sql (idempotentes).
+-- Não criar policies dessas tabelas aqui para evitar conflito com os DROPs do rls_fix.sql.
