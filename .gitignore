@@ -47,3 +47,5 @@ Thumbs.db
 # Lock file (manter apenas um; se usar npm, manter package-lock.json)
 app/yarn.lock
 app/pnpm-lock.yaml
+.vercel
+.env*

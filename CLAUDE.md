@@ -68,12 +68,16 @@ App_salão/
 │   ├── .env                      # Credenciais Supabase (não commitar)
 │   ├── vite.config.js            # Config Vite + PWA + SSL dev
 │   └── package.json
-└── Documentos/                   # Documentação do projeto
-    ├── SPEC.md                   # Especificação de requisitos
-    ├── PRD.md                    # Product Requirements Document
-    ├── schema.sql                # Schema completo do banco de dados
-    └── PLANO_MONETIZACAO.md
+├── Documentos/                   # Documentação do projeto
+│   ├── SPEC.md                   # Especificação de requisitos
+│   ├── PRD.md                    # Product Requirements Document
+│   ├── schema.sql                # Schema completo do banco de dados
+│   └── PLANO_MONETIZACAO.md
+└── teste_regressao/              # Todo teste de regressão manual é registrado aqui (1 arquivo por rodada)
 ```
+
+## Testes de regressão
+Todo teste de regressão manual (feature nova ou correção de bug validada em produção/staging) é registrado em `teste_regressao/AAAA-MM-DD-assunto.md` — passos reproduzidos, resultado, evidência e, se FAIL, causa raiz e correção. Ver `teste_regressao/README.md`. Isso é diferente do smoke test de pré-deploy (`Documentos/smoke_test_result.md`) e da base RAG (`.claude/knowledge/`).
 
 ## Como rodar localmente
 ```bash
@@ -123,6 +127,9 @@ npm run preview
 - Nunca usar políticas RLS com `WITH CHECK (true)` sem validar o `owner_id` — qualquer usuário autenticado conseguiria alterar dados de outro salão
 - Nunca criar agendamento sem verificar conflito de horário no mesmo profissional antes de inserir no banco
 - Nunca adicionar dependências de UI externas (Material UI, Tailwind, shadcn) sem decisão explícita — o projeto usa CSS próprio
+
+## Guardrail — não criar estrutura nova por conta própria
+**Nunca crie pastas, arquivos de configuração (`vercel.json`, `.vercel/`, etc.) ou reestruture a árvore do projeto "para resolver" um problema, a menos que o usuário peça explicitamente.** Isso já causou um incidente real em 2026-08-01: uma tentativa de corrigir deploy criou um `vercel.json` + pasta `api/` duplicados na raiz do projeto (fora de `app/`), gerando dois projetos Vercel conflitantes e derrubando todas as rotas de API em produção (404 generalizado) até o rollback. Se a causa de um problema parecer estrutural, pare e pergunte antes de criar algo novo — proponha a mudança, não a execute direto.
 
 ## Ideias de features futuras (benchmarking concorrência)
 > Registrado em 2026-07-11, a partir de comparação com Trinks/Belasis/Booksy. Não implementar sem passar pelo orchestrator e decisão explícita.

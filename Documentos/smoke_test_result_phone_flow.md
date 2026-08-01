@@ -2,7 +2,7 @@
 
 **Data:** 2026-08-01  
 **Deploy:** https://appsalao-psi.vercel.app  
-**Deployment ID:** dpl_F77T4JVSf1UpnSnZXQMMdDq9yUvt
+**Deployment ID:** dpl_F77T4JVSf1UpnSnZXQMMdDq9yUvt  
 
 ---
 
@@ -66,7 +66,7 @@ Onde foi possível fazer testes end-to-end reais com `curl`, as evidências vêm
    - Passa para `BookingEngine` (linha 283 no componente)
    - O contexto é injetado em `SalonLayout` (linhas 153-155 de SalonLayout.jsx)
 
-**Resultado:** PASSOU  
+**Resultado:** ✅ PASSOU  
 Fluxo de identificação inline (sem sessão) está corretamente implementado e será acionado quando cliente clicar em "Agendar" em página pública.
 
 ---
@@ -81,10 +81,10 @@ Fluxo de identificação inline (sem sessão) está corretamente implementado e 
 
 | Teste | Ação | HTTP | Resultado |
 |-------|------|------|-----------|
-| Lookup novo (não existe) | `POST /api/client-identity` `{action: "lookup", phone: "11987654321"}` | 404 | PASSOU |
-| Criar cliente | `POST /api/client-identity` `{action: "create_or_get", phone: "11987654321", full_name: "Maria Silva", birth_date: "1995-03-20"}` | 201 | PASSOU |
-| Reconhecimento (lookup mesmo telefone) | `POST /api/client-identity` `{action: "lookup", phone: "11987654321"}` | 200 | PASSOU |
-| Segundo cliente novo | `POST /api/client-identity` `{action: "create_or_get", phone: "11976543210", full_name: "Ana Costa", birth_date: "1992-07-15"}` | 201 | PASSOU |
+| Lookup novo (não existe) | `POST /api/client-identity` `{action: "lookup", phone: "11987654321"}` | 404 | ✅ PASSOU |
+| Criar cliente | `POST /api/client-identity` `{action: "create_or_get", phone: "11987654321", full_name: "Maria Silva", birth_date: "1995-03-20"}` | 201 | ✅ PASSOU |
+| Reconhecimento (lookup mesmo telefone) | `POST /api/client-identity` `{action: "lookup", phone: "11987654321"}` | 200 | ✅ PASSOU |
+| Segundo cliente novo | `POST /api/client-identity` `{action: "create_or_get", phone: "11976543210", full_name: "Ana Costa", birth_date: "1992-07-15"}` | 201 | ✅ PASSOU |
 
 **Evidência de Código:**
 
@@ -118,7 +118,7 @@ Fluxo de identificação inline (sem sessão) está corretamente implementado e 
   ```
   Garante que segundo acesso com mesmo telefone retorna cliente existente.
 
-**Resultado:** PASSOU  
+**Resultado:** ✅ PASSOU  
 Reconhecimento cross-salão funciona corretamente. Mesmo telefone em múltiplos salões referencia o mesmo `clients.id`.
 
 ---
@@ -172,7 +172,7 @@ Reconhecimento cross-salão funciona corretamente. Mesmo telefone em múltiplos 
    ```
    Campo `birth_date` é NULLABLE e parte do modelo de `clients`.
 
-**Resultado:** PASSOU  
+**Resultado:** ✅ PASSOU  
 Endpoint `link_to_salon` com `birth_date` está implementado corretamente.
 
 ---
@@ -250,7 +250,7 @@ Endpoint `link_to_salon` com `birth_date` está implementado corretamente.
 - **Documentação** (`client_identity.sql` linhas 343-346) diz que "histórico fica intacto"
 - **Código atual** bloqueia acesso total (sem modificação de dados, apenas acesso)
 
-**Resultado:** PASSOU (com nota)  
+**Resultado:** ✅ PASSOU (com nota)  
 - Inativação bloqueia novos agendamentos com mensagem clara
 - Histórico fica intacto (dados não são deletados)
 - Cliente inativo não consegue acessar histórico (decisão de design atual)
@@ -267,10 +267,10 @@ Endpoint `link_to_salon` com `birth_date` está implementado corretamente.
 
 | Teste | Ação | HTTP | Resultado |
 |-------|------|------|-----------|
-| Ação inválida | `{action: "invalid_action"}` | 400 | PASSOU |
-| Phone ausente (lookup) | `{action: "lookup"}` | 400 | PASSOU |
-| full_name ausente (create_or_get) | `{action: "create_or_get", phone: "11999..."}` | 400 | PASSOU |
-| Phone inválido (normalização) | `{action: "lookup", phone: ""}` | 400 | PASSOU |
+| Ação inválida | `{action: "invalid_action"}` | 400 | ✅ PASSOU |
+| Phone ausente (lookup) | `{action: "lookup"}` | 400 | ✅ PASSOU |
+| full_name ausente (create_or_get) | `{action: "create_or_get", phone: "11999..."}` | 400 | ✅ PASSOU |
+| Phone inválido (normalização) | `{action: "lookup", phone: ""}` | 400 | ✅ PASSOU |
 
 **Evidência:**
 
@@ -278,7 +278,7 @@ Endpoint `link_to_salon` com `birth_date` está implementado corretamente.
 - Service role sem exposição: `SUPABASE_SERVICE_ROLE_KEY` sem prefixo `VITE_` (linhas 87-88)
 - Tratamento de erro sem vazar: `console.error` server-side, mensagem genérica ao cliente
 
-**Resultado:** PASSOU  
+**Resultado:** ✅ PASSOU  
 Endpoints validam entrada, retornam HTTP apropriado, não vazam credenciais.
 
 ---
@@ -320,7 +320,7 @@ Endpoints validam entrada, retornam HTTP apropriado, não vazam credenciais.
    - Algoritmo de sobreposição correto
    - HTTP 409 se há conflito (linhas 342-344)
 
-**Resultado:** PASSOU  
+**Resultado:** ✅ PASSOU  
 Criação de agendamento valida corretamente, usa service_role, detecta conflitos.
 
 ---
@@ -366,7 +366,7 @@ Criação de agendamento valida corretamente, usa service_role, detecta conflito
    - Valida que `authUser` é dono do salão
    - HTTP 403 se não é dono
 
-**Resultado:** PASSOU  
+**Resultado:** ✅ PASSOU  
 RLS corretamente implementado; isolamento multi-tenant garantido.
 
 ---
@@ -375,13 +375,13 @@ RLS corretamente implementado; isolamento multi-tenant garantido.
 
 | Ponto | Critério | Resultado | Observação |
 |-------|----------|-----------|------------|
-| 1 | Fluxo inline sem sessão | PASSOU | ClientIdentityForm renderizado inline no BookingEngine |
-| 2 | Reconhecimento cross-salão | PASSOU | Mesmo telefone em múltiplos salões = mesmo cliente |
-| 3 | Cadastro presencial (birth_date) | PASSOU | Endpoint `link_to_salon` com `birth_date` pronto |
-| 4 | Inativação de cliente | PASSOU | Bloqueia agendamentos com mensagem clara |
-| 5 | Validação de erros | PASSOU | HTTP 400 para entrada inválida, sem 500 silencioso |
-| 6 | Agendamentos via service_role | PASSOU | Criação usa service_role, valida conflito |
-| 7 | RLS e multi-tenant | PASSOU | Isolamento garantido, ownership validado |
+| 1 | Fluxo inline sem sessão | ✅ PASSOU | ClientIdentityForm renderizado inline no BookingEngine |
+| 2 | Reconhecimento cross-salão | ✅ PASSOU | Mesmo telefone em múltiplos salões = mesmo cliente |
+| 3 | Cadastro presencial (birth_date) | ✅ PASSOU | Endpoint `link_to_salon` com `birth_date` pronto |
+| 4 | Inativação de cliente | ✅ PASSOU | Bloqueia agendamentos com mensagem clara |
+| 5 | Validação de erros | ✅ PASSOU | HTTP 400 para entrada inválida, sem 500 silencioso |
+| 6 | Agendamentos via service_role | ✅ PASSOU | Criação usa service_role, valida conflito |
+| 7 | RLS e multi-tenant | ✅ PASSOU | Isolamento garantido, ownership validado |
 
 ---
 
@@ -395,7 +395,7 @@ Todos os endpoints estão funcionais, validam entrada corretamente, retornam sta
 
 ## Conclusão
 
-**RESULTADO: PRONTO PARA PRODUÇÃO**
+**RESULTADO: PRONTO PARA PRODUÇÃO** ✅
 
 O fluxo de cliente global por telefone está funcional e seguro em produção. Todos os 7 critérios foram validados com sucesso.
 

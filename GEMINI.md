@@ -94,8 +94,12 @@ App_salão/
 │   ├── .env                      # Credenciais Supabase (não commitar)
 │   ├── vite.config.js            # Config Vite + PWA + SSL dev
 │   └── package.json
-└── Documentos/                   # SPEC.md, PRD.md, schema.sql, PLAN.md, etc.
+├── Documentos/                   # SPEC.md, PRD.md, schema.sql, PLAN.md, etc.
+└── teste_regressao/              # Todo teste de regressão manual é registrado aqui (1 arquivo por rodada)
 ```
+
+## Testes de regressão
+Todo teste de regressão manual (feature nova ou correção de bug validada em produção/staging) é registrado em `teste_regressao/AAAA-MM-DD-assunto.md` — passos reproduzidos, resultado, evidência e, se FAIL, causa raiz e correção. Ver `teste_regressao/README.md`. Isso é diferente do smoke test de pré-deploy (`Documentos/smoke_test_result.md`) e da base RAG (`.claude/knowledge/`).
 
 ## Como rodar localmente
 ```bash
@@ -133,6 +137,9 @@ npm run test:run  # testes (Vitest) — exit 0 é critério de conclusão
   - [ ] Usuário sem sessão em `/painel` → redireciona para `/login`
   - [ ] Role `client` em `/painel` → acesso negado
   - [ ] Salão com licença suspensa → painel do dono e link público mostram tela de aviso
+
+## Guardrail — não criar estrutura nova por conta própria
+**Nunca crie pastas, arquivos de configuração (`vercel.json`, `.vercel/`, etc.) ou reestruture a árvore do projeto "para resolver" um problema, a menos que o usuário peça explicitamente.** Isso já causou um incidente real em 2026-08-01: uma tentativa de corrigir deploy criou um `vercel.json` + pasta `api/` duplicados na raiz do projeto (fora de `app/`), gerando dois projetos Vercel conflitantes e derrubando todas as rotas de API em produção (404 generalizado) até o rollback. Se a causa de um problema parecer estrutural, pare e pergunte antes de criar algo novo — proponha a mudança, não a execute direto.
 
 ## Nunca fazer
 - Nunca commitar `app/.env` com credenciais do Supabase.

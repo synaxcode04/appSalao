@@ -454,6 +454,63 @@ describe('BookingEngine — handleConfirm bloqueio de cliente inativo', () => {
   })
 })
 
+describe('BookingEngine — create sem profissional envia professional_id null', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('quando professionals é vazio, o payload de create inclui professional_id: null', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+
+    let capturedBody = null
+
+    global.fetch = vi.fn().mockImplementation(async (url, opts) => {
+      const body = JSON.parse(opts?.body || '{}')
+      if (body.action === 'list_scheduled') {
+        return { ok: true, json: async () => ({ appointments: [] }) }
+      }
+      if (url.includes('client-identity')) {
+        return { ok: true, json: async () => ({ blocked: false }) }
+      }
+      if (body.action === 'create') {
+        capturedBody = body
+        return { ok: true, json: async () => ({ appointment: {}, owner_id: null }) }
+      }
+      return { ok: true, json: async () => ({}) }
+    })
+
+    const onSuccess = vi.fn()
+    const { queryAllByRole, getByText } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={service}
+        clientId="client1"
+        professionals={[]}
+        onSuccess={onSuccess}
+      />
+    )
+
+    await waitFor(() => {
+      const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
+      expect(slots.length).toBeGreaterThan(0)
+    })
+
+    const firstSlot = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))[0]
+    fireEvent.click(firstSlot)
+    fireEvent.click(getByText('Confirmar Horário'))
+
+    await waitFor(() => {
+      expect(capturedBody).not.toBeNull()
+      expect(capturedBody.professional_id).toBeNull()
+    })
+  })
+})
+
 describe('BookingEngine — working_hours com maybeSingle', () => {
   beforeEach(() => {
     vi.clearAllMocks()

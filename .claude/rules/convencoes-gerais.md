@@ -6,6 +6,7 @@ Padrões que não emergem da leitura do código.
 - O client é singleton em `app/src/supabase.js`. Nunca crie uma segunda instância em outro arquivo.
 - Subscriptions Realtime em `useEffect` devem sempre retornar `subscription.unsubscribe` no cleanup — senão vaza listener.
 - Datas e horários chegam do banco em UTC (string `"HH:MM:SS"` para TIME, ISO para TIMESTAMP). Converta para timezone local antes de exibir ou comparar.
+- **NUNCA use `.eq(coluna, valor)` quando `valor` pode ser `null`** (ex: `.eq('professional_id', professional_id || null)`). O PostgREST não trata `.eq()` com `null` como comparação de igualdade válida — a query falha silenciosamente com erro do servidor (não é um simples "0 resultados"). Use `.is('coluna', null)` para comparar com null, condicionando: `professional_id ? query.eq('professional_id', professional_id) : query.is('professional_id', null)`. Bug real de 2026-08-01: causou 500 em `/api/appointments` (create) toda vez que um agendamento não tinha profissional específico atribuído — várias rodadas de investigação até a causa ser achada via aba Network do navegador (corpo da resposta 500). Ver `.claude/knowledge/2026-08-01-*eq-null-professional-id*.md`.
 
 **React / Roteamento**
 - Rotas são definidas centralmente em `App.jsx` — não há auto-descoberta de arquivos de rota.
