@@ -137,7 +137,8 @@ export default async function handler(req, res) {
     end_time,
     rating,
     comment,
-    id
+    id,
+    exclude_id
   } = req.body;
 
   // Validar ação
@@ -198,6 +199,11 @@ export default async function handler(req, res) {
       // Filtro opcional por profissional
       if (professional_id) {
         query = query.eq('professional_id', professional_id);
+      }
+
+      // Exclui o agendamento atual no fluxo de reagendamento para não auto-bloquear o slot
+      if (exclude_id) {
+        query = query.neq('id', exclude_id);
       }
 
       const { data, error } = await query;
@@ -510,7 +516,29 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Erro ao buscar informações do salão' });
       }
 
-      // 3. Recheca conflito (excluindo o agendamento atual)
+      // 3. Recomputa end_time server-side — não confia no valor enviado pelo cliente
+      const { data: apptServices } = await supabase
+        .from('appointment_services')
+        .select('services(duration_minutes)')
+        .eq('appointment_id', appointment_id);
+
+      let computedEndTime = end_time;
+      if (apptServices && apptServices.length > 0) {
+        const totalDuration = apptServices.reduce((sum, as) => sum + (as.services?.duration_minutes || 0), 0);
+        computedEndTime = minutesToTime(timeToMinutes(start_time) + totalDuration);
+      } else {
+        // Fallback para agendamentos legados sem appointment_services
+        const { data: svc } = await supabase
+          .from('services')
+          .select('duration_minutes')
+          .eq('id', appt.service_id)
+          .single();
+        if (svc) {
+          computedEndTime = minutesToTime(timeToMinutes(start_time) + svc.duration_minutes);
+        }
+      }
+
+      // 4. Recheca conflito (excluindo o agendamento atual)
       let rescheduleConflictQuery = supabase
         .from('appointments')
         .select('id, start_time, end_time')
@@ -528,17 +556,17 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Erro ao verificar disponibilidade' });
       }
 
-      if (hasConflict(existingAppointments, start_time, end_time)) {
+      if (hasConflict(existingAppointments, start_time, computedEndTime)) {
         return res.status(409).json({ error: 'Horário indisponível' });
       }
 
-      // 4. Atualizar
+      // 5. Atualizar com end_time recomputado server-side
       const { data: updated, error: updateError } = await supabase
         .from('appointments')
         .update({
           appointment_date: appointment_date,
           start_time: start_time,
-          end_time: end_time
+          end_time: computedEndTime
         })
         .eq('id', appointment_id)
         .select('id, salon_id, service_id, professional_id, appointment_date, start_time, end_time, status')
@@ -549,7 +577,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Erro ao reagendar' });
       }
 
-      // 5. Inserir notificação
+      // 6. Inserir notificação
       const { data: client } = await supabase
         .from('clients')
         .select('full_name')

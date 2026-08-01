@@ -6,6 +6,28 @@ import BookingEngine from '../../components/BookingEngine'
 import { sendPushNotification } from '../../utils/notification'
 import toast from 'react-hot-toast'
 
+// Soma o preço de todos os serviços do agendamento.
+// Usa appointment_services quando disponível (multi-serviço); cai em services.price para
+// agendamentos legados de serviço único.
+function sumAppointmentRevenue(appt) {
+  if (appt.appointment_services && appt.appointment_services.length > 0) {
+    return appt.appointment_services.reduce((sum, as) => sum + Number(as.services?.price || 0), 0)
+  }
+  return Number(appt.services?.price || 0)
+}
+
+export function computeStats(appointments, todayStr) {
+  const todayAppointments = appointments.filter(a => a.appointment_date === todayStr)
+  const upcomingAppointments = appointments.filter(a => a.appointment_date !== todayStr)
+  return {
+    todayCount: todayAppointments.length,
+    upcoming: upcomingAppointments.length,
+    upcomingRevenue: upcomingAppointments.reduce((acc, curr) => acc + sumAppointmentRevenue(curr), 0),
+    estimatedRevenue: todayAppointments.reduce((acc, curr) => acc + sumAppointmentRevenue(curr), 0),
+    realRevenue: todayAppointments.filter(a => a.status === 'completed').reduce((acc, curr) => acc + sumAppointmentRevenue(curr), 0),
+  }
+}
+
 function DashboardHome() {
   const { salon } = useOutletContext()
   const location = useLocation()
@@ -60,28 +82,13 @@ function DashboardHome() {
     const today = new Date().toISOString().split('T')[0]
     const { data } = await supabase
       .from('appointments')
-      .select('appointment_date, status, services(price)')
+      .select('appointment_date, status, services(price), appointment_services(services(price))')
       .eq('salon_id', salon.id)
       .gte('appointment_date', today)
       .neq('status', 'canceled')
-    
+
     if (data) {
-      const todayAppointments = data.filter(a => a.appointment_date === today)
-      const upcomingAppointments = data.filter(a => a.appointment_date !== today)
-      
-      const upcomingCount = upcomingAppointments.length
-      const upcomingRevenue = upcomingAppointments.reduce((acc, curr) => acc + Number(curr.services?.price || 0), 0)
-      
-      const estimatedRevenue = todayAppointments.reduce((acc, curr) => acc + Number(curr.services?.price || 0), 0)
-      const realRevenue = todayAppointments.filter(a => a.status === 'completed').reduce((acc, curr) => acc + Number(curr.services?.price || 0), 0)
-      
-      setStats({ 
-        todayCount: todayAppointments.length, 
-        upcoming: upcomingCount,
-        upcomingRevenue,
-        estimatedRevenue,
-        realRevenue
-      })
+      setStats(computeStats(data, today))
     }
   }
 
