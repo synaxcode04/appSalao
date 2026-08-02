@@ -82,7 +82,10 @@ export function computeAvailableSlots({ workingHours, appointments, timeBlocks =
 // services: lista de todos os serviços do salão para seleção múltipla.
 // service: serviço pré-selecionado (compat com uso de serviço singular e reagendamento).
 // Quando services não é fornecido, usa [service] como lista — mantendo compat retroativa.
-function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARRAY, clientId, clientName = 'Cliente', professionals = EMPTY_ARRAY, existingAppointmentId = null, onSuccess, loginByPhone = null, slotIntervalMinutes = null }) {
+// inline=true: renderiza o corpo embutido na página, sem overlay, sem bottom-sheet, sem header/X.
+// inline=false (padrão): comportamento modal inalterado (overlay position:fixed, gating por isOpen).
+function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARRAY, clientId, clientName = 'Cliente', professionals = EMPTY_ARRAY, existingAppointmentId = null, onSuccess, loginByPhone = null, slotIntervalMinutes = null, inline = false }) {
+  const effectiveIsOpen = inline ? true : isOpen
   const availableServices = services.length > 0 ? services : (service ? [service] : [])
 
   const [selectedServiceIds, setSelectedServiceIds] = useState(() => service ? [service.id] : [])
@@ -100,7 +103,7 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
   const totalPrice = selectedServices.reduce((sum, s) => sum + Number(s.price), 0)
 
   useEffect(() => {
-    if (isOpen) {
+    if (effectiveIsOpen) {
       const tmrw = new Date()
       tmrw.setDate(tmrw.getDate() + 1)
       setSelectedDate(tmrw.toLocaleDateString('en-CA'))
@@ -114,23 +117,23 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
         setSelectedProfessional('')
       }
     }
-  }, [isOpen, professionals, service])
+  }, [effectiveIsOpen, professionals, service])
 
   useEffect(() => {
-    if (isOpen && selectedDate && totalDurationMinutes > 0 && (professionals.length === 0 || selectedProfessional)) {
+    if (effectiveIsOpen && selectedDate && totalDurationMinutes > 0 && (professionals.length === 0 || selectedProfessional)) {
       calculateAvailableSlots()
     } else {
       setAvailableSlots([])
     }
     setSelectedSlot(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, totalDurationMinutes, isOpen, selectedProfessional, professionals])
+  }, [selectedDate, totalDurationMinutes, effectiveIsOpen, selectedProfessional, professionals])
 
   // Carrega assinaturas ativas do cliente neste salão — usadas só para o alerta
   // informativo de "fora do dia do plano" (não bloqueia o agendamento).
   useEffect(() => {
     let mounted = true
-    if (!isOpen || !clientId || !salonId) {
+    if (!effectiveIsOpen || !clientId || !salonId) {
       setActiveSubscriptions(EMPTY_ARRAY)
       return
     }
@@ -151,7 +154,7 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
     }
     loadSubs()
     return () => { mounted = false }
-  }, [isOpen, clientId, salonId])
+  }, [effectiveIsOpen, clientId, salonId])
 
   // Alerta não-bloqueante: cliente tem plano que cobre um serviço selecionado, mas a
   // data escolhida cai num dia FORA dos subscription_plan_days do plano (plano sem dias
@@ -365,7 +368,172 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingConfirm, clientId])
 
-  if (!isOpen || availableServices.length === 0) return null
+  if (!effectiveIsOpen || availableServices.length === 0) return null
+
+  const bodyContent = showIdentity ? (
+    <div style={{ overflowY: 'auto', flex: 1 }}>
+      <ClientIdentityForm
+        salonId={salonId}
+        loginByPhone={loginByPhone}
+        onIdentified={handleIdentified}
+        onCancel={() => setShowIdentity(false)}
+      />
+    </div>
+  ) : (
+    <>
+      <div style={{ padding: inline ? '0' : '1.5rem', overflowY: inline ? 'visible' : 'auto', flex: inline ? 'none' : 1 }}>
+
+        {/* Seleção de serviços com checkboxes à esquerda */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
+            {availableServices.length === 1 ? 'Serviço:' : 'Selecione os serviços:'}
+          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {availableServices.map(s => {
+              const isChecked = selectedServiceIds.includes(s.id)
+              return (
+                <label
+                  key={s.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.8rem 1rem',
+                    borderRadius: '8px',
+                    border: isChecked ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
+                    backgroundColor: isChecked ? 'var(--light-green)' : 'var(--surface-color)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {
+                      setSelectedServiceIds(prev =>
+                        prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]
+                      )
+                    }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontWeight: '500', color: isChecked ? 'var(--dark-green)' : 'var(--text-primary)' }}>
+                      {s.name}
+                    </span>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                      {s.duration_minutes} min
+                    </span>
+                  </div>
+                  <span style={{ fontWeight: 'bold', color: isChecked ? 'var(--dark-green)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                    R$ {Number(s.price).toFixed(2).replace('.', ',')}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+
+          {selectedServiceIds.length > 1 && (
+            <div style={{ marginTop: '0.8rem', padding: '0.75rem 1rem', backgroundColor: 'var(--light-green)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', color: 'var(--dark-green)', fontWeight: '500', fontSize: '0.95rem' }}>
+              <span>Total: {totalDurationMinutes} min</span>
+              <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
+            </div>
+          )}
+        </div>
+
+        {professionals && professionals.length > 0 && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Escolha o Profissional:</label>
+            <select
+              value={selectedProfessional}
+              onChange={(e) => setSelectedProfessional(e.target.value)}
+              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '1rem', color: 'var(--text-primary)', backgroundColor: 'var(--surface-color)' }}
+            >
+              <option value="" disabled>Selecione um profissional</option>
+              {professionals.map(prof => (
+                <option key={prof.id} value={prof.id}>{prof.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div style={{ marginBottom: '2rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Escolha a Data:</label>
+          <input
+            type="date"
+            value={selectedDate}
+            min={new Date().toLocaleDateString('en-CA')}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '1rem', color: 'var(--text-primary)' }}
+          />
+        </div>
+
+        {outOfPlanDayAlert && (
+          <div style={{ marginBottom: '1.5rem', padding: '0.9rem 1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid #ffe69c' }}>
+            {outOfPlanDayAlert}
+          </div>
+        )}
+
+        <div style={{ marginBottom: '2rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Horários Disponíveis:</label>
+
+          {selectedServiceIds.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)' }}>Selecione ao menos um serviço.</p>
+          ) : !selectedDate ? (
+            <p style={{ color: 'var(--text-secondary)' }}>Selecione uma data primeiro.</p>
+          ) : availableSlots.length === 0 ? (
+            <div style={{ padding: '1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', fontSize: '0.9rem' }}>
+              Nenhum horário disponível para esta data.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.8rem' }}>
+              {availableSlots.map(slot => (
+                <button
+                  key={slot}
+                  onClick={() => setSelectedSlot(slot)}
+                  style={{
+                    padding: '0.8rem',
+                    borderRadius: '8px',
+                    border: selectedSlot === slot ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
+                    backgroundColor: selectedSlot === slot ? 'var(--light-green)' : 'var(--surface-color)',
+                    color: selectedSlot === slot ? 'var(--dark-green)' : 'var(--text-primary)',
+                    fontWeight: selectedSlot === slot ? 'bold' : 'normal',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {slot}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={inline
+        ? { paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }
+        : { padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }
+      }>
+        <button
+          className="btn-primary"
+          style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}
+          disabled={!selectedSlot || loading || selectedServiceIds.length === 0}
+          onClick={handleConfirm}
+        >
+          {loading ? 'Confirmando...' : 'Confirmar Horário'}
+        </button>
+      </div>
+    </>
+  )
+
+  if (inline) {
+    return (
+      <div className="card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.3rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+          {existingAppointmentId ? 'Reagendar Horário' : 'Agendar Horário'}
+        </h2>
+        {bodyContent}
+      </div>
+    )
+  }
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
@@ -379,158 +547,7 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
           </button>
         </div>
 
-        {showIdentity ? (
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            <ClientIdentityForm
-              salonId={salonId}
-              loginByPhone={loginByPhone}
-              onIdentified={handleIdentified}
-              onCancel={() => setShowIdentity(false)}
-            />
-          </div>
-        ) : (
-        <>
-        {/* Conteúdo Rolável */}
-        <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }}>
-
-          {/* Seleção de serviços com checkboxes à esquerda */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              {availableServices.length === 1 ? 'Serviço:' : 'Selecione os serviços:'}
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {availableServices.map(s => {
-                const isChecked = selectedServiceIds.includes(s.id)
-                return (
-                  <label
-                    key={s.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.8rem 1rem',
-                      borderRadius: '8px',
-                      border: isChecked ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
-                      backgroundColor: isChecked ? 'var(--light-green)' : 'var(--surface-color)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {
-                        setSelectedServiceIds(prev =>
-                          prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]
-                        )
-                      }}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontWeight: '500', color: isChecked ? 'var(--dark-green)' : 'var(--text-primary)' }}>
-                        {s.name}
-                      </span>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
-                        {s.duration_minutes} min
-                      </span>
-                    </div>
-                    <span style={{ fontWeight: 'bold', color: isChecked ? 'var(--dark-green)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                      R$ {Number(s.price).toFixed(2).replace('.', ',')}
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-
-            {selectedServiceIds.length > 1 && (
-              <div style={{ marginTop: '0.8rem', padding: '0.75rem 1rem', backgroundColor: 'var(--light-green)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', color: 'var(--dark-green)', fontWeight: '500', fontSize: '0.95rem' }}>
-                <span>Total: {totalDurationMinutes} min</span>
-                <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
-              </div>
-            )}
-          </div>
-
-          {professionals && professionals.length > 0 && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Escolha o Profissional:</label>
-              <select
-                value={selectedProfessional}
-                onChange={(e) => setSelectedProfessional(e.target.value)}
-                style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '1rem', color: 'var(--text-primary)', backgroundColor: 'var(--surface-color)' }}
-              >
-                <option value="" disabled>Selecione um profissional</option>
-                {professionals.map(prof => (
-                  <option key={prof.id} value={prof.id}>{prof.name}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div style={{ marginBottom: '2rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Escolha a Data:</label>
-            <input
-              type="date"
-              value={selectedDate}
-              min={new Date().toLocaleDateString('en-CA')}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '1rem', color: 'var(--text-primary)' }}
-            />
-          </div>
-
-          {outOfPlanDayAlert && (
-            <div style={{ marginBottom: '1.5rem', padding: '0.9rem 1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid #ffe69c' }}>
-              {outOfPlanDayAlert}
-            </div>
-          )}
-
-          <div style={{ marginBottom: '2rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Horários Disponíveis:</label>
-
-            {selectedServiceIds.length === 0 ? (
-              <p style={{ color: 'var(--text-secondary)' }}>Selecione ao menos um serviço.</p>
-            ) : !selectedDate ? (
-              <p style={{ color: 'var(--text-secondary)' }}>Selecione uma data primeiro.</p>
-            ) : availableSlots.length === 0 ? (
-              <div style={{ padding: '1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', fontSize: '0.9rem' }}>
-                Nenhum horário disponível para esta data.
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.8rem' }}>
-                {availableSlots.map(slot => (
-                  <button
-                    key={slot}
-                    onClick={() => setSelectedSlot(slot)}
-                    style={{
-                      padding: '0.8rem',
-                      borderRadius: '8px',
-                      border: selectedSlot === slot ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
-                      backgroundColor: selectedSlot === slot ? 'var(--light-green)' : 'var(--surface-color)',
-                      color: selectedSlot === slot ? 'var(--dark-green)' : 'var(--text-primary)',
-                      fontWeight: selectedSlot === slot ? 'bold' : 'normal',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer Fixo */}
-        <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
-          <button
-            className="btn-primary"
-            style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}
-            disabled={!selectedSlot || loading || selectedServiceIds.length === 0}
-            onClick={handleConfirm}
-          >
-            {loading ? 'Confirmando...' : 'Confirmar Horário'}
-          </button>
-        </div>
-        </>
-        )}
+        {bodyContent}
 
       </div>
     </div>

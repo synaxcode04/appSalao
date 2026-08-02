@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { supabase } from '../../supabase'
-import { ArrowLeft, Clock, MapPin, Star, MessageSquare, Home } from 'lucide-react'
+import { ArrowLeft, MapPin, Star, MessageSquare, Home } from 'lucide-react'
 import BookingEngine from '../../components/BookingEngine'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 import toast from 'react-hot-toast'
@@ -25,10 +25,6 @@ function SalonDetails() {
   const [newRating, setNewRating] = useState(5)
   const [newComment, setNewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
-
-  // Booking Modal States
-  const [selectedService, setSelectedService] = useState(null)
-  const [isBookingOpen, setIsBookingOpen] = useState(false)
 
   const [canReview, setCanReview] = useState(false)
 
@@ -102,13 +98,7 @@ function SalonDetails() {
     setLoading(false)
   }
 
-  const handleOpenBooking = (service) => {
-    setSelectedService(service)
-    setIsBookingOpen(true)
-  }
-
   const handleBookingSuccess = () => {
-    setIsBookingOpen(false)
     navigate(`/s/${slug}/agenda`)
   }
 
@@ -216,36 +206,25 @@ function SalonDetails() {
         </div>
       )}
 
-      {/* Lista de Serviços */}
-      <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Serviços Disponíveis</h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {services.length === 0 ? (
+      {/* Agendamento inline — seleção de serviços e horário na mesma tela */}
+      {services.length === 0 ? (
+        <>
+          <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Serviços Disponíveis</h2>
           <p style={{ color: 'var(--text-secondary)' }}>Este salão ainda não cadastrou nenhum serviço.</p>
-        ) : (
-          services.map(service => (
-            <div key={service.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
-              <div>
-                <h3 style={{ color: 'var(--dark-green)', marginBottom: '0.2rem' }}>{service.name}</h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Clock size={14} /> {service.duration_minutes} min
-                </p>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                  R$ {Number(service.price).toFixed(2).replace('.', ',')}
-                </span>
-                <button 
-                  className="btn-primary" 
-                  style={{ padding: '0.6rem 1.2rem', width: 'auto' }}
-                  onClick={() => handleOpenBooking(service)}
-                >
-                  Agendar
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+        </>
+      ) : (
+        <BookingEngine
+          inline
+          services={services}
+          salonId={salon.id}
+          clientId={clientSession?.client_id ?? null}
+          clientName={clientSession?.full_name || profile?.full_name || 'Cliente'}
+          professionals={professionals}
+          onSuccess={handleBookingSuccess}
+          loginByPhone={loginByPhone}
+          slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
+        />
+      )}
 
       {/* Avaliações e Comentários */}
       <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', marginTop: '2.5rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -321,20 +300,6 @@ function SalonDetails() {
           ))
         )}
       </div>
-
-      <BookingEngine
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        salonId={salon.id}
-        service={selectedService}
-        services={services}
-        clientId={clientSession?.client_id ?? null}
-        clientName={clientSession?.full_name || profile?.full_name || 'Cliente'}
-        professionals={professionals}
-        onSuccess={handleBookingSuccess}
-        loginByPhone={loginByPhone}
-        slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
-      />
 
     </div>
   )

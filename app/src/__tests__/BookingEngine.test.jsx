@@ -992,6 +992,72 @@ describe('computeAvailableSlots — função pura', () => {
   })
 })
 
+// ─── Testes da variante inline ─────────────────────────────────────────────
+
+describe('BookingEngine — variante inline', () => {
+  const s1 = { id: 's1', name: 'Corte', duration_minutes: 60, price: 50 }
+  const s2 = { id: 's2', name: 'Escova', duration_minutes: 90, price: 80 }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+  })
+
+  it('inline=true renderiza checkboxes de serviço sem overlay e sem botão X', async () => {
+    const { queryAllByRole, queryByRole } = render(
+      <BookingEngine
+        inline
+        services={[s1, s2]}
+        salonId="salon1"
+        clientId="client1"
+        professionals={[]}
+        onSuccess={vi.fn()}
+      />
+    )
+
+    // Checkboxes presentes
+    const checkboxes = queryAllByRole('checkbox')
+    expect(checkboxes.length).toBe(2)
+
+    // Nenhum botão X (o lucide X renderiza como svg dentro de button sem texto — verificamos
+    // que não existe nenhum button com aria-label ou estilo de fechar).
+    // O botão X modal é identificável pelo fato de o render não ter o overlay position:fixed —
+    // o componente não está dentro de um portal; basta confirmar que não há overlay no DOM.
+    const buttons = queryAllByRole('button')
+    // Botões presentes: apenas "Confirmar Horário" (o X não aparece no inline)
+    const xButtons = buttons.filter(b => b.textContent === '')
+    expect(xButtons.length).toBe(0)
+  })
+
+  it('inline=true: selecionar 2 serviços exibe resumo com soma de duração e preço', async () => {
+    const { queryAllByRole, getByText } = render(
+      <BookingEngine
+        inline
+        services={[s1, s2]}
+        salonId="salon1"
+        clientId="client1"
+        professionals={[]}
+        onSuccess={vi.fn()}
+      />
+    )
+
+    const checkboxes = queryAllByRole('checkbox')
+    // Nenhum serviço marcado inicialmente (sem prop service) — marca os dois
+    fireEvent.click(checkboxes[0])
+    fireEvent.click(checkboxes[1])
+
+    // 60 + 90 = 150 min, 50 + 80 = R$ 130,00
+    await waitFor(() => {
+      expect(getByText('Total: 150 min')).toBeTruthy()
+      expect(getByText('R$ 130,00')).toBeTruthy()
+    })
+  })
+})
+
 // ─── Testes de UI: múltiplos serviços com checkboxes ───────────────────────
 
 describe('BookingEngine — múltiplos serviços com checkboxes', () => {
