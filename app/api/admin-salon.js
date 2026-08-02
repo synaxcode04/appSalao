@@ -80,7 +80,10 @@ export default async function handler(req, res) {
   // (esses têm fluxo próprio de Renovar/Bloquear no painel).
   // ==========================================
   if (action === 'update') {
-    const { salonId, name, address, target_gender, document } = body;
+    const {
+      salonId, name, address, target_gender, document,
+      logradouro, numero, bairro, cep, cidade, estado
+    } = body;
 
     if (!salonId) {
       return res.status(400).json({ error: 'salonId é obrigatório.' });
@@ -94,12 +97,18 @@ export default async function handler(req, res) {
     if (address !== undefined) updateFields.address = address;
     if (target_gender !== undefined) updateFields.target_gender = target_gender;
     if (document !== undefined) updateFields.document = document;
+    if (logradouro !== undefined) updateFields.logradouro = logradouro;
+    if (numero !== undefined) updateFields.numero = numero;
+    if (bairro !== undefined) updateFields.bairro = bairro;
+    if (cep !== undefined) updateFields.cep = cep;
+    if (cidade !== undefined) updateFields.cidade = cidade;
+    if (estado !== undefined) updateFields.estado = estado;
 
     const { data: updatedSalon, error: updateError } = await supabase
       .from('salons')
       .update(updateFields)
       .eq('id', salonId)
-      .select('id, owner_id, name, address, target_gender, document')
+      .select('id, owner_id, name, address, target_gender, document, logradouro, numero, bairro, cep, cidade, estado')
       .single();
 
     if (updateError) {

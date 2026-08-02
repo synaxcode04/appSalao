@@ -4,6 +4,29 @@ import { supabase } from '../../supabase'
 import { Upload, Image as ImageIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+// Recompõe uma string de endereço consistente a partir dos campos estruturados,
+// no formato "Logradouro, Número - Bairro, Cidade - Estado, CEP", omitindo com
+// elegância as partes vazias (sem vírgulas/traços órfãos).
+function formatarEndereco({ logradouro, numero, bairro, cep, cidade, estado } = {}) {
+  const trim = (v) => (v || '').trim()
+  const lg = trim(logradouro)
+  const nu = trim(numero)
+  const ba = trim(bairro)
+  const ce = trim(cep)
+  const ci = trim(cidade)
+  const es = trim(estado)
+
+  // "Logradouro, Número"
+  const ruaNumero = [lg, nu].filter(Boolean).join(', ')
+  // "Logradouro, Número - Bairro"
+  const ruaNumeroBairro = [ruaNumero, ba].filter(Boolean).join(' - ')
+  // "Cidade - Estado"
+  const cidadeEstado = [ci, es].filter(Boolean).join(' - ')
+
+  // Junta os blocos por vírgula: "...- Bairro, Cidade - Estado, CEP"
+  return [ruaNumeroBairro, cidadeEstado, ce].filter(Boolean).join(', ')
+}
+
 function SettingsPage() {
   const { salon, refreshSalon } = useOutletContext()
   const [loadingInfo, setLoadingInfo] = useState(false)
@@ -11,6 +34,12 @@ function SettingsPage() {
   const [uploading, setUploading] = useState(false)
   const [name, setName] = useState(salon?.name || '')
   const [address, setAddress] = useState(salon?.address || '')
+  const [logradouro, setLogradouro] = useState(salon?.logradouro || '')
+  const [numero, setNumero] = useState(salon?.numero || '')
+  const [bairro, setBairro] = useState(salon?.bairro || '')
+  const [cep, setCep] = useState(salon?.cep || '')
+  const [cidade, setCidade] = useState(salon?.cidade || '')
+  const [estado, setEstado] = useState(salon?.estado || '')
   const [googleReviewLink, setGoogleReviewLink] = useState(salon?.google_review_link || '')
   const [slotInterval, setSlotInterval] = useState(
     salon?.slot_interval_minutes != null ? String(salon.slot_interval_minutes) : ''
@@ -31,6 +60,12 @@ function SettingsPage() {
   useEffect(() => {
     setName(salon?.name || '')
     setAddress(salon?.address || '')
+    setLogradouro(salon?.logradouro || '')
+    setNumero(salon?.numero || '')
+    setBairro(salon?.bairro || '')
+    setCep(salon?.cep || '')
+    setCidade(salon?.cidade || '')
+    setEstado(salon?.estado || '')
     setGoogleReviewLink(salon?.google_review_link || '')
     setSlotInterval(salon?.slot_interval_minutes != null ? String(salon.slot_interval_minutes) : '')
   }, [salon])
@@ -56,10 +91,31 @@ function SettingsPage() {
     let lat = salon.latitude
     let lng = salon.longitude
 
-    // Se o endereço foi alterado ou ainda não tem coordenadas, busca na API
-    if (address && address !== salon.address) {
+    // Endereço estruturado recomposto em string consistente.
+    const enderecoFormatado = formatarEndereco({ logradouro, numero, bairro, cep, cidade, estado })
+
+    // Há pelo menos um campo estruturado preenchido?
+    const temCampoEstruturado = [logradouro, numero, bairro, cep, cidade, estado]
+      .some((v) => (v || '').trim() !== '')
+
+    // String usada para geocoding: estruturado quando houver, senão o address legado.
+    const enderecoParaGeocoding = temCampoEstruturado ? enderecoFormatado : address
+
+    // Detecta se QUALQUER campo relevante mudou em relação ao salon atual.
+    const camposEstruturadosMudaram =
+      (logradouro || '') !== (salon.logradouro || '') ||
+      (numero || '') !== (salon.numero || '') ||
+      (bairro || '') !== (salon.bairro || '') ||
+      (cep || '') !== (salon.cep || '') ||
+      (cidade || '') !== (salon.cidade || '') ||
+      (estado || '') !== (salon.estado || '')
+    const addressLegadoMudou = (address || '') !== (salon.address || '')
+    const enderecoMudou = temCampoEstruturado ? camposEstruturadosMudaram : addressLegadoMudou
+
+    // Re-roda o geocoding sempre que qualquer campo de endereço mudar.
+    if (enderecoParaGeocoding && enderecoMudou) {
       try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(enderecoParaGeocoding)}`)
         const data = await response.json()
         if (data && data.length > 0) {
           lat = parseFloat(data[0].lat)
@@ -68,13 +124,21 @@ function SettingsPage() {
           toast.error('Aviso: Não conseguimos encontrar esse endereço no mapa. As coordenadas não foram atualizadas.')
         }
       } catch (error) {
-        console.error('Erro na geocodificação:', error)
+        // Falha de rede na geocodificação não deve impedir o salvamento dos dados.
       }
     }
 
-    const payload = { 
-      name, 
-      address,
+    const payload = {
+      name,
+      logradouro: logradouro || null,
+      numero: numero || null,
+      bairro: bairro || null,
+      cep: cep || null,
+      cidade: cidade || null,
+      estado: estado || null,
+      // Mantém o address coerente: grava o formatado quando há estrutura;
+      // preserva o address legado intacto quando os 6 campos estão vazios.
+      address: temCampoEstruturado ? enderecoFormatado : address,
       latitude: lat,
       longitude: lng,
       google_review_link: googleReviewLink || null
@@ -322,14 +386,68 @@ function SettingsPage() {
             </div>
             
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Endereço Completo (Para clientes te acharem no Mapa)</label>
-              <textarea 
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Ex: Rua das Flores, 123, Centro, Belo Horizonte - MG"
-                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', minHeight: '80px', marginTop: '0.5rem', fontFamily: 'inherit' }}
-                required 
-              />
+              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Endereço (Para clientes te acharem no Mapa)</label>
+
+              <div style={{ marginTop: '0.5rem' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Logradouro</label>
+                <input
+                  type="text"
+                  value={logradouro}
+                  onChange={(e) => setLogradouro(e.target.value)}
+                  placeholder="Ex: Rua das Flores"
+                />
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Número</label>
+                <input
+                  type="text"
+                  value={numero}
+                  onChange={(e) => setNumero(e.target.value)}
+                  placeholder="Ex: 123"
+                />
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Bairro</label>
+                <input
+                  type="text"
+                  value={bairro}
+                  onChange={(e) => setBairro(e.target.value)}
+                  placeholder="Ex: Centro"
+                />
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>CEP</label>
+                <input
+                  type="text"
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  placeholder="Ex: 30110-000"
+                />
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cidade</label>
+                <input
+                  type="text"
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  placeholder="Ex: Belo Horizonte"
+                />
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Estado</label>
+                <input
+                  type="text"
+                  value={estado}
+                  onChange={(e) => setEstado(e.target.value)}
+                  placeholder="Ex: MG"
+                />
+              </div>
+
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                 O sistema buscará automaticamente as coordenadas GPS deste endereço quando você salvar.
               </p>

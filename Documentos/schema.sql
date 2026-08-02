@@ -20,6 +20,7 @@
 --   2. rls_fix.sql  (adiciona colunas is_active/status/subscription_expires_at
 --                    em salons e cria tabelas notifications/payments se não existem)
 --   3. add_slot_interval_minutes.sql  (adiciona slot_interval_minutes em salons)
+--   4. add_structured_address.sql     (adiciona logradouro/numero/bairro/cep/cidade/estado em salons)
 --
 -- =============================================================================
 
@@ -70,6 +71,15 @@ CREATE TABLE public.salons (
   --   slot_interval_minutes INTEGER DEFAULT NULL
   --     NULL = usar duração do serviço (fallback); quando preenchido, múltiplo de 15,
   --     mínimo 15, máximo 120. CHECK constraint: salons_slot_interval_minutes_check.
+  -- Colunas adicionadas via add_structured_address.sql (ADD COLUMN IF NOT EXISTS):
+  --   logradouro TEXT   — ex: "Rua das Flores"
+  --   numero     TEXT   — ex: "123" ou "S/N"
+  --   bairro     TEXT   — ex: "Centro"
+  --   cep        TEXT   — ex: "01310-100"
+  --   cidade     TEXT   — ex: "São Paulo"
+  --   estado     TEXT   — ex: "SP"
+  --   Todas nullable. A coluna address (texto livre) é MANTIDA como fallback —
+  --   os campos novos ficam NULL até o dono reeditar o perfil do salão.
 );
 
 -- 3. Tabela services (Serviços oferecidos pelos salões)
