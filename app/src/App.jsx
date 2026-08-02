@@ -13,7 +13,6 @@ import ProfessionalsManager from './pages/owner/ProfessionalsManager'
 import WorkingHoursManager from './pages/owner/WorkingHoursManager'
 import TimeBlocksManager from './pages/owner/TimeBlocksManager'
 import ClientsManager from './pages/owner/ClientsManager'
-import OwnerReviews from './pages/owner/OwnerReviews'
 import SettingsPage from './pages/owner/Settings'
 import MetricsDashboard from './pages/owner/MetricsDashboard'
 import PlansManager from './pages/owner/PlansManager'
@@ -97,7 +96,6 @@ function App() {
           <Route path="bloqueios" element={<TimeBlocksManager />} />
           <Route path="clientes" element={<ClientsManager />} />
           <Route path="metricas" element={<MetricsDashboard />} />
-          <Route path="avaliacoes" element={<OwnerReviews />} />
           <Route path="configuracoes" element={<SettingsPage />} />
         </Route>
 

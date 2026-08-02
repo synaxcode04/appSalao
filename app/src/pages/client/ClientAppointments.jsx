@@ -28,6 +28,10 @@ function ClientAppointments() {
   const [notifications, setNotifications] = useState([])
   const [showNotifications, setShowNotifications] = useState(false)
 
+  // Convite para avaliação no Google exibido após concluir um atendimento,
+  // quando o salão tem google_review_link configurado.
+  const [showGoogleReview, setShowGoogleReview] = useState(false)
+
   useEffect(() => {
     if (clientId) fetchAppointments()
   }, [clientId, showCanceled])
@@ -163,7 +167,14 @@ function ClientAppointments() {
     }
 
     await fetchAppointments()
-    toast.success('Serviço marcado como concluído!')
+
+    // Se o salão tiver link de avaliação do Google, convida o cliente a avaliar
+    // (sem depender de nota). Caso contrário, mantém o feedback simples.
+    if (salon?.google_review_link) {
+      setShowGoogleReview(true)
+    } else {
+      toast.success('Serviço marcado como concluído!')
+    }
   }
 
   const canMarkAsCompleted = (appt) => {
@@ -407,6 +418,45 @@ function ClientAppointments() {
           onSuccess={handleRescheduleSuccess}
           slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
         />
+      )}
+
+      {/* Convite para avaliação no Google após concluir atendimento */}
+      {showGoogleReview && salon?.google_review_link && (
+        <div
+          onClick={() => setShowGoogleReview(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card"
+            style={{ maxWidth: '420px', width: '100%', padding: '2rem', textAlign: 'center' }}
+          >
+            <h3 style={{ fontSize: '1.3rem', color: 'var(--dark-green)', marginBottom: '0.8rem' }}>
+              Atendimento concluído!
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+              Que tal deixar uma avaliação no Google? Leva menos de um minuto e ajuda muito o salão.
+            </p>
+            <a
+              href={salon.google_review_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setShowGoogleReview(false)}
+              className="btn-primary"
+              style={{ display: 'inline-block', width: 'auto', padding: '0.7rem 1.4rem', fontSize: '0.95rem', textDecoration: 'none', marginBottom: '0.8rem' }}
+            >
+              Avaliar no Google
+            </a>
+            <div>
+              <button
+                onClick={() => setShowGoogleReview(false)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                Agora não
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

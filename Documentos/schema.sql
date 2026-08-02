@@ -21,6 +21,7 @@
 --                    em salons e cria tabelas notifications/payments se não existem)
 --   3. add_slot_interval_minutes.sql  (adiciona slot_interval_minutes em salons)
 --   4. add_structured_address.sql     (adiciona logradouro/numero/bairro/cep/cidade/estado em salons)
+--   5. add_google_review_link.sql     (adiciona google_review_link em salons)
 --
 -- =============================================================================
 
@@ -80,6 +81,9 @@ CREATE TABLE public.salons (
   --   estado     TEXT   — ex: "SP"
   --   Todas nullable. A coluna address (texto livre) é MANTIDA como fallback —
   --   os campos novos ficam NULL até o dono reeditar o perfil do salão.
+  -- Colunas adicionadas via add_google_review_link.sql (ADD COLUMN IF NOT EXISTS):
+  --   google_review_link TEXT   — URL do link de avaliação do Google (nullable).
+  --     Sem constraint de domínio no banco; validação de formato fica no frontend.
 );
 
 -- 3. Tabela services (Serviços oferecidos pelos salões)
