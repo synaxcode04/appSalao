@@ -1,7 +1,25 @@
-import { getValidMpToken } from './_mpTokens.js';
-
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+async function getSalonAccessToken(salonId) {
+  const credRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/salon_mp_credentials?salon_id=eq.${salonId}&select=access_token`,
+    {
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    }
+  );
+
+  if (!credRes.ok) {
+    throw new Error(`Supabase credentials fetch falhou: ${credRes.status}`);
+  }
+
+  const rows = await credRes.json();
+  if (!rows || rows.length === 0) return null;
+  return rows[0].access_token || null;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -43,11 +61,9 @@ export default async function handler(req, res) {
 
     const plan = plans[0];
 
-    // Obtém token válido do dono, com refresh automático se expirado.
-    // getValidMpToken retorna null se o salão não tiver credencial MP cadastrada.
     let ownerToken;
     try {
-      ownerToken = await getValidMpToken(salon_id);
+      ownerToken = await getSalonAccessToken(salon_id);
     } catch (err) {
       console.error('Erro ao obter token MP do dono:', { salon_id, message: err.message });
       return res.status(500).json({ error: 'Erro ao acessar credenciais do salão' });

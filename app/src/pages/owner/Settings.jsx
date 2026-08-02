@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useOutletContext, useSearchParams } from 'react-router-dom'
+import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../../supabase'
 import { Upload, Image as ImageIcon, CreditCard, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -51,8 +51,8 @@ function SettingsPage() {
   // Estado da integração Mercado Pago
   const [mpConnected, setMpConnected] = useState(false)
   const [mpLoadingStatus, setMpLoadingStatus] = useState(true)
-  const [mpConnecting, setMpConnecting] = useState(false)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [mpToken, setMpToken] = useState('')
+  const [mpSaving, setMpSaving] = useState(false)
 
   useEffect(() => {
     if (salon && salon.owner_id) {
@@ -79,63 +79,36 @@ function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [salon?.id])
 
-  // Trata o retorno do OAuth do Mercado Pago (?mp=conectado | ?mp=erro).
-  useEffect(() => {
-    const mp = searchParams.get('mp')
-    if (!mp) return
-    if (mp === 'conectado') {
-      toast.success('Mercado Pago conectado com sucesso!')
-      setMpConnected(true)
-      fetchMpStatus()
-    } else if (mp === 'erro') {
-      toast.error('Não foi possível conectar o Mercado Pago. Tente novamente.')
-    }
-    // Remove o parâmetro da URL para não repetir o toast ao recarregar.
-    searchParams.delete('mp')
-    setSearchParams(searchParams, { replace: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
-
-  const handleConnectMp = async () => {
+  // Grava o Access Token do Mercado Pago colado pelo dono na tabela
+  // salon_mp_credentials via supabase client autenticado. O dono grava
+  // (policies de INSERT/UPDATE escopadas por owner) mas NÃO lê o token de
+  // volta (sem policy SELECT) — por isso não carregamos o valor existente.
+  const handleSaveToken = async () => {
     if (!salon?.id) return
-    setMpConnecting(true)
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const accessToken = session?.access_token
-      if (!accessToken) {
-        toast.error('Sessão expirada. Faça login novamente.')
-        setMpConnecting(false)
-        return
-      }
-
-      const res = await fetch('/api/mp-oauth-start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`
-        },
-        body: JSON.stringify({ salon_id: salon.id })
-      })
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        toast.error(err.error || 'Não foi possível iniciar a conexão com o Mercado Pago.')
-        setMpConnecting(false)
-        return
-      }
-
-      const { authUrl } = await res.json()
-      if (!authUrl) {
-        toast.error('Não foi possível iniciar a conexão com o Mercado Pago.')
-        setMpConnecting(false)
-        return
-      }
-
-      window.location.href = authUrl
-    } catch (e) {
-      toast.error('Erro ao conectar o Mercado Pago.')
-      setMpConnecting(false)
+    const token = mpToken.trim()
+    if (!token) {
+      toast.error('Cole o Access Token antes de salvar.')
+      return
     }
+
+    setMpSaving(true)
+    const { error } = await supabase
+      .from('salon_mp_credentials')
+      .upsert(
+        { salon_id: salon.id, access_token: token, updated_at: new Date().toISOString() },
+        { onConflict: 'salon_id' }
+      )
+
+    if (error) {
+      toast.error('Erro ao salvar o token: ' + error.message)
+      setMpSaving(false)
+      return
+    }
+
+    setMpToken('')
+    toast.success('Token salvo com sucesso!')
+    await fetchMpStatus()
+    setMpSaving(false)
   }
 
   // Ressincroniza o estado local quando o salon é atualizado externamente
@@ -402,45 +375,58 @@ function SettingsPage() {
         <div className="card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
             <CreditCard size={22} color="var(--primary-green)" />
-            <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Receber pagamentos pelo app</h3>
+            <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Receber pagamentos pelo app (Mercado Pago)</h3>
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
-            Conecte sua conta do Mercado Pago para que os clientes possam pagar os planos de assinatura diretamente pelo app. Os pagamentos caem na sua conta.
+            Cole o Access Token da sua conta do Mercado Pago para que os clientes possam pagar os planos de assinatura diretamente pelo app. Os pagamentos caem na sua conta.
           </p>
 
+          {/* Status atual da conexão */}
           {mpLoadingStatus ? (
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Verificando conexão...</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>Verificando conexão...</p>
           ) : mpConnected ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: 'var(--light-green)', color: 'var(--dark-green)', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                <CheckCircle size={16} /> Conectado
-              </span>
-              <button
-                onClick={handleConnectMp}
-                disabled={mpConnecting}
-                className="btn-outline"
-                style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.9rem' }}
-              >
-                {mpConnecting ? 'Redirecionando...' : 'Reconectar'}
-              </button>
-            </div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: 'var(--light-green)', color: 'var(--dark-green)', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              <CheckCircle size={16} /> Conectado
+            </span>
           ) : (
-            <div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#fff3cd', color: '#8a6d00', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                Não conectado
-              </span>
-              <div>
-                <button
-                  onClick={handleConnectMp}
-                  disabled={mpConnecting}
-                  className="btn-primary"
-                  style={{ width: 'auto', padding: '0.7rem 1.4rem' }}
-                >
-                  {mpConnecting ? 'Redirecionando...' : 'Conectar Mercado Pago'}
-                </button>
-              </div>
-            </div>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#fff3cd', color: '#8a6d00', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              Não conectado
+            </span>
           )}
+
+          {/* Aviso quando já há um token salvo (não é possível lê-lo de volta) */}
+          {!mpLoadingStatus && mpConnected && (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '0.8rem' }}>
+              Um token já está salvo. Cole um novo para substituir.
+            </p>
+          )}
+
+          <div style={{ marginBottom: '0.8rem' }}>
+            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Cole aqui o Access Token do Mercado Pago do seu salão
+            </label>
+            <input
+              type="password"
+              value={mpToken}
+              onChange={(e) => setMpToken(e.target.value)}
+              placeholder="APP_USR-..."
+              autoComplete="off"
+              style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginTop: '0.5rem', fontFamily: 'inherit', backgroundColor: 'var(--surface-color)', color: 'var(--text-primary)' }}
+            />
+          </div>
+
+          <button
+            onClick={handleSaveToken}
+            disabled={mpSaving || !mpToken.trim()}
+            className="btn-primary"
+            style={{ width: 'auto', padding: '0.7rem 1.4rem' }}
+          >
+            {mpSaving ? 'Salvando...' : 'Salvar'}
+          </button>
+
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '1rem' }}>
+            Como encontrar seu Access Token? No painel do Mercado Pago, acesse Suas integrações / Configurações &gt; Credenciais de produção &gt; Access Token e copie o valor.
+          </p>
         </div>
 
         {/* Card do Logo */}

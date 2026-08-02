@@ -1,8 +1,8 @@
 -- =============================================================================
 -- mp_marketplace.sql — App Salão
 -- Criado em: 2026-08-02
--- Descrição: Integração Mercado Pago Marketplace — OAuth por salão + colunas
---            de pagamento em client_subscriptions.
+-- Descrição: Integração Mercado Pago Marketplace — token colado pelo dono em
+--            Settings + colunas de pagamento em client_subscriptions.
 --
 -- !! APLICAÇÃO MANUAL !!
 -- Execute este arquivo manualmente no Supabase Dashboard → SQL Editor.
@@ -25,13 +25,22 @@
 -- DECISÕES DE ARQUITETURA
 -- =============================================================================
 --
--- A. TOKENS OAuth NUNCA EXPOSTOS VIA anon key
---    salon_mp_credentials tem RLS habilitado e NENHUMA policy SELECT/INSERT/
---    UPDATE/DELETE criada. service_role bypassa RLS por design — é o único
---    mecanismo de acesso a tokens. Nem mesmo o dono autenticado (auth.uid())
---    lê as colunas de token diretamente.
+-- A. TOKEN COLADO MANUALMENTE PELO DONO — SEM FLUXO OAUTH
+--    O dono obtém o Access Token no painel do Mercado Pago e cola no campo de
+--    Settings do app. Não há redirect OAuth, callback nem refresh_token.
+--    As colunas refresh_token, expires_at e mp_user_id foram removidas da tabela
+--    salon_mp_credentials por não fazerem sentido fora de um fluxo OAuth.
 --
--- B. O DONO VÊ APENAS STATUS BOOLEANO DE CONEXÃO
+-- B. DONO GRAVA O TOKEN DIRETO VIA SUPABASE CLIENT AUTENTICADO
+--    salon_mp_credentials tem RLS habilitado. Duas policies são criadas:
+--      - INSERT: dono autentica (auth.uid()), verifica ownership, insere.
+--      - UPDATE: dono autenticado pode substituir o próprio token (upsert).
+--    NENHUMA policy SELECT é criada — o dono NÃO consegue ler o token de volta.
+--    A leitura do token continua exclusiva de service_role (usada pelos endpoints
+--    de pagamento). Essa assimetria (escreve mas não lê) é a proteção: o token
+--    nunca é exposto ao client-side mesmo para o dono.
+--
+-- C. O DONO VÊ APENAS STATUS BOOLEANO DE CONEXÃO
 --    A função SECURITY DEFINER public.is_salon_mp_connected(p_salon_id uuid)
 --    expõe apenas um boolean (connected) sem nenhuma coluna de token.
 --    Ela valida que auth.uid() é o dono de p_salon_id antes de retornar.
@@ -51,14 +60,13 @@
 --    colunas de token ao chamador.
 --
 --    IMPACTO NO FRONTEND: app/src/pages/owner/Settings.jsx (ou equivalente que
---    exibia o status de conexão MP) DEVE ser ajustado para chamar o RPC em vez
---    de fazer SELECT na view. Ver checklist de validação ao final deste arquivo.
+--    exibia o status de conexão MP) DEVE chamar o RPC em vez de SELECT na tabela.
 --    Exemplo de chamada:
 --      const { data } = await supabase.rpc('is_salon_mp_connected', { p_salon_id: salonId })
 --      // data === true  → conectado
 --      // data === false → não conectado ou dono não autorizado
 --
--- C. payment_status = 'approved' É OBRIGATÓRIO PARA COTA ATIVA
+-- D. payment_status = 'approved' É OBRIGATÓRIO PARA COTA ATIVA
 --    A migration anterior (subscription_plans.sql) modelou assinatura ativa
 --    apenas com status = 'active'. Com a introdução do gateway, a semântica
 --    muda: uma assinatura só gera direito a cota quando AMBOS:
@@ -71,17 +79,17 @@
 --    Para assinaturas pagas fora do app (dono confirmou no braço), o campo
 --    payment_method = 'external' e confirmed_by = 'owner' documentam isso.
 --
--- D. payment_method SEM DEFAULT — nullable intencional
+-- E. payment_method SEM DEFAULT — nullable intencional
 --    Assinaturas criadas antes desta migration não têm método de pagamento.
 --    Forçar default 'mercado_pago' incorreria em dado falso para registros
 --    históricos. A Vercel Function que cria a assinatura define o valor
 --    explicitamente. NULL significa "registrado antes da integração de
 --    pagamento" — tratar como 'external' na camada de aplicação se necessário.
 --
--- E. ISOLAMENTO MULTI-TENANT PRESERVADO
+-- F. ISOLAMENTO MULTI-TENANT PRESERVADO
 --    As novas colunas de client_subscriptions não afetam o invariante
 --    (client_id, salon_id, plan_id). A tabela salon_mp_credentials tem
---    salon_id como PRIMARY KEY — um salão tem no máximo uma credencial OAuth.
+--    salon_id como PRIMARY KEY — um salão tem no máximo uma credencial.
 --    Credenciais de donos diferentes são completamente isoladas.
 --
 -- =============================================================================
@@ -137,7 +145,7 @@ ALTER TABLE public.client_subscriptions
 --                  dono confirma manualmente no painel (confirmed_by='owner').
 -- NULL           = registrado antes da integração de pagamento — tratar como
 --                  'external' na camada de aplicação se necessário.
--- SEM DEFAULT FORÇADO: ver decisão D no cabeçalho. Nullable intencional.
+-- SEM DEFAULT FORÇADO: ver decisão E no cabeçalho. Nullable intencional.
 ALTER TABLE public.client_subscriptions
   ADD COLUMN IF NOT EXISTS payment_method TEXT;
 
@@ -195,50 +203,92 @@ CREATE INDEX IF NOT EXISTS idx_client_subscriptions_salon_payment_status
 
 -- =============================================================================
 -- SEÇÃO 2: CREATE TABLE public.salon_mp_credentials
--- Tokens OAuth do dono do salão para o Mercado Pago Marketplace.
+-- Armazena o Access Token colado manualmente pelo dono em Settings.
 --
--- CRÍTICO DE SEGURANÇA: ver decisão A no cabeçalho.
--- Nenhuma policy RLS é criada nesta tabela — service_role bypassa RLS e é o
--- único mecanismo de leitura/escrita de tokens. Qualquer policy SELECT aqui
--- exporia token via anon key, mesmo que restrita por auth.uid().
+-- MODELO: sem OAuth — sem refresh_token, expires_at, mp_user_id.
+-- O dono obtém o token no painel do Mercado Pago e cola no app.
+-- O token nunca é lido de volta pelo client-side (sem policy SELECT).
+-- service_role lê o token para os endpoints de pagamento (bypassa RLS).
+--
+-- IDEMPOTÊNCIA: se a tabela já existia de uma execução anterior com as colunas
+-- OAuth, os ALTER TABLE ... DROP COLUMN IF EXISTS abaixo as removem de forma
+-- segura sem recriar a tabela inteira.
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.salon_mp_credentials (
-  -- Um salão tem no máximo uma credencial OAuth (PK = salon_id)
+  -- Um salão tem no máximo uma credencial (PK = salon_id)
   salon_id      UUID        PRIMARY KEY
                             REFERENCES public.salons(id) ON DELETE CASCADE,
 
-  -- ID do usuário (dono) na plataforma Mercado Pago
-  mp_user_id    TEXT,
-
-  -- Token de acesso OAuth. NOT NULL: uma linha só existe se a conexão foi
-  -- completada. Se o dono revogar o acesso, a linha é deletada (via service_role).
+  -- Access Token colado pelo dono. NOT NULL: uma linha só existe se o dono
+  -- colou um token. Para desconectar, a linha é deletada (via service_role ou
+  -- policy DELETE futura — não criada agora).
   access_token  TEXT        NOT NULL,
 
-  -- Token para renovação quando access_token expirar. Nullable: alguns fluxos
-  -- MP não retornam refresh_token (depende do scope solicitado).
-  refresh_token TEXT,
-
-  -- Quando o access_token expira. Nullable: MP pode não informar TTL.
-  -- A Vercel Function deve verificar expires_at antes de usar o token e
-  -- renovar via refresh_token se necessário.
-  expires_at    TIMESTAMPTZ,
-
-  -- Quando a conexão OAuth foi estabelecida pela primeira vez.
+  -- Quando o token foi colado pela primeira vez.
   connected_at  TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL,
 
-  -- Atualizado sempre que access_token é renovado via refresh_token.
+  -- Atualizado sempre que o dono substitui o token.
   updated_at    TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- RLS habilitado — mas SEM policies. service_role bypassa RLS automaticamente.
--- Não criar policies aqui é a proteção, não uma omissão.
+-- Remove colunas do fluxo OAuth caso a tabela já existisse de execução anterior.
+-- Idempotente: DROP COLUMN IF EXISTS não falha se a coluna não existir.
+ALTER TABLE public.salon_mp_credentials DROP COLUMN IF EXISTS refresh_token;
+ALTER TABLE public.salon_mp_credentials DROP COLUMN IF EXISTS expires_at;
+ALTER TABLE public.salon_mp_credentials DROP COLUMN IF EXISTS mp_user_id;
+
+-- RLS habilitado.
 ALTER TABLE public.salon_mp_credentials ENABLE ROW LEVEL SECURITY;
 
--- Índice para lookup por mp_user_id (reconciliação OAuth callback → salão)
-CREATE INDEX IF NOT EXISTS idx_salon_mp_credentials_mp_user_id
-  ON public.salon_mp_credentials (mp_user_id)
-  WHERE mp_user_id IS NOT NULL;
+-- Remove policies anteriores caso existam (idempotência de re-execução).
+DROP POLICY IF EXISTS "Owners can insert their mp credentials" ON public.salon_mp_credentials;
+DROP POLICY IF EXISTS "Owners can update their mp credentials" ON public.salon_mp_credentials;
+
+-- INSERT: dono autenticado insere o token do próprio salão.
+-- auth.uid() IS NOT NULL garante que anon nunca passa — defesa em profundidade
+-- além do REVOKE abaixo.
+CREATE POLICY "Owners can insert their mp credentials"
+ON public.salon_mp_credentials FOR INSERT
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = salon_mp_credentials.salon_id
+      AND s.owner_id = auth.uid()
+  )
+);
+
+-- UPDATE: dono autenticado substitui o token do próprio salão (upsert).
+-- USING valida a linha existente; WITH CHECK valida o novo valor.
+-- Ambos usam a mesma verificação de ownership.
+CREATE POLICY "Owners can update their mp credentials"
+ON public.salon_mp_credentials FOR UPDATE
+USING (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = salon_mp_credentials.salon_id
+      AND s.owner_id = auth.uid()
+  )
+)
+WITH CHECK (
+  auth.uid() IS NOT NULL
+  AND EXISTS (
+    SELECT 1 FROM public.salons s
+    WHERE s.id = salon_mp_credentials.salon_id
+      AND s.owner_id = auth.uid()
+  )
+);
+
+-- SEM policy SELECT: o dono NÃO consegue ler o token de volta via anon key.
+-- O status de conexão é obtido via RPC is_salon_mp_connected (retorna boolean).
+-- SEM policy DELETE: remoção de credencial é operação administrativa futura
+-- (via service_role ou policy dedicada quando necessário).
+
+-- Índice para lookup futuro por access_token (reconciliação, se necessário).
+-- Mantido mínimo: sem índice em mp_user_id (coluna removida).
+-- Nenhum índice adicional necessário com o modelo de token colado.
 
 
 -- =============================================================================
@@ -258,6 +308,10 @@ CREATE INDEX IF NOT EXISTS idx_salon_mp_credentials_mp_user_id
 --   SELECT na tabela base ao dono), valida ownership internamente via
 --   auth.uid(), e retorna apenas boolean — o token nunca é acessível ao
 --   chamador.
+--
+-- COMPATIBILIDADE COM MODELO DE TOKEN COLADO:
+--   A função verifica access_token IS NOT NULL — segue 100% válida com a
+--   tabela simplificada (sem refresh_token/expires_at/mp_user_id).
 --
 -- GARANTIAS:
 --   (1) access_token nunca legível pelo dono autenticado.
@@ -364,19 +418,36 @@ GRANT EXECUTE ON FUNCTION public.is_salon_mp_connected(UUID) TO authenticated;
 -- [ ] payment_method = 'stripe' → erro (CHECK violation).
 -- [ ] confirmed_by = 'admin' → erro (CHECK violation).
 --
--- salon_mp_credentials — sem acesso via anon key
--- -----------------------------------------------
--- [ ] Com anon key: SELECT * FROM salon_mp_credentials → 0 linhas retornadas
---     (RLS habilitado sem policy SELECT = bloqueio total para anon/authenticated).
--- [ ] Com usuário autenticado como dono: SELECT * FROM salon_mp_credentials
---     → 0 linhas retornadas (mesma razão — sem policy SELECT na tabela base).
--- [ ] Com service_role: INSERT/SELECT em salon_mp_credentials → sucesso.
---     (Testar via SQL Editor no Dashboard, que usa service_role por padrão.)
+-- salon_mp_credentials — estrutura simplificada (sem colunas OAuth)
+-- -----------------------------------------------------------------
+-- [ ] SELECT column_name FROM information_schema.columns
+--     WHERE table_schema = 'public' AND table_name = 'salon_mp_credentials';
+--     → Deve retornar APENAS: salon_id, access_token, connected_at, updated_at.
+--     → NÃO deve conter: refresh_token, expires_at, mp_user_id.
+--
+-- salon_mp_credentials — INSERT/UPDATE pelo dono autenticado
+-- ----------------------------------------------------------
+-- [ ] Logado como dono do salão A: INSERT INTO salon_mp_credentials
+--     (salon_id, access_token) VALUES ('<salon_A_id>', 'token_teste') → sucesso.
+-- [ ] Mesmo dono: UPDATE salon_mp_credentials SET access_token = 'token_novo'
+--     WHERE salon_id = '<salon_A_id>' → sucesso (upsert de token).
+-- [ ] Logado como dono do salão A tentando INSERT com salon_id = '<salon_B_id>'
+--     (de outro dono) → erro RLS (policy WITH CHECK rejeita).
+-- [ ] Não autenticado (anon key): INSERT em salon_mp_credentials → erro RLS.
+--
+-- salon_mp_credentials — token NUNCA lido pelo client-side
+-- --------------------------------------------------------
+-- [ ] Logado como dono do salão A: SELECT * FROM salon_mp_credentials
+--     → 0 linhas retornadas (sem policy SELECT = bloqueio total para authenticated).
+-- [ ] Com anon key: SELECT * FROM salon_mp_credentials
+--     → 0 linhas retornadas (mesma razão).
+-- [ ] Com service_role (SQL Editor do Dashboard): SELECT * FROM salon_mp_credentials
+--     → retorna as linhas normalmente (service_role bypassa RLS).
 -- [ ] ON DELETE CASCADE: deletar salão referenciado → linha em
 --     salon_mp_credentials é removida automaticamente.
 --
--- is_salon_mp_connected — função RPC substitui a view removida
--- -------------------------------------------------------------
+-- is_salon_mp_connected — função RPC (status boolean apenas)
+-- ----------------------------------------------------------
 -- [ ] View removida: SELECT * FROM salon_mp_connection_status → erro
 --     "relation does not exist" (confirma remoção completa).
 -- [ ] Função criada: SELECT proname FROM pg_proc WHERE proname = 'is_salon_mp_connected'
@@ -386,7 +457,7 @@ GRANT EXECUTE ON FUNCTION public.is_salon_mp_connected(UUID) TO authenticated;
 --     → Deve retornar FALSE (auth.uid() IS NULL internamente).
 -- [ ] Logado como dono do salão A, sem credencial MP cadastrada:
 --     SELECT public.is_salon_mp_connected('<salon_A_id>') → FALSE.
--- [ ] Logado como dono do salão A, com credencial MP inserida via service_role:
+-- [ ] Logado como dono do salão A, após INSERT do token:
 --     SELECT public.is_salon_mp_connected('<salon_A_id>') → TRUE.
 -- [ ] Logado como dono do salão A, consultando salão B (de outro dono):
 --     SELECT public.is_salon_mp_connected('<salon_B_id>') → FALSE
