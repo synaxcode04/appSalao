@@ -15,7 +15,7 @@ function OwnerLayout() {
     location.pathname.includes('/servicos') || 
     location.pathname.includes('/profissionais') || 
     location.pathname.includes('/horarios') ||
-    location.pathname.includes('/bloqueios') ||
+    location.pathname.includes('/planos') ||
     location.pathname.includes('/clientes')
   )
 
@@ -152,22 +152,22 @@ function OwnerLayout() {
                   <span>Horários</span>
                 </NavLink>
 
-                <NavLink to="/painel/bloqueios" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
-                  <CalendarX size={18} />
-                  <span>Bloqueios</span>
-                </NavLink>
-
                 <NavLink to="/painel/clientes" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
                   <UserPlus size={18} />
                   <span>Clientes</span>
+                </NavLink>
+
+                <NavLink to="/painel/planos" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
+                  <Package size={18} />
+                  <span>Planos</span>
                 </NavLink>
               </div>
             )}
           </div>
 
-          <NavLink to="/painel/planos" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
-            <Package size={20} />
-            <span>Planos</span>
+          <NavLink to="/painel/bloqueios" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
+            <CalendarX size={20} />
+            <span>Bloqueios</span>
           </NavLink>
 
           <NavLink to="/painel/metricas" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
