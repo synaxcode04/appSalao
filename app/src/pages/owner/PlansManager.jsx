@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import { Trash2, Edit2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Trash2, Edit2, ToggleLeft, ToggleRight, CheckCircle, Users } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 // Convenção de dia da semana idêntica a working_hours e subscription_plan_days:
 // 0 = Domingo ... 6 = Sábado.
@@ -14,12 +15,33 @@ const WEEK_DAYS = [
   { value: 6, label: 'Sáb' }
 ]
 
+// Rótulos amigáveis de status de pagamento para o painel do dono.
+const PAYMENT_STATUS_LABELS = {
+  pending: 'Aguardando pagamento',
+  approved: 'Pago',
+  rejected: 'Recusado',
+  in_process: 'Em processamento',
+  refunded: 'Estornado',
+  cancelled: 'Cancelado'
+}
+
+const PAYMENT_METHOD_LABELS = {
+  mercado_pago: 'Mercado Pago (app)',
+  external: 'Direto com o salão'
+}
+
 function PlansManager() {
   const [salonId, setSalonId] = useState(null)
   const [plans, setPlans] = useState([])
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  // Abas: gestão de planos x lista de assinantes
+  const [activeTab, setActiveTab] = useState('planos')
+  const [subscriptions, setSubscriptions] = useState([])
+  const [subsLoading, setSubsLoading] = useState(false)
+  const [subBusy, setSubBusy] = useState(null)
 
   // Form states
   const [editId, setEditId] = useState(null)
@@ -43,13 +65,76 @@ function PlansManager() {
 
         if (salonData) {
           setSalonId(salonData.id)
-          await Promise.all([loadServices(salonData.id), loadPlans(salonData.id)])
+          await Promise.all([loadServices(salonData.id), loadPlans(salonData.id), loadSubscriptions(salonData.id)])
         }
       }
       setLoading(false)
     }
     fetchSalonData()
   }, [])
+
+  // Assinantes do salão (via Supabase client autenticado — policy SELECT do dono).
+  // Embute o nome/telefone do cliente (policy "Owners can view clients of their salons")
+  // e o nome do plano.
+  const loadSubscriptions = async (sId) => {
+    setSubsLoading(true)
+    const { data } = await supabase
+      .from('client_subscriptions')
+      .select('id, status, payment_status, payment_method, confirmed_by, started_at, created_at, clients(full_name, phone), subscription_plans(name)')
+      .eq('salon_id', sId)
+      .order('created_at', { ascending: false })
+
+    if (data) setSubscriptions(data)
+    setSubsLoading(false)
+  }
+
+  // Confirma manualmente o pagamento de uma assinatura paga direto com o dono
+  // (payment_method='external'): ativa o plano. Escrita via Supabase client autenticado
+  // (policy UPDATE do dono) — não usa service_role.
+  const handleMarkAsPaid = async (sub) => {
+    setSubBusy(sub.id)
+    const { error } = await supabase
+      .from('client_subscriptions')
+      .update({
+        payment_status: 'approved',
+        status: 'active',
+        started_at: new Date().toISOString(),
+        confirmed_by: 'owner'
+      })
+      .eq('id', sub.id)
+
+    if (error) {
+      toast.error('Erro ao confirmar o pagamento. Tente novamente.')
+      setSubBusy(null)
+      return
+    }
+    toast.success('Pagamento confirmado. Plano ativado!')
+    await loadSubscriptions(salonId)
+    setSubBusy(null)
+  }
+
+  // Cancelamento pelo dono (não mexe em agendamentos futuros — decisão do CLAUDE.md).
+  const handleCancelSubscription = async (sub) => {
+    if (!window.confirm('Cancelar esta assinatura? Agendamentos futuros já marcados não são alterados automaticamente.')) return
+    setSubBusy(sub.id)
+    const { error } = await supabase
+      .from('client_subscriptions')
+      .update({
+        status: 'canceled',
+        canceled_at: new Date().toISOString(),
+        canceled_by: 'owner'
+      })
+      .eq('id', sub.id)
+
+    if (error) {
+      toast.error('Erro ao cancelar a assinatura. Tente novamente.')
+      setSubBusy(null)
+      return
+    }
+    toast.success('Assinatura cancelada.')
+    await loadSubscriptions(salonId)
+    setSubBusy(null)
+  }
 
   const loadServices = async (sId) => {
     const { data } = await supabase
@@ -279,6 +364,26 @@ function PlansManager() {
         <p className="subtitle">Crie pacotes mensais de serviços para seus clientes recorrentes.</p>
       </header>
 
+      {/* Abas: gestão de planos x assinantes */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('planos')}
+          style={{ padding: '0.7rem 1.1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'planos' ? '3px solid var(--primary-green)' : '3px solid transparent', color: activeTab === 'planos' ? 'var(--dark-green)' : 'var(--text-secondary)', fontWeight: activeTab === 'planos' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem' }}
+        >
+          Planos
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('assinantes')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.7rem 1.1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'assinantes' ? '3px solid var(--primary-green)' : '3px solid transparent', color: activeTab === 'assinantes' ? 'var(--dark-green)' : 'var(--text-secondary)', fontWeight: activeTab === 'assinantes' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem' }}
+        >
+          <Users size={16} /> Assinantes
+        </button>
+      </div>
+
+      {activeTab === 'planos' && (
+      <>
       <div className="card" style={{ marginBottom: '2rem' }}>
         <h3>{editId ? 'Editar Plano' : 'Novo Plano'}</h3>
         <form onSubmit={handleSave} className="auth-form" style={{ marginTop: '1rem' }}>
@@ -463,6 +568,77 @@ function PlansManager() {
           </div>
         )}
       </div>
+      </>
+      )}
+
+      {activeTab === 'assinantes' && (
+        <div className="card">
+          <h3>Assinantes</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
+            Assinaturas dos seus clientes. Para pagamentos combinados diretamente com você, confirme o pagamento para ativar o plano.
+          </p>
+
+          {subsLoading ? (
+            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Carregando assinantes...</p>
+          ) : subscriptions.length === 0 ? (
+            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Nenhum assinante ainda.</p>
+          ) : (
+            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {subscriptions.map(sub => {
+                const isCanceled = sub.status === 'canceled'
+                const isPaid = sub.payment_status === 'approved'
+                const canConfirm = sub.payment_status === 'pending' && sub.payment_method === 'external' && !isCanceled
+                return (
+                  <div key={sub.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', opacity: isCanceled ? 0.6 : 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: '180px' }}>
+                        <h4 style={{ color: 'var(--dark-green)' }}>{sub.clients?.full_name || 'Cliente'}</h4>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                          {sub.subscription_plans?.name || 'Plano'}
+                        </p>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
+                          Pagamento: {PAYMENT_METHOD_LABELS[sub.payment_method] || 'Não informado'}
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px', backgroundColor: isPaid ? 'var(--light-green)' : '#fff3cd', color: isPaid ? 'var(--dark-green)' : '#8a6d00' }}>
+                            {PAYMENT_STATUS_LABELS[sub.payment_status] || sub.payment_status || 'Sem status'}
+                          </span>
+                          {isCanceled && (
+                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px', backgroundColor: '#ffebee', color: '#d32f2f' }}>
+                              Cancelada
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flexShrink: 0 }}>
+                        {canConfirm && (
+                          <button
+                            onClick={() => handleMarkAsPaid(sub)}
+                            disabled={subBusy === sub.id}
+                            className="btn-primary"
+                            style={{ width: 'auto', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                          >
+                            <CheckCircle size={16} /> {subBusy === sub.id ? 'Salvando...' : 'Marcar como pago'}
+                          </button>
+                        )}
+                        {!isCanceled && (
+                          <button
+                            onClick={() => handleCancelSubscription(sub)}
+                            disabled={subBusy === sub.id}
+                            style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #d32f2f', color: '#d32f2f', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '500', fontSize: '0.9rem' }}
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

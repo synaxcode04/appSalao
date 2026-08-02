@@ -22,6 +22,7 @@ import ClientAppointments from './pages/client/ClientAppointments'
 import ClientProfile from './pages/client/ClientProfile'
 import ClientHistory from './pages/client/ClientHistory'
 import ClientPlans from './pages/client/ClientPlans'
+import PaymentReturn from './pages/client/PaymentReturn'
 import AdminLayout from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import { Toaster } from 'react-hot-toast'
@@ -110,6 +111,10 @@ function App() {
         >
           <Route index element={<AdminDashboard />} />
         </Route>
+
+        {/* Retorno do Checkout Pro do Mercado Pago — rota estática, DEVE vir antes de /s/:slug
+            (senão :slug capturaria "pagamento"). Standalone: sem SalonLayout. */}
+        <Route path="/s/pagamento" element={<PaymentReturn />} />
 
         {/* Árvore multi-tenant por salão */}
         <Route path="/s/:slug" element={<SalonLayout />}>

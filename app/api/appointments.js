@@ -161,10 +161,19 @@ function validateInput(action, body) {
     if (!body.salon_id) return 'salon_id is required';
   }
 
+  if (action === 'get_salon_payment_options') {
+    if (!body.salon_id) return 'salon_id is required';
+  }
+
   if (action === 'subscribe') {
     if (!body.salon_id) return 'salon_id is required';
     if (!body.client_id) return 'client_id is required';
     if (!body.plan_id) return 'plan_id is required';
+    // payment_method é opcional: só 'external' é aceito aqui (pagamento direto com
+    // o dono). O fluxo Mercado Pago cria a assinatura por criar-preferencia-plano.js.
+    if (body.payment_method != null && body.payment_method !== 'external') {
+      return 'payment_method inválido';
+    }
   }
 
   if (action === 'cancel_subscription') {
@@ -203,7 +212,8 @@ export default async function handler(req, res) {
     id,
     exclude_id,
     plan_id,
-    subscription_id
+    subscription_id,
+    payment_method
   } = req.body;
 
   // Validar ação
@@ -219,6 +229,7 @@ export default async function handler(req, res) {
     'mark_notifications_read',
     'list_notifications',
     'get_salon_contact',
+    'get_salon_payment_options',
     'subscribe',
     'cancel_subscription',
     'list_client_subscriptions'
@@ -1129,7 +1140,33 @@ export default async function handler(req, res) {
     }
 
     // ==========================================
-    // AÇÃO: subscribe — cliente assina um plano do salão (sem pagamento — Fase 1)
+    // AÇÃO: get_salon_payment_options — o cliente descobre se o salão aceita
+    // pagamento pelo app (Mercado Pago conectado). O cliente não tem sessão Auth e
+    // não pode ler a view salon_mp_connection_status (owner-only); por isso esta
+    // consulta roda via service_role e devolve apenas um booleano — nunca o token.
+    // ==========================================
+    if (action === 'get_salon_payment_options') {
+      const { data: cred, error: credError } = await supabase
+        .from('salon_mp_credentials')
+        .select('access_token')
+        .eq('salon_id', salon_id)
+        .maybeSingle();
+
+      if (credError) {
+        console.error('Supabase get_salon_payment_options error:', { salon_id, error: credError });
+        return res.status(500).json({ error: 'Erro ao verificar formas de pagamento' });
+      }
+
+      // Uma linha só existe se a conexão OAuth foi concluída (access_token NOT NULL).
+      const mpConnected = !!(cred && cred.access_token);
+
+      return res.status(200).json({ mp_connected: mpConnected });
+    }
+
+    // ==========================================
+    // AÇÃO: subscribe — cliente assina um plano do salão
+    // Sem payment_method → assinatura 'active' (legado, sem pagamento).
+    // payment_method='external' → assinatura 'pending' para o dono confirmar depois.
     // ==========================================
     if (action === 'subscribe') {
       // 1. Validar vínculo cliente-salão e bloqueio
@@ -1174,7 +1211,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Plano indisponível' });
       }
 
-      // 3. Impedir assinatura ativa duplicada do mesmo cliente no mesmo plano
+      // Pagamento direto com o dono (fora do app): a assinatura entra como PENDING
+      // e só passa a valer (status='active', payment_status='approved') quando o dono
+      // confirmar o pagamento manualmente no painel. Sem payment_method (legado) a
+      // assinatura entra 'active' como antes — retrocompatível.
+      const isExternal = payment_method === 'external';
+
+      // 3. Impedir assinatura ATIVA duplicada do mesmo cliente no mesmo plano
       const { data: existing, error: existingError } = await supabase
         .from('client_subscriptions')
         .select('id')
@@ -1193,16 +1236,50 @@ export default async function handler(req, res) {
         return res.status(409).json({ error: 'Você já possui uma assinatura ativa deste plano' });
       }
 
-      // 4. Inserir assinatura ativa
+      // 3b. Para pagamento externo, reutiliza uma pendência já existente do mesmo
+      // plano (idempotência — evita várias linhas pending se o cliente clicar de novo).
+      if (isExternal) {
+        const { data: pendingExisting, error: pendingErr } = await supabase
+          .from('client_subscriptions')
+          .select('id, salon_id, plan_id, client_id, status, payment_status, payment_method, started_at, created_at')
+          .eq('salon_id', salon_id)
+          .eq('client_id', client_id)
+          .eq('plan_id', plan_id)
+          .eq('status', 'pending')
+          .eq('payment_method', 'external')
+          .maybeSingle();
+
+        if (pendingErr) {
+          console.error('Supabase subscribe pending check error:', { salon_id, client_id, plan_id, error: pendingErr });
+          return res.status(500).json({ error: 'Erro ao validar assinatura' });
+        }
+
+        if (pendingExisting) {
+          return res.status(200).json({ subscription: pendingExisting });
+        }
+      }
+
+      // 4. Inserir assinatura (pending para pagamento externo; active para o legado)
+      const insertPayload = isExternal
+        ? {
+            salon_id: salon_id,
+            plan_id: plan_id,
+            client_id: client_id,
+            status: 'pending',
+            payment_status: 'pending',
+            payment_method: 'external'
+          }
+        : {
+            salon_id: salon_id,
+            plan_id: plan_id,
+            client_id: client_id,
+            status: 'active'
+          };
+
       const { data: subscription, error: createError } = await supabase
         .from('client_subscriptions')
-        .insert({
-          salon_id: salon_id,
-          plan_id: plan_id,
-          client_id: client_id,
-          status: 'active'
-        })
-        .select('id, salon_id, plan_id, client_id, status, started_at, created_at')
+        .insert(insertPayload)
+        .select('id, salon_id, plan_id, client_id, status, payment_status, payment_method, started_at, created_at')
         .single();
 
       if (createError) {
@@ -1304,13 +1381,16 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
-      // 2. Buscar assinaturas ativas do cliente NESTE salão, com plano e serviços/cotas
+      // 2. Buscar assinaturas ATIVAS e PENDENTES do cliente NESTE salão, com plano e
+      // serviços/cotas. Pendentes (aguardando pagamento) são retornadas para a tela do
+      // cliente exibir o estado "aguardando pagamento" — o frontend só trata como ativa
+      // (consumindo cota) quando status='active' E payment_status='approved'.
       const { data, error } = await supabase
         .from('client_subscriptions')
-        .select('id, salon_id, plan_id, status, started_at, created_at, subscription_plans(id, name, description, price, is_active, subscription_plan_services(service_id, monthly_quota, services(id, name)), subscription_plan_days(day_of_week))')
+        .select('id, salon_id, plan_id, status, payment_status, payment_method, started_at, created_at, subscription_plans(id, name, description, price, is_active, subscription_plan_services(service_id, monthly_quota, services(id, name)), subscription_plan_days(day_of_week))')
         .eq('salon_id', salon_id)
         .eq('client_id', client_id)
-        .eq('status', 'active')
+        .in('status', ['active', 'pending'])
         .order('started_at', { ascending: false });
 
       if (error) {
