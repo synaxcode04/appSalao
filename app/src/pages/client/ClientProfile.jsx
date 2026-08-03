@@ -145,19 +145,27 @@ function ClientProfile() {
         return
       }
 
-      if (OneSignal.User && OneSignal.User.PushSubscription && OneSignal.User.PushSubscription.optedIn) {
+      const sub = OneSignal.User?.PushSubscription
+      const hasToken = sub?.token || sub?.id
+      if (sub?.optedIn && hasToken) {
         toast.success('As notificações já estão ativadas no seu aparelho!')
         return
       }
 
       const accepted = await OneSignal.Notifications.requestPermission()
       if (accepted) {
-        toast.success('Notificações ativadas com sucesso!')
+        await new Promise(r => setTimeout(r, 1500))
+        const token = OneSignal.User?.PushSubscription?.token || OneSignal.User?.PushSubscription?.id
+        if (token) {
+          toast.success('Notificações ativadas com sucesso!')
+        } else {
+          toast.error('Permissão concedida, mas token push não foi gerado. Feche o app, reabra e tente novamente.')
+        }
       } else {
         toast.error('A permissão foi negada ou já estava bloqueada nas configurações.')
       }
-    } catch {
-      toast.error('Não foi possível ativar as notificações. Tente novamente.')
+    } catch (error) {
+      toast.error('Erro ao ativar notificações: ' + (error?.message || String(error)))
     }
   }
 

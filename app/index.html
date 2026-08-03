@@ -52,6 +52,11 @@
     }
     </script>
     <!-- =============== FIM SEO =============== -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/onesignal/OneSignalSDKWorker.js', { scope: '/onesignal/' });
+      }
+    </script>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];

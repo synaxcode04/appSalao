@@ -349,20 +349,27 @@ function SettingsPage() {
                   return;
                 }
                 
-                if (OneSignal.User && OneSignal.User.PushSubscription && OneSignal.User.PushSubscription.optedIn) {
+                const sub = OneSignal.User?.PushSubscription;
+                const hasToken = sub?.token || sub?.id;
+                if (sub?.optedIn && hasToken) {
                   toast.success("As notificações já estão ativadas no seu aparelho!");
                   return;
                 }
-                
-                // Dispara o prompt nativo
+
                 const accepted = await OneSignal.Notifications.requestPermission();
                 if (accepted) {
-                  toast.success("Notificações ativadas com sucesso!");
+                  await new Promise(r => setTimeout(r, 1500));
+                  const token = OneSignal.User?.PushSubscription?.token || OneSignal.User?.PushSubscription?.id;
+                  if (token) {
+                    toast.success("Notificações ativadas com sucesso!");
+                  } else {
+                    toast.error("Permissão concedida, mas token push não foi gerado. Feche o app, reabra e tente novamente.");
+                  }
                 } else {
                   toast.error("A permissão foi negada ou já estava bloqueada nas configurações.");
                 }
               } catch (error) {
-                toast.error("Erro: " + error.message);
+                toast.error("Erro ao ativar notificações: " + (error?.message || String(error)));
               }
             }}
             style={{ padding: '0.6rem 1.2rem', background: '#e8f5e9', border: '1px solid var(--primary-green)', color: 'var(--dark-green)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
