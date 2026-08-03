@@ -118,3 +118,32 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
 }
+
+.birthdate-input {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+.birthdate-select {
+  padding: 0.8rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 1rem;
+  color: var(--text-primary);
+  background-color: var(--surface-color);
+  flex: 1;
+  min-width: 0;
+}
+
+.birthdate-year {
+  padding: 0.8rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  font-size: 1rem;
+  color: var(--text-primary);
+  background-color: var(--surface-color);
+  flex: 1.4;
+  min-width: 0;
+}

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { supabase } from '../supabase'
 import { createOrGetClient, linkClientToSalon, formatPhone } from '../utils/clientIdentity'
+import BirthdateInput from '../components/BirthdateInput'
 
 const PLANOS = [
   { id: 'mensal', nome: 'Mensal', preco: 'R$ 29,90', periodo: '/mês' },
@@ -86,9 +87,9 @@ function Register() {
 
     try {
       if (salonId) {
-        await linkClientToSalon({ phone, full_name: fullName, birth_date: birthDate, salon_id: salonId })
+        await linkClientToSalon({ phone, full_name: fullName, birth_date: birthDate || null, salon_id: salonId })
       } else {
-        await createOrGetClient({ phone, full_name: fullName, birth_date: birthDate })
+        await createOrGetClient({ phone, full_name: fullName, birth_date: birthDate || null })
       }
     } catch (err) {
       setError(err.message || 'Não foi possível concluir o cadastro. Tente novamente.')
@@ -237,12 +238,7 @@ function Register() {
             />
 
             {role === 'client' && (
-              <input
-                type="date"
-                placeholder="Data de nascimento"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-              />
+              <BirthdateInput value={birthDate} onChange={setBirthDate} />
             )}
 
             {role === 'owner' && (

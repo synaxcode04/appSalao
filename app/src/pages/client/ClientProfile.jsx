@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { LogOut, User, Upload } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useClientSession } from '../../contexts/ClientSessionContext'
+import BirthdateInput from '../../components/BirthdateInput'
 
 async function compressImage(file) {
   return new Promise((resolve) => {
@@ -234,12 +235,9 @@ function ClientProfile() {
 
             <div>
               <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Data de Nascimento</label>
-              <input
-                type="date"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                style={{ marginTop: '0.4rem' }}
-              />
+              <div style={{ marginTop: '0.4rem' }}>
+                <BirthdateInput value={birthDate} onChange={setBirthDate} />
+              </div>
             </div>
           </div>
         </div>

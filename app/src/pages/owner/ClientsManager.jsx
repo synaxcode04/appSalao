@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../../supabase'
 import { UserPlus, Phone } from 'lucide-react'
+import BirthdateInput from '../../components/BirthdateInput'
 
 function formatPhone(phone) {
   const digits = (phone || '').replace(/\D/g, '')
@@ -68,7 +69,7 @@ function ClientsManager() {
           action: 'link_to_salon',
           phone,
           full_name: fullName,
-          birth_date: birthDate,
+          birth_date: birthDate || null,
           salon_id: salon.id
         })
       })
@@ -202,12 +203,7 @@ function ClientsManager() {
             onChange={(e) => setFullName(e.target.value)}
             required
           />
-          <input
-            type="date"
-            placeholder="Data de nascimento"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-          />
+          <BirthdateInput value={birthDate} onChange={setBirthDate} />
           <button type="submit" disabled={submitting} className="btn-primary">
             <UserPlus size={18} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
             {submitting ? 'Cadastrando...' : 'Cadastrar Cliente'}

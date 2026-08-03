@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { formatPhone, lookupClient, linkClientToSalon } from '../utils/clientIdentity'
+import BirthdateInput from './BirthdateInput'
 
 // Fluxo inline de identificação do cliente na página pública do salão.
 // Modelo por TELEFONE (sem email/senha): pede o WhatsApp; se já existir
@@ -50,7 +51,7 @@ function ClientIdentityForm({ salonId, loginByPhone, onIdentified, onCancel }) {
     setLoading(true)
     try {
       // Cria o cliente com a data de nascimento e vincula ao salão...
-      await linkClientToSalon({ phone, full_name: fullName, birth_date: birthDate, salon_id: salonId })
+      await linkClientToSalon({ phone, full_name: fullName, birth_date: birthDate || null, salon_id: salonId })
       // ...e persiste a sessão leve escopada por slug.
       await loginByPhone(phone, fullName, salonId)
       onIdentified()
@@ -118,12 +119,9 @@ function ClientIdentityForm({ salonId, loginByPhone, onIdentified, onCancel }) {
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
             Data de nascimento
           </label>
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            style={{ ...inputStyle, marginBottom: '1.5rem' }}
-          />
+          <div style={{ marginBottom: '1.5rem' }}>
+            <BirthdateInput value={birthDate} onChange={setBirthDate} />
+          </div>
           <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }} disabled={loading}>
             {loading ? 'Concluindo...' : 'Concluir e agendar'}
           </button>
