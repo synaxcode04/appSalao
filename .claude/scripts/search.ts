@@ -9,7 +9,7 @@
  *   tsx search.ts "problema com RLS"
  */
 import Database from 'better-sqlite3';
-import sqliteVec from 'sqlite-vec';
+import * as sqliteVec from 'sqlite-vec';
 import { pipeline } from '@xenova/transformers';
 import { existsSync } from 'fs';
 import { join, dirname } from 'path';
@@ -74,14 +74,15 @@ async function main() {
   const queryEmbedding = new Float32Array(output.data as Float32Array);
 
   // Busca top-K*2 candidatos pela similaridade de vetor
+  // Nota: sqlite-vec usa ? para placeholder de embedding, não para parâmetro numérico
   const candidates = db.prepare(`
     SELECT k.id, k.path, k.content, k.category, k.agent, k.created_at,
-           v.distance
+           vec_distance_L2(v.embedding, ?) as distance
     FROM vec_knowledge v
     JOIN knowledge k ON k.id = v.rowid
-    ORDER BY v.distance ASC
+    ORDER BY distance ASC
     LIMIT ?
-  `).all(topK * 2, queryEmbedding) as KnowledgeRow[];
+  `).all(queryEmbedding, topK * 2) as unknown[];
 
   if (candidates.length === 0) {
     db.close();
@@ -90,7 +91,7 @@ async function main() {
 
   // Re-ranqueia: resultados da mesma categoria do agent ativo sobem
   const priorityCategory = AGENT_CATEGORY_MAP[agentArg] ?? '';
-  const ranked = candidates.sort((a, b) => {
+  const ranked = (candidates as KnowledgeRow[]).sort((a, b) => {
     const aBoost = a.category === priorityCategory ? -0.1 : 0;
     const bBoost = b.category === priorityCategory ? -0.1 : 0;
     return (a.distance + aBoost) - (b.distance + bBoost);

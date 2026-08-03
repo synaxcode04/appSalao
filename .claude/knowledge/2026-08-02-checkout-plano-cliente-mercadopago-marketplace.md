@@ -6,7 +6,7 @@
 
 ## Contexto
 
-Feature: cliente do salão paga a assinatura de um plano via Mercado Pago (Checkout Pro), modelo MARKETPLACE — dinheiro vai 100% direto para a conta MP de cada DONO (sem comissão da plataforma), via OAuth por salão. Distinta da integração MP pré-existente (`criar-preferencia.js` + `mercado-pago-webhook.js`), que é a cobrança da LICENÇA do salão à plataforma (grava em payment_leads). Só Checkout Pro / pagamento manual avulso por ciclo de 30 dias — SEM recorrência/preapproval (fica para futuro).
+Feature: cliente do salão paga a assinatura de um plano via Mercado Pago (Checkout Pro), modelo MARKETPLACE — dinheiro vai 100% direto para a conta MP de cada DONO (sem comissão da plataforma). Modelo simplificado: dono cola seu Access Token direto nas Settings (sem OAuth). Distinta da integração MP pré-existente (`criar-preferencia.js` + `mercado-pago-webhook.js`), que é a cobrança da LICENÇA do salão à plataforma (grava em payment_leads). Só Checkout Pro / pagamento manual avulso por ciclo de 30 dias — SEM recorrência/preapproval (fica para futuro).
 
 ## Achado crítico de infraestrutura
 
@@ -16,30 +16,52 @@ Existem DUAS pastas `api/`:
 
 **Confirmação**: teste contra produção (`POST https://appsalao-psi.vercel.app/api/appointments` com action `list_client_subscriptions` retorna JSON de erro limpo, action que só existe na versão nova) prova que **a pasta servida em produção é `app/api/`**.
 
-A `api/` da raiz é dangling (resíduo do incidente de 2026-08-01) — NÃO usar, NÃO deletar sem decisão explícita. **Todo endpoint novo vai em `app/api/`.**
+A `api/` da raiz é dangling (resíduo do incidente de 2026-08-01) — NÃO usar, NÃO deletar sem decisão explícita. **Todo endpoint novo vai em `app/api/`.** Limite: **máximo 12 serverless functions no Vercel Hobby** — contagem atual 11 functions em `app/api/`.
 
 ## Arquitetura implementada
 
-### OAuth Marketplace
-- **`app/api/mp-oauth-start.js`**: dono inicia fluxo. Valida JWT do dono + ownership de salão, gera state HMAC anti-CSRF/replay (válido 10 min), redireciona para autorização MP
-- **`app/api/mp-oauth-callback.js`**: troca `code` por tokens, grava em `salon_mp_credentials` com criação de índice para performance (salon_id, created_at), redireciona para `/painel/configuracoes?mp=conectado` ou `?mp=erro`
-- **`app/api/_mpTokens.js`**: helper reutilizável. `getValidMpToken(salonId)` com refresh automático (margem de 60s antes do expirado)
+### Modelo de credenciais simplificado (sem OAuth)
+
+Dono do salão:
+1. Acessa painel → Settings (Configurações)
+2. Copia o Access Token de sua conta Mercado Pago (MP Dashboard → Credenciais de produção → Access Token, formato `APP_USR-...`)
+3. Cola no campo "Access Token" do salão
+4. Clica Salvar
+
+**Endpoints REMOVIDOS** desta simplificação:
+- `app/api/mp-oauth-start.js` (não há mais redirecionamento OAuth)
+- `app/api/mp-oauth-callback.js` (não há mais troca de code por token)
+- `app/api/_mpTokens.js` (não há mais refresh automático — token colado não tem refresh_token)
+
+**Endpoints atuais da feature** (2 functions):
+- `app/api/criar-preferencia-plano.js`
+- `app/api/mp-plano-webhook.js`
+
+Ambos usam helper local `getSalonAccessToken(salonId)` que lê o token de `salon_mp_credentials` via `service_role` (sem refresh ou validação de expiração).
 
 ### Criar preferência (checkout)
-- **`app/api/criar-preferencia-plano.js`**: cria linha `client_subscriptions` com `payment_status='pending'`, usa token do DONO, `external_reference = client_subscriptions.id`, `notification_url` inclui `?salon_id=` (crítico em marketplace). Retorna 409 se salão não conectado ao MP
-- Validações: salão existe, plano existe, cliente não tem outro ativo em ciclo corrente, dono autenticado
+
+**`app/api/criar-preferencia-plano.js`**: 
+- Cria linha `client_subscriptions` com `payment_status='pending'`
+- Busca token do DONO em `salon_mp_credentials`
+- Retorna 409 se salão não tem token salvo
+- Usa POST `/v1/checkout/preferences` do MP com `external_reference = client_subscriptions.id`
+- Inclui `notification_url` com `?salon_id=` (crítico em marketplace)
+- Validações: salão existe, plano existe, cliente não tem outro ativo em ciclo corrente
 
 ### Webhook de pagamento (fonte de verdade)
-- **`app/api/mp-plano-webhook.js`**: 
-  - Lê `salon_id` da query string (`notification_url?salon_id=...`)
-  - Usa token do DONO (via `getValidMpToken(salon_id)`) para consultar `/v1/payments/{id}` — essencial em marketplace (token da plataforma não consegue acessar pagamentos da conta do vendedor)
-  - Valida `payment.external_reference` contra `client_subscriptions.id`
-  - Valida `sub.salon_id === salon_id` (defesa cross-tenant — cliente poderia forjar salon_id na query se não validasse)
-  - HMAC validado via `crypto.timingSafeEqual`
-  - Ativa: `payment_status='approved'`, `status='active'`, `started_at=now()`, `confirmed_by='webhook'`
-  - **Idempotente**: ignora eventos duplicados (já em estado `approved`), não sobrescreve `started_at` se já definido
+
+**`app/api/mp-plano-webhook.js`**:
+- Lê `salon_id` da query string (`notification_url?salon_id=...`)
+- Busca token do DONO em `salon_mp_credentials` — usa esse token para consultar `/v1/payments/{id}` (essencial em marketplace: token da plataforma não consegue acessar pagamentos da conta do vendedor)
+- Valida HMAC via `crypto.timingSafeEqual` contra `process.env.MERCADO_PAGO_WEBHOOK_SECRET` (permissivo só se env ausente — deve estar setado em produção)
+- Valida `payment.external_reference` contra `client_subscriptions.id`
+- Valida `sub.salon_id === salon_id` (defesa cross-tenant — cliente poderia forjar salon_id na query se não validasse)
+- Ativa: `payment_status='approved'`, `status='active'`, `started_at=now()`, `confirmed_by='webhook'`
+- **Idempotente**: ignora eventos duplicados (já em estado `approved`), não sobrescreve `started_at` se já definido
 
 ### Actions (serviço de negócio)
+
 - **`get_salon_payment_options`** (appointments.js, `service_role`): retorna `{ mp_connected: boolean }` para cliente (sem auth) decidir se mostra "pagar pelo app"
 - **`list_client_subscriptions`**: lista do cliente com filtro por status de pagamento (pending/approved/canceled)
 - **`get_subscription_plan`**: retorna plano completo + serviços inclusos
@@ -52,7 +74,7 @@ A `api/` da raiz é dangling (resíduo do incidente de 2026-08-01) — NÃO usar
   
 - **`PaymentReturn.jsx`** + rota `/s/:slug/pagamento`: retorna do Checkout Pro (success/failure/pending). Lê parâmetro GET, atualiza UI com status
   
-- **`Settings.jsx`** (painel dono): aba Configurações → Conectar MP, exibe status via RPC `is_salon_mp_connected()`
+- **`Settings.jsx`** (painel dono): aba Configurações → campo "Access Token", exibe status via RPC `is_salon_mp_connected()`, botão Salvar (upsert)
   
 - **`PlansManager.jsx`** (painel dono): aba Assinantes, tabela de `client_subscriptions` do salão, ação "Marcar como pago" (via Supabase client autenticado do dono — UPDATE direto, não função, porque dono é autenticado)
 
@@ -60,24 +82,24 @@ A `api/` da raiz é dangling (resíduo do incidente de 2026-08-01) — NÃO usar
 
 Migration: `Documentos/mp_marketplace.sql`
 
-Colunas adicionadas a `client_subscriptions`:
+**Tabela `client_subscriptions` — colunas adicionadas:**
 - `payment_status`: 'pending' | 'approved' | 'failed' (default 'pending')
 - `gateway_ref`: ID do pagamento no MP (ex: `12345678`)
 - `external_id`: ID retornado pela API (ex: `ext_ABC123`)
 - `payment_method`: 'credit_card' | 'debit_card' | 'bank_transfer' | null
 - `confirmed_by`: 'webhook' | 'manual' | 'system' (quem confirmou o pagamento)
 
-Tabela: `salon_mp_credentials`
-- `salon_id` (FK, unique, indexed)
-- `access_token` (encrypted via `pgcrypto`)
-- `refresh_token` (encrypted via `pgcrypto`)
-- `token_expires_at` (timestamp)
-- `created_at`, `updated_at`
-- **RLS: DESABILITADO** (tabela acessível só via `service_role` — políticas NUNCA seriam suficientes para proteger credentials, mesmo com EXISTS JOIN). Nenhuma policy configurada; `supabase.from('salon_mp_credentials')` retornará erro se tentado com `anon` ou `authenticated`. Acesso sempre via Vercel Functions com token `service_role`.
+**Tabela `salon_mp_credentials` (simplificada, sem refresh)**:
+- `salon_id` (PK, FK, indexed)
+- `access_token` (string, padrão — não encriptado neste modelo, já que é token colado pelo dono, não credencial sensível de terceiro)
+- `connected_at` (timestamp)
+- `updated_at` (timestamp)
+- **Colunas REMOVIDAS**: `refresh_token`, `token_expires_at`, `mp_user_id` (não há mais refresh automático)
+- **RLS**: políticas de INSERT e UPDATE para o DONO (escopadas por owner_id via salons), **SEM policy de SELECT nem DELETE** — o dono grava o próprio token via `supabase.from('salon_mp_credentials').upsert({salon_id, access_token}, {onConflict:'salon_id'})` mas NÃO consegue lê-lo de volta (token nunca exposto ao client). Endpoints de pagamento leem o token via `service_role`.
 
-Função PL/pgSQL: `is_salon_mp_connected(p_salon_id)`
+**Função PL/pgSQL: `is_salon_mp_connected(p_salon_id)`**:
 - SECURITY DEFINER (roda com direitos da owner, não do chamador)
-- Retorna `boolean` — dono vê só `true/false` se seu salão está conectado (não vê credenciais, token expirado, nada)
+- Retorna `boolean` — dono vê só `true/false` se seu salão está conectado (não vê credenciais)
 - Necessária porque **VIEW com RLS não existe no Postgres** — `ALTER VIEW ... ENABLE ROW LEVEL SECURITY` é inválido
 
 ## Armadilhas descobertas
@@ -87,7 +109,7 @@ Erro inicial: usar token da plataforma (`MP_CLIENT_ID`/`MP_CLIENT_SECRET` em Bea
 
 **Resultado**: 404 — a API do MP não consegue retornar um pagamento "alheio" nem que a plataforma tenha acesso via OAuth.
 
-**Solução**: usar o **token do DONO** (armazenado em `salon_mp_credentials.access_token`, refreshado se expirado). O webhook então:
+**Solução**: usar o **token do DONO** (armazenado em `salon_mp_credentials.access_token`). O webhook então:
 1. Extrai `salon_id` da query (`notification_url?salon_id=...`)
 2. Busca credenciais do DONO em `salon_mp_credentials` WHERE `salon_id = ?`
 3. Chama `/v1/payments/{id}` com Bearer do DONO
@@ -131,7 +153,16 @@ Cliente pode forjar `notification_url?salon_id=123` para ativar assinatura de ou
 2. `payment.external_reference` depois é consultado no DB — sua `salon_id` é comparada com a da query
 3. Idempotência (se já `approved`, ignora duplicata)
 
-## Estado atual / pendências (não deployado)
+### 6. Limite de 12 serverless functions no Vercel Hobby
+Contagem atual: **11 functions** em `app/api/`. Limite da plataforma: 12.
+
+**Implicação**: endpoints novos precisam respeitar esse teto. Se necessário escalabilidade, considerar:
+- Consolidar lógica em functions existentes (reusar e-points)
+- Usar helper com prefixo `_` (ainda conta como function)
+- Preferir logic inline em functions existentes vs. helper separado se o teto apertar
+- Documentado em CLAUDE.md para referência futura
+
+## Estado atual
 
 **Aprovação e testes:**
 - Code-reviewer: Aprovado (sem bloqueantes)
@@ -140,36 +171,31 @@ Cliente pode forjar `notification_url?salon_id=123` para ativar assinatura de ou
 
 **Deploy BLOQUEADO** — aguardando:
 
-1. **Configurar app OAuth no Mercado Pago**:
-   - Criar aplicação em [Aplicaciones — Developers MP](https://www.mercadopago.com.br/developers/pt-BR/docs/checkout-pro/integration-configuration/how-to-integrate)
-   - Coletar `Client ID` e `Client Secret` (sandbox + produção)
-   - Configurar Redirect URI em `https://appsalao-psi.vercel.app/api/mp-oauth-callback`
-   - Documentado em `Documentos/mercado_pago_oauth_setup.md` (criar se não existir)
-
-2. **Configurar env vars no Vercel** (Production + Preview):
-   - `MP_CLIENT_ID`
-   - `MP_CLIENT_SECRET`
-   - Via Vercel Dashboard → Settings → Environment Variables (não commitando `.env`)
-
-3. **Aplicar migration no Supabase**:
+1. **Aplicar migration no Supabase**:
    - Rodar `Documentos/mp_marketplace.sql` na base de produção
    - Verifica: colunas em `client_subscriptions`, tabela `salon_mp_credentials`, função `is_salon_mp_connected()`
 
-4. **Teste ponta-a-ponta em sandbox**:
-   - Dono: conectar ao MP via `/painel/configuracoes`
+2. **Configurar env var no Vercel** (Production + Preview):
+   - `MERCADO_PAGO_WEBHOOK_SECRET` (HMAC secret de validação — deve estar setado em produção; ausente em sandbox para permitir webhooks de teste)
+   - Via Vercel Dashboard → Settings → Environment Variables (não commitando `.env`)
+
+3. **Teste ponta-a-ponta em sandbox**:
+   - Dono: acessar Settings, colar um Access Token MP de sandbox, clicar Salvar
+   - Verificar `is_salon_mp_connected()` retorna `true`
    - Cliente: ver "Pagar pelo app" em ClientPlans.jsx (if `mp_connected`)
    - Cliente: criar preferência → redireciona Checkout Pro
    - Simular pagamento aprovado via webhook (ou MP Simulator)
    - Verificar `client_subscriptions.status = 'active'` + `confirmed_by = 'webhook'`
    - Bloquear overlapping subscriptions do mesmo cliente no mesmo plano (cenário de overlap discovery pós-webhook)
 
+4. **Documentação de setup atualizada**:
+   - `Documentos/mercado_pago_token_setup.md` — instruções de onde pegar o Access Token e como colar nas Settings (substituiu o antigo `mercado_pago_oauth_setup.md`)
+
 **Não commitado** — aguardando confirmação do usuário para prosseguir com setup + deploy.
 
 ## Referências internas
 - `CLAUDE.md` — "Feature em desenvolvimento — Planos de assinatura" (contexto de ciclo de 30 dias, extensibilidade de `client_subscriptions`)
 - `Documentos/mp_marketplace.sql` — migration completa
-- `Documentos/mercado_pago_oauth_setup.md` — instruções de app OAuth (criar se necessário)
-- `app/api/_mpTokens.js` — refresh automático do token do dono
-- `app/api/mp-oauth-start.js`, `mp-oauth-callback.js` — fluxo OAuth
+- `Documentos/mercado_pago_token_setup.md` — instruções de setup (Access Token colado)
 - `app/api/criar-preferencia-plano.js` — criação de preferência com validações
-- `app/api/mp-plano-webhook.js` — webhook idempotente com validações de cross-tenant
+- `app/api/mp-plano-webhook.js` — webhook idempotente com validações de cross-tenant, HMAC
