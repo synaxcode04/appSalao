@@ -38,7 +38,7 @@ function ServicesManager() {
       .from('services')
       .select('*')
       .eq('salon_id', sId)
-      .order('created_at', { ascending: false })
+      .order('name', { ascending: true })
     
     if (data) setServices(data)
   }

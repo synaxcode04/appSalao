@@ -34,7 +34,7 @@ function SalonDetails() {
       .from('services')
       .select('*')
       .eq('salon_id', id)
-      .order('price', { ascending: true })
+      .order('name', { ascending: true })
 
     if (!mounted) return
 

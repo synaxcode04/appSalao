@@ -33,10 +33,17 @@ function ClientsManager() {
       .from('salon_clients')
       .select('id, created_at, is_active, clients ( id, phone, full_name )')
       .eq('salon_id', salonId)
-      .order('created_at', { ascending: false })
+
+    const sorted = (data || []).slice().sort((a, b) => {
+      const nameA = a.clients?.full_name?.trim() || ''
+      const nameB = b.clients?.full_name?.trim() || ''
+      if (!nameA) return 1
+      if (!nameB) return -1
+      return nameA.localeCompare(nameB, 'pt-BR', { sensitivity: 'base' })
+    })
 
     if (mountedRef.value && data) {
-      setClients(data)
+      setClients(sorted)
     }
     if (mountedRef.value) {
       setLoadingList(false)
