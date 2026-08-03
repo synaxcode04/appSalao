@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/|sitemap\\.xml|robots\\.txt|manifest\\.json|googlee79d3a303835907f\\.html|favicon\\.ico|favicon\\.svg|logo\\.png|icons\\.svg|pwa-192x192\\.png|pwa-512x512\\.png|OneSignalSDKWorker\\.js|registerSW\\.js|sw\\.js|workbox-.*\\.js).*)",
+      "source": "/((?!api/|sitemap\\.xml|robots\\.txt|manifest\\.json|googlee79d3a303835907f\\.html|favicon\\.ico|favicon\\.svg|logo\\.png|icons\\.svg|pwa-192x192\\.png|pwa-512x512\\.png|onesignal/.*|registerSW\\.js|sw\\.js|workbox-.*\\.js).*)",
       "destination": "/index.html"
     }
   ]

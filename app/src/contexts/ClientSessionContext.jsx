@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 
 // Exceção aprovada em 2026-08-01: Context de identidade leve do cliente.
 // A regra "sem Context global" do react.md é dispensada exclusivamente para
@@ -36,6 +36,17 @@ export function ClientSessionProvider({ slug, children }) {
     setClientSession(session)
     return session
   }, [slug])
+
+  useEffect(() => {
+    if (!clientSession?.client_id) return
+    window.OneSignalDeferred = window.OneSignalDeferred || []
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        await OneSignal.login(clientSession.client_id)
+      } catch {
+      }
+    })
+  }, [clientSession?.client_id])
 
   const logout = useCallback(() => {
     localStorage.removeItem(storageKey(slug))

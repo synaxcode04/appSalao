@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => ({
       manifest: false,
       devOptions: {
         enabled: true
-      }
+      },
+      workbox: {
+        navigateFallbackDenylist: [/^\/onesignal\//],
+      },
     })
   ].filter(Boolean),
   test: {
