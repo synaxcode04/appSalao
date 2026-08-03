@@ -106,6 +106,7 @@ function validateInput(action, body) {
   // create_review: salon_id, client_id, rating, comment
   // mark_notifications_read: client_id (id opcional)
   // list_notifications: client_id
+  // notify_client: client_id, salon_id, title, message
   // get_salon_contact: salon_id
 
   if (action === 'list_scheduled' || action === 'list_by_client' || action === 'list_history') {
@@ -155,6 +156,13 @@ function validateInput(action, body) {
 
   if (action === 'list_notifications') {
     if (!body.client_id) return 'client_id is required';
+  }
+
+  if (action === 'notify_client') {
+    if (!body.client_id) return 'client_id is required';
+    if (!body.salon_id) return 'salon_id is required';
+    if (!body.title) return 'title is required';
+    if (!body.message) return 'message is required';
   }
 
   if (action === 'get_salon_contact') {
@@ -213,7 +221,9 @@ export default async function handler(req, res) {
     exclude_id,
     plan_id,
     subscription_id,
-    payment_method
+    payment_method,
+    title,
+    message
   } = req.body;
 
   // Validar ação
@@ -228,6 +238,7 @@ export default async function handler(req, res) {
     'create_review',
     'mark_notifications_read',
     'list_notifications',
+    'notify_client',
     'get_salon_contact',
     'get_salon_payment_options',
     'subscribe',
@@ -1403,6 +1414,39 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).json({ subscriptions: data || [] });
+    }
+
+    // ==========================================
+    // AÇÃO: notify_client — inserir notificação para o cliente via service_role
+    // Usado pelo painel do dono (que não tem permissão RLS para inserir com client_id).
+    // ==========================================
+    if (action === 'notify_client') {
+      const { data: clientLink, error: linkError } = await supabase
+        .from('salon_clients')
+        .select('client_id')
+        .eq('salon_id', salon_id)
+        .eq('client_id', client_id)
+        .maybeSingle();
+
+      if (linkError) {
+        console.error('Supabase notify_client salon_clients lookup error:', { salon_id, client_id, error: linkError });
+        return res.status(500).json({ error: 'Erro ao verificar vínculo do cliente' });
+      }
+
+      if (!clientLink) {
+        return res.status(403).json({ error: 'client_id não pertence a este salão' });
+      }
+
+      const { error: notifyError } = await supabase
+        .from('notifications')
+        .insert([{ client_id, salon_id, title, message }]);
+
+      if (notifyError) {
+        console.error('Supabase notify_client insert error:', { client_id, salon_id, error: notifyError });
+        return res.status(500).json({ error: 'Erro ao registrar notificação para o cliente' });
+      }
+
+      return res.status(201).json({ message: 'Notificação registrada' });
     }
   } catch (error) {
     console.error('Unexpected error in appointments handler:', {

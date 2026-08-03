@@ -149,18 +149,27 @@ function DashboardHome() {
     if (!window.confirm('Tem certeza que deseja cancelar este agendamento do cliente?')) return
     setLoading(true)
 
-    await supabase.from('appointments').update({ status: 'canceled' }).eq('id', id)
-    
-    // Notificar cliente
+    const { error: cancelError } = await supabase.from('appointments').update({ status: 'canceled' }).eq('id', id)
+    if (cancelError) {
+      toast.error('Erro ao cancelar agendamento.')
+      setLoading(false)
+      return
+    }
+
     const appt = appointments.find(a => a.id === id)
     if (appt && appt.client_id) {
-      await supabase.from('notifications').insert([{
-        client_id: appt.client_id,
-        salon_id: salon.id,
-        title: 'Agendamento Cancelado',
-        message: `O salão cancelou o seu agendamento de ${appt.services.name}.`
-      }])
-      await sendPushNotification('owner_canceled', appt.client_id, 'Agendamento Cancelado', `O salão cancelou o seu agendamento de ${appt.services.name}.`)
+      const notifyRes = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'notify_client',
+          client_id: appt.client_id,
+          salon_id: salon.id,
+          title: 'Agendamento Cancelado',
+          message: `O salão cancelou o seu agendamento de ${appt.services?.name ?? 'serviço'}.`
+        })
+      })
+      await sendPushNotification('owner_canceled', appt.client_id, 'Agendamento Cancelado', `O salão cancelou o seu agendamento de ${appt.services?.name ?? 'serviço'}.`)
     }
 
     await fetchAppointments()
@@ -172,17 +181,26 @@ function DashboardHome() {
     if (!window.confirm('Marcar este agendamento como concluído?')) return
     setLoading(true)
 
-    await supabase.from('appointments').update({ status: 'completed' }).eq('id', appt.id)
-    
-    // Notificar cliente
+    const { error: completeError } = await supabase.from('appointments').update({ status: 'completed' }).eq('id', appt.id)
+    if (completeError) {
+      toast.error('Erro ao concluir agendamento.')
+      setLoading(false)
+      return
+    }
+
     if (appt.client_id) {
-      await supabase.from('notifications').insert([{
-        client_id: appt.client_id,
-        salon_id: salon.id,
-        title: 'Serviço Concluído',
-        message: `O salão marcou o seu serviço de ${appt.services.name} como concluído.`
-      }])
-      await sendPushNotification('completed_by_owner', appt.client_id, 'Serviço Concluído', `O salão marcou o seu serviço de ${appt.services.name} como concluído.`)
+      const notifyRes = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'notify_client',
+          client_id: appt.client_id,
+          salon_id: salon.id,
+          title: 'Serviço Concluído',
+          message: `O salão marcou o seu serviço de ${appt.services?.name ?? 'serviço'} como concluído.`
+        })
+      })
+      await sendPushNotification('completed_by_owner', appt.client_id, 'Serviço Concluído', `O salão marcou o seu serviço de ${appt.services?.name ?? 'serviço'} como concluído.`)
     }
 
     await fetchAppointments()

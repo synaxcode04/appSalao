@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { supabase } from '../../supabase'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 import { Calendar, Clock, MapPin, XCircle, RefreshCw, Navigation, MessageCircle, User, Bell } from 'lucide-react'
 import BookingEngine from '../../components/BookingEngine'
@@ -37,43 +36,35 @@ function ClientAppointments() {
   }, [clientId, showCanceled])
 
   useEffect(() => {
-    if (clientId) {
-      fetchNotifications()
+    if (!clientId) return
 
-      // Postgres Realtime aceita apenas um filtro de igualdade simples no servidor.
-      // Mantemos o filtro por client_id no servidor e escopamos por salon_id no
-      // cliente, para não exibir notificações de outro salão nesta agenda.
-      const channel = supabase
-        .channel('client-notifications')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `client_id=eq.${clientId}` },
-          (payload) => {
-            if (payload.new.salon_id !== salon.id) return
-            setNotifications(prev => [payload.new, ...prev])
-          }
-        )
-        .subscribe()
+    let mounted = true
 
-      return () => {
-        supabase.removeChannel(channel)
+    const poll = async () => {
+      try {
+        const res = await fetch('/api/appointments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'list_notifications', client_id: clientId })
+        })
+        if (res.ok && mounted) {
+          const data = await res.json()
+          const filtered = (data.notifications || []).filter(n => n.salon_id === salon.id)
+          setNotifications(filtered)
+        }
+      } catch {
+        // falha de rede silenciosa — próximo poll tentará novamente
       }
     }
-  }, [clientId, salon?.id])
 
-  const fetchNotifications = async () => {
-    if (!clientId) return
-    const res = await fetch('/api/appointments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'list_notifications', client_id: clientId })
-    })
-    if (res.ok) {
-      const data = await res.json()
-      const allNotifications = data.notifications || []
-      setNotifications(allNotifications.filter(n => n.salon_id === salon.id))
+    poll()
+    const intervalId = setInterval(poll, 45000)
+
+    return () => {
+      mounted = false
+      clearInterval(intervalId)
     }
-  }
+  }, [clientId, salon?.id])
 
   const unreadCount = notifications.filter(n => !n.is_read).length
 
