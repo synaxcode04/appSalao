@@ -1292,6 +1292,10 @@ export default async function handler(req, res) {
         if (createError.code === '23503') {
           return res.status(400).json({ error: 'Dados da assinatura inválidos' });
         }
+        // 23514: check_violation — valor fora do CHECK (ex: status inválido)
+        if (createError.code === '23514') {
+          return res.status(400).json({ error: 'Status de assinatura inválido' });
+        }
         return res.status(500).json({ error: 'Erro ao criar assinatura' });
       }
 

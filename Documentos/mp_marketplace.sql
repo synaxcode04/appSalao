@@ -186,6 +186,27 @@ BEGIN
 END;
 $$;
 
+-- -----------------------------------------------------------------------------
+-- CORREÇÃO: client_subscriptions_status_check
+--
+-- PROBLEMA: a constraint criada em subscription_plans.sql só permite
+-- status IN ('active', 'canceled'). A integração com o Mercado Pago introduz
+-- o estado 'pending' — assinaturas criadas pela action `subscribe` chegam com
+-- status='pending' até o webhook confirmar o pagamento e transicioná-las para
+-- 'active'. Sem esta correção, todo INSERT com status='pending' viola o CHECK
+-- (Postgres error 23514) e o cliente recebe "Erro ao criar assinatura".
+--
+-- SOLUÇÃO INCREMENTAL: recria a constraint nesta migration sem alterar
+-- subscription_plans.sql (já aplicada em produção). Idempotente: DROP IF EXISTS
+-- garante que re-execução não falha se a constraint original já foi removida.
+-- -----------------------------------------------------------------------------
+ALTER TABLE public.client_subscriptions
+  DROP CONSTRAINT IF EXISTS client_subscriptions_status_check;
+
+ALTER TABLE public.client_subscriptions
+  ADD CONSTRAINT client_subscriptions_status_check
+  CHECK (status IN ('active', 'canceled', 'pending'));
+
 -- Índice para queries frequentes de webhook/reconciliação (buscar por gateway_ref)
 CREATE INDEX IF NOT EXISTS idx_client_subscriptions_gateway_ref
   ON public.client_subscriptions (gateway_ref)
@@ -417,6 +438,17 @@ GRANT EXECUTE ON FUNCTION public.is_salon_mp_connected(UUID) TO authenticated;
 -- [ ] payment_status = 'invalid_value' → erro (CHECK violation).
 -- [ ] payment_method = 'stripe' → erro (CHECK violation).
 -- [ ] confirmed_by = 'admin' → erro (CHECK violation).
+--
+-- client_subscriptions — constraint status corrigida (bug fix desta migration)
+-- ----------------------------------------------------------------------------
+-- [ ] INSERT com status='pending' → sucesso (correção do bug 23514).
+-- [ ] INSERT com status='active'  → sucesso.
+-- [ ] INSERT com status='canceled' → sucesso.
+-- [ ] INSERT com status='suspended' → erro (CHECK violation — valor não permitido).
+-- [ ] Confirmar constraint recriada: SELECT constraint_name FROM
+--     information_schema.table_constraints WHERE table_name = 'client_subscriptions'
+--     AND constraint_name = 'client_subscriptions_status_check';
+--     → Deve retornar 1 linha.
 --
 -- salon_mp_credentials — estrutura simplificada (sem colunas OAuth)
 -- -----------------------------------------------------------------
