@@ -64,6 +64,219 @@ function makeRes() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// AÇÃO: lookup — procura cliente por telefone
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('lookup — procura cliente por telefone', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('cliente não encontrado (telefone inexistente) retorna 404', async () => {
+    const chain = makeChain(null, { code: 'PGRST116', message: 'no rows' })
+
+    vi.mocked(createClient).mockReturnValue({
+      from: () => chain,
+    })
+
+    const req = makeReq({ action: 'lookup', phone: '11999999999' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(404)
+    expect(res.body.error).toBe('Cliente não encontrado')
+    expect(res.body.client).toBeNull()
+  })
+
+  it('cliente encontrado retorna 200 com { client } contendo id, phone, full_name, birth_date, avatar_url, created_at', async () => {
+    const clientData = {
+      id: 'client1',
+      phone: '11999999999',
+      full_name: 'João Silva',
+      birth_date: '1990-05-15',
+      avatar_url: 'https://test.supabase.co/storage/v1/object/public/client-avatars/client1.jpg',
+      created_at: '2026-08-01T10:00:00Z',
+    }
+
+    const chain = makeChain(clientData)
+
+    vi.mocked(createClient).mockReturnValue({
+      from: () => chain,
+    })
+
+    const req = makeReq({ action: 'lookup', phone: '(11) 99999-9999' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.client).toEqual(clientData)
+    // Confirma que o select incluiu todos os campos esperados
+    expect(res.body.client).toHaveProperty('id')
+    expect(res.body.client).toHaveProperty('phone')
+    expect(res.body.client).toHaveProperty('full_name')
+    expect(res.body.client).toHaveProperty('birth_date')
+    expect(res.body.client).toHaveProperty('avatar_url')
+    expect(res.body.client).toHaveProperty('created_at')
+  })
+
+  it('select() chamado com birth_date e avatar_url no lookup', async () => {
+    const clientData = {
+      id: 'client1',
+      phone: '11999999999',
+      full_name: 'Test',
+      birth_date: '1990-01-01',
+      avatar_url: 'https://example.com/avatar.jpg',
+      created_at: '2026-08-01T10:00:00Z',
+    }
+
+    const chain = makeChain(clientData)
+    const selectSpy = vi.spyOn(chain, 'select')
+
+    vi.mocked(createClient).mockReturnValue({
+      from: () => chain,
+    })
+
+    const req = makeReq({ action: 'lookup', phone: '11999999999' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(selectSpy).toHaveBeenCalledWith('id, phone, full_name, birth_date, avatar_url, created_at')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// AÇÃO: create_or_get — UPSERT de cliente
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('create_or_get — UPSERT de cliente', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('cliente já existe retorna 200 { client, created: false } com id, phone, full_name, birth_date, avatar_url, created_at', async () => {
+    const existingClient = {
+      id: 'client1',
+      phone: '11999999999',
+      full_name: 'João Silva',
+      birth_date: '1990-05-15',
+      avatar_url: 'https://test.supabase.co/storage/v1/object/public/client-avatars/client1.jpg',
+      created_at: '2026-08-01T10:00:00Z',
+    }
+
+    const lookupChain = makeChain(existingClient)
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom([lookupChain]),
+    })
+
+    const req = makeReq({
+      action: 'create_or_get',
+      phone: '(11) 99999-9999',
+      full_name: 'João Silva',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.client).toEqual(existingClient)
+    expect(res.body.created).toBe(false)
+    expect(res.body.client).toHaveProperty('birth_date')
+    expect(res.body.client).toHaveProperty('avatar_url')
+  })
+
+  it('cliente não existe, cria novo e retorna 201 { client, created: true } com id, phone, full_name, birth_date, avatar_url, created_at', async () => {
+    const newClient = {
+      id: 'new-client-id',
+      phone: '11999999999',
+      full_name: 'Maria Santos',
+      birth_date: '1992-03-20',
+      avatar_url: null,
+      created_at: '2026-08-03T10:00:00Z',
+    }
+
+    const lookupChain = makeChain(null, { code: 'PGRST116' })
+    const insertChain = makeChain(newClient)
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom([lookupChain, insertChain]),
+    })
+
+    const req = makeReq({
+      action: 'create_or_get',
+      phone: '11999999999',
+      full_name: 'Maria Santos',
+      birth_date: '1992-03-20',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(201)
+    expect(res.body.client).toEqual(newClient)
+    expect(res.body.created).toBe(true)
+    expect(res.body.client).toHaveProperty('birth_date')
+    expect(res.body.client).toHaveProperty('avatar_url')
+  })
+
+  it('lookup select() chamado com birth_date e avatar_url', async () => {
+    const existingClient = {
+      id: 'client1',
+      phone: '11999999999',
+      full_name: 'Test',
+      birth_date: '1990-01-01',
+      avatar_url: 'https://example.com/avatar.jpg',
+      created_at: '2026-08-01T10:00:00Z',
+    }
+
+    const lookupChain = makeChain(existingClient)
+    const selectSpy = vi.spyOn(lookupChain, 'select')
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom([lookupChain]),
+    })
+
+    const req = makeReq({
+      action: 'create_or_get',
+      phone: '11999999999',
+      full_name: 'Test',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(selectSpy).toHaveBeenCalledWith('id, phone, full_name, birth_date, avatar_url, created_at')
+  })
+
+  it('insert select() chamado com birth_date e avatar_url quando cria novo cliente', async () => {
+    const newClient = {
+      id: 'new-id',
+      phone: '11999999999',
+      full_name: 'New User',
+      birth_date: '1995-06-10',
+      avatar_url: null,
+      created_at: '2026-08-03T10:00:00Z',
+    }
+
+    const lookupChain = makeChain(null, { code: 'PGRST116' })
+    const insertChain = makeChain(newClient)
+    const insertSelectSpy = vi.spyOn(insertChain, 'select')
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom([lookupChain, insertChain]),
+    })
+
+    const req = makeReq({
+      action: 'create_or_get',
+      phone: '11999999999',
+      full_name: 'New User',
+      birth_date: '1995-06-10',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(insertSelectSpy).toHaveBeenCalledWith('id, phone, full_name, birth_date, avatar_url, created_at')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
 // AÇÃO: update — edição do perfil do cliente (nome, WhatsApp, nascimento, foto)
 // Contrato: { action:'update', client_id (obrig), current_phone (obrig, prova de
 // posse), full_name?, phone?, birth_date?, avatar_base64? (data URL) }
@@ -96,7 +309,7 @@ describe('update — edição do perfil do cliente', () => {
     expect(res.body.error).toBe('current_phone is required for update action')
   })
 
-  it('current_phone que NÃO bate com o phone do registro retorna 403', async () => {
+  it('current_phone que NÃO bata com o phone do registro retorna 403', async () => {
     // Guarda de posse: cliente existe, mas o telefone informado não confere.
     const guardChain = makeChain({ phone: '11999999999' })
 
@@ -138,7 +351,7 @@ describe('update — edição do perfil do cliente', () => {
     expect(res.body.error).toBe('Cliente não encontrado')
   })
 
-  it('válido (current_phone bate) com apenas full_name chama UPDATE com { full_name } e retorna 200 { client }', async () => {
+  it('válido (current_phone bata) com apenas full_name chama UPDATE com { full_name } e retorna 200 { client }', async () => {
     const updatedClient = {
       id: 'client1',
       phone: '11999999999',
@@ -251,6 +464,44 @@ describe('update — edição do perfil do cliente', () => {
     expect(getPublicUrlMock).toHaveBeenCalledWith('client1.jpg')
     expect(updatePayload).toEqual({ avatar_url: publicUrl })
     expect(res.body.client.avatar_url).toBe(publicUrl)
+  })
+
+  it('birth_date: null passa pela validação e chama UPDATE com { birth_date: null } para limpar o campo', async () => {
+    const updatedClient = {
+      id: 'client1',
+      phone: '11999999999',
+      full_name: 'João Silva',
+      birth_date: null,
+      avatar_url: null,
+    }
+
+    const guardChain = makeChain({ phone: '11999999999' })
+    let updatePayload = null
+    const updateChain = makeChain(updatedClient)
+    updateChain.update = vi.fn((payload) => {
+      updatePayload = payload
+      return updateChain
+    })
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom([guardChain, updateChain]),
+    })
+
+    // Requisição com birth_date: null como único campo editável (além do obrigatório current_phone).
+    const req = makeReq({
+      action: 'update',
+      client_id: 'client1',
+      current_phone: '11999999999',
+      birth_date: null,
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.client).toEqual(updatedClient)
+    // O UPDATE deve conter { birth_date: null }.
+    expect(updatePayload).toEqual({ birth_date: null })
+    expect(updateChain.eq).toHaveBeenCalledWith('id', 'client1')
   })
 })
 

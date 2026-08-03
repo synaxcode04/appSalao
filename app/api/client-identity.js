@@ -68,8 +68,10 @@ function validateInput(action, body) {
     if (!body.current_phone) {
       return 'current_phone is required for update action';
     }
-    // Valida que pelo menos um campo editável foi fornecido
-    if (!body.full_name && !body.phone && !body.birth_date && !body.avatar_base64) {
+    // Valida que pelo menos um campo editável foi fornecido.
+    // Usa presença de chave no body ('key' in body), não truthiness do valor,
+    // para permitir limpar birth_date (null ou "").
+    if (!body.full_name && !body.phone && !('birth_date' in body) && !body.avatar_base64) {
       return 'At least one editable field must be provided (full_name, phone, birth_date, or avatar_base64)';
     }
   }
@@ -177,7 +179,7 @@ export default async function handler(req, res) {
     if (action === 'lookup') {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, phone, full_name, created_at')
+        .select('id, phone, full_name, birth_date, avatar_url, created_at')
         .eq('phone', normalizedPhone)
         .single(); // Uma linha ou nenhuma
 
@@ -202,7 +204,7 @@ export default async function handler(req, res) {
       // Primeiro, tenta buscar o cliente existente
       const { data: existing } = await supabase
         .from('clients')
-        .select('id, phone, full_name, created_at')
+        .select('id, phone, full_name, birth_date, avatar_url, created_at')
         .eq('phone', normalizedPhone)
         .single();
 
@@ -219,7 +221,7 @@ export default async function handler(req, res) {
           full_name: full_name.trim(),
           ...(birth_date ? { birth_date } : {})
         })
-        .select('id, phone, full_name, created_at')
+        .select('id, phone, full_name, birth_date, avatar_url, created_at')
         .single();
 
       if (createError) {
@@ -363,7 +365,7 @@ export default async function handler(req, res) {
     // ==========================================
     if (action === 'update') {
       // GUARDA DE AUTORIZAÇÃO: Prova de posse por telefone
-      // Busca o cliente e valida se current_phone bate com o telefone atual
+      // Busca o cliente e valida se current_phone bata com o telefone atual
       const { data: client, error: clientError } = await supabase
         .from('clients')
         .select('phone')
@@ -384,7 +386,7 @@ export default async function handler(req, res) {
       // Validar current_phone: normalizar e comparar com phone atual do cliente
       const normalizedCurrentPhone = normalizePhone(current_phone);
       if (normalizedCurrentPhone !== client.phone) {
-        // Telefone não bate — sem permissão
+        // Telefone não bata — sem permissão
         return res.status(403).json({ error: 'Sem permissão' });
       }
 
@@ -469,7 +471,9 @@ export default async function handler(req, res) {
         }
       }
 
-      // Montar objeto de UPDATE apenas com campos presentes
+      // Montar objeto de UPDATE apenas com campos presentes.
+      // Para birth_date, usar presença da chave ('birth_date' in req.body), não truthiness,
+      // para permitir limpar (null ou "") o campo. Converte "" para null.
       const updateObject = {};
       if (full_name) {
         updateObject.full_name = full_name.trim();
@@ -477,8 +481,8 @@ export default async function handler(req, res) {
       if (normalizedUpdatePhone) {
         updateObject.phone = normalizedUpdatePhone;
       }
-      if (birth_date) {
-        updateObject.birth_date = birth_date;
+      if ('birth_date' in req.body) {
+        updateObject.birth_date = birth_date || null;
       }
       if (avatarUrl) {
         updateObject.avatar_url = avatarUrl;

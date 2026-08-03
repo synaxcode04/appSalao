@@ -18,6 +18,9 @@ export function ClientSessionProvider({ slug, children }) {
     }
   })
 
+  // A sessão inicial gravada aqui contém apenas { client_id, phone, full_name }.
+  // Os campos birth_date e avatar_url são preenchidos progressivamente via
+  // updateSession — chamado no mount do ClientProfile (lookup) e após salvar o perfil.
   const loginByPhone = useCallback(async (phone, full_name, salon_id) => {
     const res = await fetch('/api/client-identity', {
       method: 'POST',

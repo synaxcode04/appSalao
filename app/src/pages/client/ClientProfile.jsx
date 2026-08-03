@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { LogOut, User, Upload } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -46,6 +46,36 @@ function ClientProfile() {
   const [avatarDataUrl, setAvatarDataUrl] = useState(null)
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    if (!clientSession?.phone) return
+    let mounted = true
+    fetch('/api/client-identity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lookup', phone: clientSession.phone }),
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!mounted || !data?.client) return
+        updateSession({
+          full_name: data.client.full_name,
+          birth_date: data.client.birth_date || '',
+          avatar_url: data.client.avatar_url || null,
+        })
+        setFullName(data.client.full_name || '')
+        setBirthDate(data.client.birth_date || '')
+        setAvatarPreview(data.client.avatar_url || null)
+      })
+      .catch(() => {})
+    return () => { mounted = false }
+  }, [clientSession?.phone])
+
+  const hasChanges =
+    fullName !== (clientSession?.full_name || '') ||
+    phone !== (clientSession?.phone || '') ||
+    birthDate !== (clientSession?.birth_date || '') ||
+    !!avatarDataUrl
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0]
@@ -217,7 +247,7 @@ function ClientProfile() {
         <button
           type="submit"
           className="btn-primary"
-          disabled={saving}
+          disabled={saving || !hasChanges}
           style={{ width: '100%', marginBottom: '1.5rem' }}
         >
           {saving ? 'Salvando...' : 'Salvar'}

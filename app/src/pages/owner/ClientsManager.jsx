@@ -207,7 +207,6 @@ function ClientsManager() {
             placeholder="Data de nascimento"
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
-            required
           />
           <button type="submit" disabled={submitting} className="btn-primary">
             <UserPlus size={18} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
