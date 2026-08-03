@@ -61,6 +61,19 @@ function validateInput(action, body) {
     }
   }
 
+  if (action === 'update') {
+    if (!body.client_id) {
+      return 'client_id is required';
+    }
+    if (!body.current_phone) {
+      return 'current_phone is required for update action';
+    }
+    // Valida que pelo menos um campo editável foi fornecido
+    if (!body.full_name && !body.phone && !body.birth_date && !body.avatar_base64) {
+      return 'At least one editable field must be provided (full_name, phone, birth_date, or avatar_base64)';
+    }
+  }
+
   return null;
 }
 
@@ -70,10 +83,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { action, phone, full_name, birth_date, salon_id, client_id, is_active } = req.body;
+  const { action, phone, full_name, birth_date, salon_id, client_id, is_active, avatar_base64, avatar_ext, current_phone } = req.body;
 
   // Validar ação
-  if (!action || !['lookup', 'create_or_get', 'link_to_salon', 'toggle_active', 'check_active'].includes(action)) {
+  if (!action || !['lookup', 'create_or_get', 'link_to_salon', 'toggle_active', 'check_active', 'update'].includes(action)) {
     return res.status(400).json({ error: 'Invalid or missing action' });
   }
 
@@ -343,6 +356,156 @@ export default async function handler(req, res) {
       const blocked = link ? link.is_active === false : false;
 
       return res.status(200).json({ blocked });
+    }
+
+    // ==========================================
+    // AÇÃO: update — edita perfil do cliente
+    // ==========================================
+    if (action === 'update') {
+      // GUARDA DE AUTORIZAÇÃO: Prova de posse por telefone
+      // Busca o cliente e valida se current_phone bate com o telefone atual
+      const { data: client, error: clientError } = await supabase
+        .from('clients')
+        .select('phone')
+        .eq('id', client_id)
+        .single();
+
+      // Se cliente não existe ou erro no banco
+      if (clientError && clientError.code !== 'PGRST116') {
+        console.error('Supabase client lookup error (update guard):', { client_id, error: clientError });
+        return res.status(500).json({ error: 'Erro ao verificar cliente' });
+      }
+
+      if (!client) {
+        // Cliente não encontrado
+        return res.status(404).json({ error: 'Cliente não encontrado' });
+      }
+
+      // Validar current_phone: normalizar e comparar com phone atual do cliente
+      const normalizedCurrentPhone = normalizePhone(current_phone);
+      if (normalizedCurrentPhone !== client.phone) {
+        // Telefone não bate — sem permissão
+        return res.status(403).json({ error: 'Sem permissão' });
+      }
+
+      // Se telefone foi enviado para atualizar: normalizar e validar unicidade
+      let normalizedUpdatePhone = null;
+      if (phone) {
+        normalizedUpdatePhone = normalizePhone(phone);
+        if (!normalizedUpdatePhone) {
+          return res.status(400).json({ error: 'Invalid phone format' });
+        }
+
+        // Verificar se o novo telefone já pertence a OUTRO cliente
+        const { data: existingClientWithPhone, error: checkPhoneError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('phone', normalizedUpdatePhone)
+          .single();
+
+        // Se erro PGRST116, nenhum cliente com esse phone (ok).
+        // Se outro erro, retorna 500.
+        if (checkPhoneError && checkPhoneError.code !== 'PGRST116') {
+          console.error('Supabase phone uniqueness check error:', { client_id, error: checkPhoneError });
+          return res.status(500).json({ error: 'Erro ao verificar telefone' });
+        }
+
+        // Se existe cliente com esse phone e NÃO é o cliente atual, conflito
+        if (existingClientWithPhone && existingClientWithPhone.id !== client_id) {
+          return res.status(409).json({ error: 'Telefone já está em uso por outro cliente' });
+        }
+      }
+
+      // Se avatar foi enviado: fazer upload no Storage e obter URL pública
+      let avatarUrl = null;
+      if (avatar_base64) {
+        try {
+          // Extrair parte base64 após a vírgula se for data URL
+          // Exemplo: "data:image/jpeg;base64,/9j/..." → "/9j/..."
+          const rawBase64 = avatar_base64.includes(',') ? avatar_base64.split(',')[1] : avatar_base64;
+
+          // Decodificar base64 para Buffer
+          const buffer = Buffer.from(rawBase64, 'base64');
+
+          // Derivar extensão: extrair mime-type do prefixo data URL quando presente
+          let ext = avatar_ext || 'jpg';
+          if (avatar_base64.includes(',')) {
+            // Prefixo: "data:image/TYPE;base64" ou "data:image/TYPE"
+            const mimeMatch = avatar_base64.match(/^data:image\/([a-zA-Z0-9+\-\.]*)/);
+            if (mimeMatch && mimeMatch[1]) {
+              ext = mimeMatch[1];
+              // Normalizar "jpeg" → "jpg"
+              if (ext === 'jpeg') {
+                ext = 'jpg';
+              }
+            }
+          }
+
+          // Caminho no bucket: {client_id}.{ext}
+          // upsert: true = sobrescreve se já existe
+          const filePath = `${client_id}.${ext}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('client-avatars')
+            .upload(filePath, buffer, {
+              contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+              upsert: true
+            });
+
+          if (uploadError) {
+            console.error('Supabase storage upload error:', { client_id, error: uploadError });
+            return res.status(500).json({ error: 'Erro ao fazer upload da foto' });
+          }
+
+          // Obter URL pública do arquivo
+          const { data: publicUrlData } = supabase.storage
+            .from('client-avatars')
+            .getPublicUrl(filePath);
+
+          avatarUrl = publicUrlData.publicUrl;
+        } catch (parseError) {
+          console.error('Avatar base64 parsing error:', { client_id, message: parseError.message });
+          return res.status(400).json({ error: 'Invalid avatar_base64 format' });
+        }
+      }
+
+      // Montar objeto de UPDATE apenas com campos presentes
+      const updateObject = {};
+      if (full_name) {
+        updateObject.full_name = full_name.trim();
+      }
+      if (normalizedUpdatePhone) {
+        updateObject.phone = normalizedUpdatePhone;
+      }
+      if (birth_date) {
+        updateObject.birth_date = birth_date;
+      }
+      if (avatarUrl) {
+        updateObject.avatar_url = avatarUrl;
+      }
+
+      // Executar UPDATE
+      const { data: updated, error: updateError } = await supabase
+        .from('clients')
+        .update(updateObject)
+        .eq('id', client_id)
+        .select('id, phone, full_name, birth_date, avatar_url')
+        .single();
+
+      if (updateError) {
+        // PGRST116 = cliente não encontrado
+        if (updateError.code === 'PGRST116') {
+          return res.status(404).json({ error: 'Cliente não encontrado' });
+        }
+        console.error('Supabase update client error:', { client_id, error: updateError });
+        return res.status(500).json({ error: 'Erro ao atualizar cliente' });
+      }
+
+      if (!updated) {
+        return res.status(404).json({ error: 'Cliente não encontrado' });
+      }
+
+      return res.status(200).json({ client: updated });
     }
   } catch (error) {
     console.error('Unexpected error in client-identity handler:', {

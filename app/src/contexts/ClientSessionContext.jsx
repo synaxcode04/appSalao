@@ -48,13 +48,21 @@ export function ClientSessionProvider({ slug, children }) {
     })
   }, [clientSession?.client_id])
 
+  const updateSession = useCallback((patch) => {
+    setClientSession(prev => {
+      const next = { ...prev, ...patch }
+      localStorage.setItem(storageKey(slug), JSON.stringify(next))
+      return next
+    })
+  }, [slug])
+
   const logout = useCallback(() => {
     localStorage.removeItem(storageKey(slug))
     setClientSession(null)
   }, [slug])
 
   return (
-    <ClientSessionContext.Provider value={{ clientSession, loginByPhone, logout }}>
+    <ClientSessionContext.Provider value={{ clientSession, loginByPhone, updateSession, logout }}>
       {children}
     </ClientSessionContext.Provider>
   )
