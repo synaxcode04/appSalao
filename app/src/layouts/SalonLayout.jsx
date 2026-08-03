@@ -124,16 +124,27 @@ function SalonLayout() {
     }
     appleTitleMeta.content = salon.name
 
-    const existingManifests = document.querySelectorAll('link[rel="manifest"]')
-    existingManifests.forEach(link => link.remove())
-
-    const manifestLink = document.createElement('link')
-    manifestLink.rel = 'manifest'
-    manifestLink.href = `/api/manifest?slug=${slug}`
-    document.head.appendChild(manifestLink)
+    // Substitui o href do manifest existente (ID "main-manifest") em vez de remover/recriar.
+    // Isso preserva a instalação das rotas raiz (dono, admin) enquanto sobrescreve
+    // dinamicamente o manifest para o contexto do cliente em /s/:slug.
+    const mainManifest = document.getElementById('main-manifest')
+    if (mainManifest) {
+      mainManifest.href = `/api/manifest?slug=${slug}`
+    } else {
+      // Fallback: se por algum motivo o elemento não existir, cria um novo
+      const manifestLink = document.createElement('link')
+      manifestLink.rel = 'manifest'
+      manifestLink.id = 'main-manifest'
+      manifestLink.href = `/api/manifest?slug=${slug}`
+      document.head.appendChild(manifestLink)
+    }
 
     return () => {
-      if (manifestLink.parentNode) manifestLink.parentNode.removeChild(manifestLink)
+      // Restaura o manifest estático ao sair do SalonLayout
+      const mainManifest = document.getElementById('main-manifest')
+      if (mainManifest) {
+        mainManifest.href = '/manifest.webmanifest'
+      }
     }
   }, [salon, slug])
 

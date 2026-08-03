@@ -329,7 +329,7 @@ export default async function handler(req, res) {
 
       const { data, error } = await supabase
         .from('appointments')
-        .select('id, salon_id, service_id, professional_id, appointment_date, start_time, end_time, status, services(id, name, duration_minutes, price), professionals(id, name), appointment_services(service_id, services(id, name, duration_minutes, price))')
+        .select('id, salon_id, service_id, professional_id, appointment_date, start_time, end_time, status, services(id, name, duration_minutes, price), professionals(id, name), appointment_services(service_id, services(id, name, duration_minutes, price)), salons(id, name, logo_url, address)')
         .eq('client_id', client_id)
         .eq('salon_id', salon_id)
         .gte('appointment_date', limitDateStr)

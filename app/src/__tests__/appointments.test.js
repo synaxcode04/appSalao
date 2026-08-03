@@ -625,3 +625,79 @@ describe('cancel_subscription — exige salon_id e valida que a assinatura perte
     expect(res.body.subscription.status).toBe('canceled')
   })
 })
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Regressão: list_by_client deve incluir salons no select
+// (bug: appt.salons era undefined, causando crash na Agenda do cliente)
+// ──────────────────────────────────────────────────────────────────────────────
+describe('list_by_client — retorna campo salons para evitar crash na Agenda', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('responde 200 com appointments contendo o objeto salons', async () => {
+    const appointmentWithSalon = {
+      id: 'appt-1',
+      salon_id: 'salon1',
+      appointment_date: '2026-08-10',
+      start_time: '10:00:00',
+      end_time: '11:00:00',
+      status: 'scheduled',
+      services: { id: 'svc1', name: 'Corte', duration_minutes: 60, price: 50 },
+      professionals: { id: 'pro1', name: 'João' },
+      appointment_services: [],
+      salons: { id: 'salon1', name: 'Salão Teste', logo_url: null, address: 'Rua X, 10' },
+    }
+
+    const linkChain = makeChain({ is_active: true })
+    const appointmentsChain = makeChain([appointmentWithSalon])
+
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'salon_clients') return linkChain
+        if (table === 'appointments') return appointmentsChain
+        return makeChain(null)
+      },
+    })
+
+    const req = makeReq({
+      action: 'list_by_client',
+      salon_id: 'salon1',
+      client_id: 'client1',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.appointments).toHaveLength(1)
+    // garante que salons está presente — sem ele a UI lança TypeError
+    expect(res.body.appointments[0].salons).toBeDefined()
+    expect(res.body.appointments[0].salons.name).toBe('Salão Teste')
+    expect(res.body.appointments[0].salons.address).toBe('Rua X, 10')
+  })
+
+  it('inclui salons no .select() — chamada Supabase contém "salons("', async () => {
+    const linkChain = makeChain({ is_active: true })
+    const appointmentsChain = makeChain([])
+
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'salon_clients') return linkChain
+        if (table === 'appointments') return appointmentsChain
+        return makeChain(null)
+      },
+    })
+
+    const req = makeReq({
+      action: 'list_by_client',
+      salon_id: 'salon1',
+      client_id: 'client1',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    // verifica que select foi chamado com o join de salons
+    const selectCall = appointmentsChain.select.mock.calls[0]?.[0] ?? ''
+    expect(selectCall).toContain('salons(')
+  })
+})

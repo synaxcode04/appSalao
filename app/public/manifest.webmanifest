@@ -1,0 +1,21 @@
+{
+  "name": "appSalão",
+  "short_name": "appSalão",
+  "description": "Sistema de agendamento online para salão de beleza. Receba agendamentos 24h por um link exclusivo, sem conflito de horário.",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

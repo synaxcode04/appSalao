@@ -9,28 +9,9 @@ export default defineConfig(({ mode }) => ({
     mode !== 'test' && basicSsl(),
     mode !== 'test' && VitePWA({
       registerType: 'autoUpdate',
+      manifest: false,
       devOptions: {
         enabled: true
-      },
-      manifest: {
-        name: 'appSalão',
-        short_name: 'appSalão',
-        description: 'Agendamento de salão',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
-        display: 'standalone',
-        icons: [
-          {
-            src: '/pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
       }
     })
   ].filter(Boolean),
