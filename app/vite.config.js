@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => ({
         enabled: true
       },
       workbox: {
-        navigateFallbackDenylist: [/^\/onesignal\//],
+        navigateFallbackDenylist: [/^\/onesignal\//, /^\/OneSignalSDKWorker\.js$/],
       },
     })
   ].filter(Boolean),
