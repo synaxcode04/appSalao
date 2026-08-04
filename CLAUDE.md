@@ -165,6 +165,7 @@ npm run preview
 - Avaliação/nota do salão na página pública de captação (prova social)
 - Bloqueio de horário avulso pelo profissional (folga pontual) sem editar o cadastro de working hours
 - Lista de espera: oferece automaticamente o horário liberado ao próximo cliente na fila
+- Lembrete de agendamento do dia via push (registrado em 2026-08-04): notificar o cliente automaticamente quando virar o dia do agendamento (ex: "você tem um horário hoje às 14h"). Diferente do item de WhatsApp acima — seria push via OneSignal (canal já existente no app), não WhatsApp. Exigiria: um 9º evento de notificação (`notify.js`) + um job agendado (ex: Vercel Cron, 1x/dia) que busca os agendamentos do dia e dispara o push para cada cliente.
 
 ## Feature em desenvolvimento — Planos de assinatura
 > Decidido em 2026-08-01. Feature "Cadastro de planos de assinatura". Tabelas do modelo de dados (migration em paralelo): `subscription_plans`, `subscription_plan_services`, `client_subscriptions`.

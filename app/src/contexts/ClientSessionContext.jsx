@@ -43,12 +43,29 @@ export function ClientSessionProvider({ slug, children }) {
   useEffect(() => {
     if (!clientSession?.client_id) return
     window.OneSignalDeferred = window.OneSignalDeferred || []
+
+    let removePushListener = null;
+
     window.OneSignalDeferred.push(async function(OneSignal) {
       try {
         await OneSignal.login(clientSession.client_id)
+        const handler = async (event) => {
+          const cur = event?.current ?? event
+          if (cur?.optedIn && (cur?.token || cur?.id)) {
+            await OneSignal.login(clientSession.client_id)
+          }
+        }
+        OneSignal.User.PushSubscription.addEventListener('change', handler)
+        removePushListener = () => {
+          OneSignal.User.PushSubscription.removeEventListener('change', handler)
+        }
       } catch {
       }
     })
+
+    return () => {
+      if (removePushListener) removePushListener()
+    }
   }, [clientSession?.client_id])
 
   const updateSession = useCallback((patch) => {

@@ -175,6 +175,16 @@ npm run test:run  # testes (Vitest) — exit 0 é critério de conclusão
 - Nunca usar `console.log` em código de produção.
 - Nunca conceder escrita de assinatura ao cliente via RLS/`auth.uid()` — assinar e cancelar plano do lado do cliente vai por Vercel Function `service_role` (coerente com a sessão leve do cliente, que tem `auth.uid()` sempre NULL). Escrita do dono continua via Supabase client com sessão Auth real.
 
+## Ideias de features futuras (benchmarking concorrência)
+> Registrado em 2026-07-11, a partir de comparação com Trinks/Belasis/Booksy. Não implementar sem passar pela decisão explícita do usuário.
+- Lembrete e confirmação automática de agendamento via WhatsApp (reduz no-show — dor nº1 do segmento)
+- ~~Pacote de sessões / assinatura para cliente recorrente (ex: "4 cortes", debitado a cada agendamento)~~ → **EM DESENVOLVIMENTO** (2026-08-01, "Cadastro de planos de assinatura") — ver seção "Feature em desenvolvimento — Planos de assinatura" abaixo.
+- Cálculo automático de comissão por profissional (base para pagamento)
+- Avaliação/nota do salão na página pública de captação (prova social)
+- Bloqueio de horário avulso pelo profissional (folga pontual) sem editar o cadastro de working hours
+- Lista de espera: oferece automaticamente o horário liberado ao próximo cliente na fila
+- Lembrete de agendamento do dia via push (registrado em 2026-08-04): notificar o cliente automaticamente quando virar o dia do agendamento (ex: "você tem um horário hoje às 14h"). Diferente do item de WhatsApp acima — seria push via OneSignal (canal já existente no app), não WhatsApp. Exigiria: um 9º evento de notificação (`notify.js`) + um job agendado (ex: Vercel Cron, 1x/dia) que busca os agendamentos do dia e dispara o push para cada cliente.
+
 ## Feature em desenvolvimento — Planos de assinatura
 > Decidido em 2026-08-01. Feature "Cadastro de planos de assinatura". Saiu de ideia futura para desenvolvimento. Tabelas do modelo de dados (migration em paralelo): `subscription_plans`, `subscription_plan_services`, `client_subscriptions`.
 1. **Sem integração de pagamento por ora** — "assinar" é registro administrativo. Integração com a API do Mercado Pago fica para uma feature futura SEPARADA. A tabela `client_subscriptions` foi desenhada própria justamente para acomodar um futuro `payment_status`/`gateway_ref` via `ADD COLUMN`, sem redesenho — mas esses campos NÃO existem agora.

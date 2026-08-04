@@ -36,6 +36,22 @@ function LegacySalonRedirect() {
 function App() {
   useEffect(() => {
     let authSubscription;
+    let removePushListener = null;
+
+    const attachPushListener = (OneSignal, userId) => {
+      if (removePushListener) removePushListener();
+      const handler = async (event) => {
+        const cur = event?.current ?? event;
+        if (cur?.optedIn && (cur?.token || cur?.id)) {
+          await OneSignal.login(userId);
+        }
+      };
+      OneSignal.User.PushSubscription.addEventListener('change', handler);
+      removePushListener = () => {
+        OneSignal.User.PushSubscription.removeEventListener('change', handler);
+        removePushListener = null;
+      };
+    };
 
     const linkOneSignal = async () => {
       try {
@@ -46,14 +62,17 @@ function App() {
         if (session?.user) {
           window.OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.login(session.user.id);
+            attachPushListener(OneSignal, session.user.id);
           });
         }
 
-        const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        const { data } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
           window.OneSignalDeferred.push(async function(OneSignal) {
-            if (session?.user) {
-              await OneSignal.login(session.user.id);
+            if (newSession?.user) {
+              await OneSignal.login(newSession.user.id);
+              attachPushListener(OneSignal, newSession.user.id);
             } else {
+              if (removePushListener) removePushListener();
               await OneSignal.logout();
             }
           });
@@ -68,6 +87,7 @@ function App() {
 
     return () => {
       authSubscription?.unsubscribe();
+      if (removePushListener) removePushListener();
     };
   }, []);
 

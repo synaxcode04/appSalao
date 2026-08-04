@@ -157,6 +157,7 @@ function ClientProfile() {
         await new Promise(r => setTimeout(r, 1500))
         const token = OneSignal.User?.PushSubscription?.token || OneSignal.User?.PushSubscription?.id
         if (token) {
+          await OneSignal.login(clientSession.client_id)
           toast.success('Notificações ativadas com sucesso!')
         } else {
           toast.error('Permissão concedida, mas token push não foi gerado. Feche o app, reabra e tente novamente.')
