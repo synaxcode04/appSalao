@@ -269,7 +269,30 @@
 
   /* Adicionar espaço no fim do conteúdo para a barra não cobrir nada */
   .dashboard-content {
-    padding-bottom: 80px; 
+    padding-bottom: 80px;
+  }
+
+  /* Agenda: "fura" o padding lateral de 2rem do .dashboard-content só nesta
+     página, para a timeline usar quase toda a largura do viewport no mobile.
+     O texto de header/seletor recebe padding de volta para não colar na borda. */
+  .agenda-page {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+  }
+
+  .agenda-page .agenda-header,
+  .agenda-page .week-selector,
+  .agenda-page .aviso-banner {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Menos altura reservada no mobile (top bar + header + seletor + bottom nav). */
+  .agenda-page .timeline-wrap {
+    max-height: calc(100dvh - 300px);
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
   }
 
   .hide-on-mobile {
@@ -859,6 +882,11 @@
 .timeline-wrap {
   width: 100%;
   overflow-x: auto;
+  overflow-y: auto;
+  /* Só a grade de horas rola; header/seletor ficam fora deste container.
+     dvh lida melhor com a barra de endereço do mobile que vh. */
+  max-height: calc(100vh - 240px);
+  max-height: calc(100dvh - 240px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface-color);
@@ -951,13 +979,23 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
+.tl-appt-head {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  overflow: hidden;
+}
+
 .tl-appt-time {
+  flex: 0 0 auto;
   font-size: 0.68rem;
   font-weight: bold;
   color: var(--dark-green);
 }
 
 .tl-appt-client {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-primary);

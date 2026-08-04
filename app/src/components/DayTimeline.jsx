@@ -1,6 +1,6 @@
 import React from 'react'
 
-const HOUR_HEIGHT = 64 // px por hora
+const HOUR_HEIGHT = 46 // px por hora
 const SNAP_MIN = 30 // granularidade do clique em vaga vazia
 const NONE_COL = '__none__'
 
@@ -73,7 +73,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
   const posStyle = (blockStart, blockEnd) => {
     const top = ((timeToMinutes(blockStart) - startMin) / 60) * HOUR_HEIGHT
     const rawHeight = ((timeToMinutes(blockEnd) - timeToMinutes(blockStart)) / 60) * HOUR_HEIGHT
-    return { top: `${top}px`, height: `${Math.max(rawHeight, 22)}px` }
+    return { top: `${top}px`, height: `${Math.max(rawHeight, 36)}px` }
   }
 
   const handleColumnClick = (e, colId) => {
@@ -162,8 +162,10 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
                     style={posStyle(appt.start_time, appt.end_time)}
                     onClick={(e) => { e.stopPropagation(); onAppointmentClick(appt) }}
                   >
-                    <span className="tl-appt-time">{appt.start_time.substring(0, 5)}</span>
-                    <span className="tl-appt-client">{appt.clients?.full_name || 'Cliente'}</span>
+                    <div className="tl-appt-head">
+                      <span className="tl-appt-time">{appt.start_time.substring(0, 5)}</span>
+                      <span className="tl-appt-client">{appt.clients?.full_name || 'Cliente'}</span>
+                    </div>
                     <span className="tl-appt-service">{appt.services?.name || ''}</span>
                   </div>
                 ))}
