@@ -98,21 +98,62 @@ function OwnerLayout() {
     <div className="dashboard-layout">
       {/* Sidebar Menu */}
       <aside className="sidebar">
-        <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {salon?.logo_url ? (
-            <img 
-              src={salon.logo_url} 
-              alt="Logo do Salão" 
-              style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} 
-            />
-          ) : (
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dark-green)', fontWeight: 'bold' }}>
-              {salon?.name ? salon.name.charAt(0).toUpperCase() : 'S'}
+        <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0 }}>
+            {salon?.logo_url ? (
+              <img
+                src={salon.logo_url}
+                alt="Logo do Salão"
+                style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dark-green)', fontWeight: 'bold', flexShrink: 0 }}>
+                {salon?.name ? salon.name.charAt(0).toUpperCase() : 'S'}
+              </div>
+            )}
+            <h2 className="sidebar-logo" style={{ fontSize: '1.2rem' }}>
+              {salon?.name || 'SalãoAdmin'}
+            </h2>
+          </div>
+
+          {/* Sino de notificações */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{ position: 'relative', cursor: 'pointer', display: 'flex' }} onClick={() => setShowNotifications(!showNotifications)}>
+              <Bell size={24} color="var(--text-secondary)" />
+              {unreadCount > 0 && (
+                <span style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#ef4444', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>
+                  {unreadCount}
+                </span>
+              )}
             </div>
-          )}
-          <h2 className="sidebar-logo" style={{ fontSize: '1.2rem' }}>
-            {salon?.name || 'SalãoAdmin'}
-          </h2>
+
+            {/* Dropdown Notificações */}
+            {showNotifications && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, width: '320px', maxWidth: '90vw', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 1000, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Notificações</h3>
+                  {unreadCount > 0 && (
+                    <button onClick={markAllAsRead} style={{ background: 'none', border: 'none', color: 'var(--primary-green)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>
+                      Marcar lidas
+                    </button>
+                  )}
+                </div>
+                <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nenhuma notificação.</div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} onClick={() => !n.is_read && markAsRead(n.id)} style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', backgroundColor: n.is_read ? '#fff' : '#f0fdf4', cursor: n.is_read ? 'default' : 'pointer', transition: 'background 0.2s' }}>
+                        <p style={{ margin: '0 0 0.3rem 0', fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{n.title}</p>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{n.message}</p>
+                        <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>{new Date(n.created_at).toLocaleString()}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         <nav className="sidebar-nav">
@@ -186,45 +227,6 @@ function OwnerLayout() {
 
       {/* Main Content Area */}
       <main className="dashboard-content" style={{ display: 'flex', flexDirection: 'column' }}>
-        {/* Top Bar for Notifications */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem', borderBottom: '1px solid var(--border-color)', backgroundColor: '#fff', position: 'relative' }}>
-          <div style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setShowNotifications(!showNotifications)}>
-            <Bell size={24} color="var(--text-secondary)" />
-            {unreadCount > 0 && (
-              <span style={{ position: 'absolute', top: '-5px', right: '-5px', backgroundColor: '#ef4444', color: '#fff', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                {unreadCount}
-              </span>
-            )}
-          </div>
-          
-          {/* Dropdown Notificações */}
-          {showNotifications && (
-            <div style={{ position: 'absolute', top: '60px', right: '1rem', width: '320px', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', zIndex: 100, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-              <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
-                <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Notificações</h3>
-                {unreadCount > 0 && (
-                  <button onClick={markAllAsRead} style={{ background: 'none', border: 'none', color: 'var(--primary-green)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 'bold' }}>
-                    Marcar lidas
-                  </button>
-                )}
-              </div>
-              <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                {notifications.length === 0 ? (
-                  <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nenhuma notificação.</div>
-                ) : (
-                  notifications.map(n => (
-                    <div key={n.id} onClick={() => !n.is_read && markAsRead(n.id)} style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', backgroundColor: n.is_read ? '#fff' : '#f0fdf4', cursor: n.is_read ? 'default' : 'pointer', transition: 'background 0.2s' }}>
-                      <p style={{ margin: '0 0 0.3rem 0', fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-primary)' }}>{n.title}</p>
-                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{n.message}</p>
-                      <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.75rem', color: '#94a3b8' }}>{new Date(n.created_at).toLocaleString()}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {(salon?.status === 'expired' || (salon?.subscription_expires_at && new Date(salon.subscription_expires_at) < new Date())) ? (
             <SuspendedScreen variant="owner" />

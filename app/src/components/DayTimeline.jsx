@@ -1,6 +1,7 @@
 import React from 'react'
 
-const HOUR_HEIGHT = 46 // px por hora
+const HOUR_HEIGHT = 46 // px por hora (piso; altura efetiva sobe com granularidade fina)
+const MIN_SLOT_HEIGHT = 30 // altura mínima confortável por linha de intervalo (px)
 const SNAP_MIN = 30 // granularidade do clique em vaga vazia
 const NONE_COL = '__none__'
 
@@ -56,8 +57,13 @@ function deriveRange(workingHours, appointments, timeBlocks) {
 function DayTimeline({ appointments, professionals, timeBlocks, workingHours, date, onAppointmentClick, onEmptySlotClick, slotMinutes }) {
   const { startMin, endMin } = deriveRange(workingHours, appointments, timeBlocks)
   const totalMin = endMin - startMin
-  const bodyHeight = (totalMin / 60) * HOUR_HEIGHT
   const step = Number(slotMinutes) > 0 ? Number(slotMinutes) : 60
+
+  // Altura efetiva por hora: garante que cada linha de `step` minutos tenha
+  // pelo menos MIN_SLOT_HEIGHT px, evitando linhas espremidas em granularidade fina.
+  const slotsPerHour = 60 / step
+  const effectiveHourHeight = Math.max(HOUR_HEIGHT, MIN_SLOT_HEIGHT * slotsPerHour)
+  const bodyHeight = (totalMin / 60) * effectiveHourHeight
 
   // Colunas: profissionais ativos + coluna "Sem profissional" se houver agendamento sem profissional.
   const columns = professionals.map(p => ({ id: p.id, name: p.name }))
@@ -72,15 +78,15 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
   }
 
   const posStyle = (blockStart, blockEnd) => {
-    const top = ((timeToMinutes(blockStart) - startMin) / 60) * HOUR_HEIGHT
-    const rawHeight = ((timeToMinutes(blockEnd) - timeToMinutes(blockStart)) / 60) * HOUR_HEIGHT
+    const top = ((timeToMinutes(blockStart) - startMin) / 60) * effectiveHourHeight
+    const rawHeight = ((timeToMinutes(blockEnd) - timeToMinutes(blockStart)) / 60) * effectiveHourHeight
     return { top: `${top}px`, height: `${Math.max(rawHeight, 36)}px` }
   }
 
   const handleColumnClick = (e, colId) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const y = e.clientY - rect.top
-    let clickedMin = startMin + Math.floor(y / HOUR_HEIGHT * 60 / SNAP_MIN) * SNAP_MIN
+    let clickedMin = startMin + Math.floor(y / effectiveHourHeight * 60 / SNAP_MIN) * SNAP_MIN
     if (clickedMin < startMin) clickedMin = startMin
     if (clickedMin > endMin - SNAP_MIN) clickedMin = endMin - SNAP_MIN
     onEmptySlotClick({
@@ -113,7 +119,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
               <div
                 key={m}
                 className="timeline-axis-hour"
-                style={{ top: `${((m - startMin) / 60) * HOUR_HEIGHT}px` }}
+                style={{ top: `${((m - startMin) / 60) * effectiveHourHeight}px` }}
               >
                 {minutesToLabel(m)}
               </div>
@@ -139,7 +145,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
                   <div
                     key={m}
                     className="timeline-hour-line"
-                    style={{ top: `${((m - startMin) / 60) * HOUR_HEIGHT}px` }}
+                    style={{ top: `${((m - startMin) / 60) * effectiveHourHeight}px` }}
                   />
                 ))}
 
