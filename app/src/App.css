@@ -749,3 +749,396 @@
   vertical-align: middle;
   margin-right: 0.4rem;
 }
+
+/* ================= Agenda em Timeline (Dashboard do dono) ================= */
+.agenda-page {
+  width: 100%;
+  max-width: 100%;
+}
+
+.agenda-header {
+  margin-bottom: 1rem;
+}
+
+.agenda-header h1 {
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.agenda-header .subtitle {
+  font-size: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+/* ---- Seletor de semana ---- */
+.week-selector {
+  margin-bottom: 1rem;
+}
+
+.week-selector-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.week-selector-month {
+  font-weight: bold;
+  color: var(--text-primary);
+  font-size: 1rem;
+  text-transform: capitalize;
+}
+
+.week-nav-btn {
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--dark-green);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.week-nav-btn:hover {
+  background: var(--light-green);
+}
+
+.week-days {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+}
+
+.week-day {
+  flex: 1 0 auto;
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem 0.3rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.week-day-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.week-day-num {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.week-day.today {
+  border-color: var(--primary-green);
+}
+
+.week-day.active {
+  background: var(--primary-green);
+  border-color: var(--primary-green);
+}
+
+.week-day.active .week-day-label,
+.week-day.active .week-day-num {
+  color: #fff;
+}
+
+/* ---- Timeline ---- */
+.timeline-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-color);
+}
+
+.timeline-grid {
+  width: 100%;
+}
+
+.timeline-header-row {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-axis-head {
+  width: 56px;
+  flex: 0 0 56px;
+}
+
+.timeline-col-head {
+  flex: 1 1 0;
+  min-width: 120px;
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.85rem;
+  color: var(--dark-green);
+  border-left: 1px solid var(--border-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-body {
+  display: flex;
+  position: relative;
+}
+
+.timeline-axis {
+  width: 56px;
+  flex: 0 0 56px;
+  position: relative;
+}
+
+.timeline-axis-hour {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.timeline-col {
+  flex: 1 1 0;
+  min-width: 120px;
+  position: relative;
+  border-left: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.timeline-hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border-color);
+  pointer-events: none;
+}
+
+.tl-appt {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  background: var(--light-green);
+  border-left: 3px solid var(--primary-green);
+  border-radius: 6px;
+  padding: 0.25rem 0.4rem;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 2;
+}
+
+.tl-appt:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.tl-appt-time {
+  font-size: 0.68rem;
+  font-weight: bold;
+  color: var(--dark-green);
+}
+
+.tl-appt-client {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-appt-service {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tl-appt-completed {
+  background: #e6f4ea;
+  border-left-color: #10b981;
+  opacity: 0.85;
+}
+
+.tl-appt-canceled {
+  background: #ffebee;
+  border-left-color: #d32f2f;
+  opacity: 0.7;
+}
+
+.tl-block {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  background: repeating-linear-gradient(45deg, #eceff1, #eceff1 6px, #dfe4e6 6px, #dfe4e6 12px);
+  border: 1px dashed #b0bec5;
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.tl-block-label {
+  font-size: 0.72rem;
+  color: #607d8b;
+  font-weight: 600;
+}
+
+/* ================= Modais genéricos (agenda) ================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: var(--surface-color);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+}
+
+.modal-body {
+  padding: 1.2rem;
+}
+
+.appt-modal-line {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0 1.2rem 1.2rem 1.2rem;
+}
+
+.modal-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+}
+
+.modal-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.modal-btn-whatsapp {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.modal-btn-reschedule {
+  background: var(--primary-green);
+  color: #fff;
+}
+
+.modal-btn-complete {
+  background: #10b981;
+  color: #fff;
+}
+
+.modal-btn-cancel {
+  background: transparent;
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+
+/* ---- Form do modal de bloqueio ---- */
+.block-form .block-form-row {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.block-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+  flex: 1;
+}
+
+.block-form-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.block-form-field input,
+.block-form-field select {
+  padding: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-color);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.block-form .modal-actions {
+  padding: 0;
+}
+
+@media (min-width: 769px) {
+  .agenda-header h1 {
+    font-size: 2rem;
+  }
+}

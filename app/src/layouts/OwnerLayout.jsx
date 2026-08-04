@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, Scissors, Clock, LogOut, Settings, Users, UserPlus, Bell, PieChart, Folder, ChevronDown, ChevronRight, CalendarX, Package } from 'lucide-react'
+import { CalendarDays, Scissors, Clock, LogOut, Settings, Users, UserPlus, Bell, PieChart, Folder, ChevronDown, ChevronRight, Package } from 'lucide-react'
 import { supabase } from '../supabase'
 import SuspendedScreen from '../components/SuspendedScreen'
 
@@ -164,11 +164,6 @@ function OwnerLayout() {
               </div>
             )}
           </div>
-
-          <NavLink to="/painel/bloqueios" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
-            <CalendarX size={20} />
-            <span>Bloqueios</span>
-          </NavLink>
 
           <NavLink to="/painel/metricas" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'} onClick={handleNavClick}>
             <PieChart size={20} />
