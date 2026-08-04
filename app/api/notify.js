@@ -56,7 +56,34 @@ export default async function handler(req, res) {
     const result = await response.json();
 
     if (response.ok) {
-      return res.status(200).json({ success: true, result });
+      const hasErrors = result.errors && result.errors.length > 0;
+      const delivered = result.recipients > 0 && !hasErrors;
+
+      if (!delivered) {
+        console.error('[notify] push enviado mas sem entrega confirmada:', {
+          event,
+          targetExternalId,
+          recipientRole,
+          notificationId: result.id,
+          recipients: result.recipients,
+          errors: result.errors ?? null,
+        });
+      } else {
+        console.error('[notify] push entregue:', {
+          event,
+          targetExternalId,
+          recipientRole,
+          notificationId: result.id,
+          recipients: result.recipients,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        delivered,
+        recipients: result.recipients ?? 0,
+        notificationId: result.id ?? null,
+      });
     } else {
       console.error('OneSignal API error:', { event, targetExternalId, recipientRole, result });
       return res.status(response.status).json({ success: false, error: 'Erro ao enviar notificação' });
