@@ -1,5 +1,12 @@
 # 2026-08-04 — 500 em /api/appointments e /api/client-identity (cliente não consegue agendar)
 
+> **ATUALIZAÇÃO (mesmo dia, investigação continuada):** a hipótese de env vars abaixo foi
+> **descartada** após o usuário confirmar as env vars corretas na Vercel e refazer o
+> Redeploy pelo Dashboard — o 500 persistiu. A causa raiz real (estrutural, não env var)
+> está documentada em `2026-08-04-500-api-duplicada-root-directory.md`. Este arquivo é
+> mantido como registro histórico da investigação (a blindagem de teste `.is(null)` abaixo
+> continua válida e foi mantida).
+
 ## O que foi testado
 Fluxo de agendamento do cliente pela página pública do salão (`/s/:slug`), que
 depende das Vercel Functions `app/api/appointments.js` (ação `create`) e

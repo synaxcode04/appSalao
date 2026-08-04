@@ -2,6 +2,10 @@
 **Tipo:** bug
 **Data:** 2026-08-04
 
+> **ATUALIZAÇÃO:** hipótese de env vars abaixo foi DESCARTADA — usuário confirmou env
+> vars corretas e refez Redeploy, 500 persistiu. Causa raiz real (estrutural):
+> `2026-08-04-500-api-duplicada-root-directory.md`.
+
 ## Sintoma
 
 Cliente não conseguia agendar pela página pública do salão (`/s/:slug`). As Vercel Functions `app/api/appointments.js` (action `create`) e `app/api/client-identity.js` retornavam **HTTP 500** em produção — as duas simultaneamente.
