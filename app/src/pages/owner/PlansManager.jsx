@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import { Trash2, Edit2, ToggleLeft, ToggleRight, CheckCircle, Users } from 'lucide-react'
+import { Trash2, Edit2, ToggleLeft, ToggleRight, CheckCircle, Users, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // Convenção de dia da semana idêntica a working_hours e subscription_plan_days:
@@ -36,6 +36,7 @@ function PlansManager() {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
 
   // Abas: gestão de planos x lista de assinantes
   const [activeTab, setActiveTab] = useState('planos')
@@ -165,6 +166,11 @@ function PlansManager() {
     setSelectedDays([])
   }
 
+  const closeModal = () => {
+    setModalOpen(false)
+    resetForm()
+  }
+
   const toggleService = (serviceId) => {
     setServiceQuotas(prev => {
       const current = prev[serviceId]
@@ -290,6 +296,7 @@ function PlansManager() {
     }
 
     resetForm()
+    setModalOpen(false)
     await loadPlans(salonId)
     setSaving(false)
   }
@@ -307,7 +314,7 @@ function PlansManager() {
     setServiceQuotas(quotas)
 
     setSelectedDays((plan.subscription_plan_days || []).map(d => d.day_of_week))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setModalOpen(true)
   }
 
   const handleDelete = async (id) => {
@@ -384,8 +391,28 @@ function PlansManager() {
 
       {activeTab === 'planos' && (
       <>
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <h3>{editId ? 'Editar Plano' : 'Novo Plano'}</h3>
+      <button
+        type="button"
+        className="btn-primary clients-toolbar"
+        onClick={() => {
+          resetForm()
+          setModalOpen(true)
+        }}
+      >
+        <Plus size={18} />
+        Novo Plano
+      </button>
+
+      {modalOpen && (
+      <div
+        onClick={() => !saving && closeModal()}
+        className="modal-overlay"
+      >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="card modal-card"
+      >
+        <h3 className="modal-title">{editId ? 'Editar Plano' : 'Novo Plano'}</h3>
         <form onSubmit={handleSave} className="auth-form" style={{ marginTop: '1rem' }}>
           <input
             type="text"
@@ -498,18 +525,22 @@ function PlansManager() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button type="submit" disabled={saving} className="btn-primary">
-              {saving ? 'Salvando...' : (editId ? 'Atualizar Plano' : 'Adicionar Plano')}
-            </button>
-            {editId && (
-              <button type="button" className="btn-outline" onClick={resetForm}>
-                Cancelar
-              </button>
-            )}
-          </div>
+          <button type="submit" disabled={saving} className="btn-primary">
+            {saving ? 'Salvando...' : (editId ? 'Atualizar Plano' : 'Adicionar Plano')}
+          </button>
         </form>
+
+        <button
+          type="button"
+          onClick={closeModal}
+          disabled={saving}
+          className="modal-cancel"
+        >
+          Cancelar
+        </button>
       </div>
+      </div>
+      )}
 
       <div className="card">
         <h3>Seus Planos</h3>
