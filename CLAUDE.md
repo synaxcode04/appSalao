@@ -46,6 +46,15 @@ Decidido em 2026-08-01. **Este projeto não usa `git push` para disparar deploy.
 - `vercel deploy`/`vercel --prod` exige **confirmação explícita do usuário** antes de ser executado (já reforçado por hook em `.claude/hooks/devops/block-vercel-deploy.sh`, que bloqueia o comando via Bash sem essa confirmação).
 - Se um agent (ex: `devops`) não souber o comando/ambiente exato de deploy deste projeto, ele deve parar e perguntar — nunca configurar remote Git novo ou inventar pipeline de CI/CD por conta própria (ver guardrail de estrutura nova).
 
+## GitHub — espelho de código (decidido em 2026-08-04)
+
+Além do commit local, **todo trabalho concluído também deve ser enviado (`git push`) para o repositório remoto `origin` (`github.com/synaxcode04/appSalao`), na branch `dev`.** Isso é só compartilhamento de código com um colaborador externo — não aciona deploy nenhum (a Vercel não está conectada a este remote).
+
+- **Branch de trabalho:** sempre `dev`. Nunca dar push na branch `main` (produção) até o usuário pedir explicitamente para promover/mergear.
+- **Gatilho do push:** o mesmo do commit automático — após aprovação do `code-reviewer`, faça `git commit` local e em seguida `git push origin dev`, sem esperar o usuário pedir.
+- **Nunca** dar push em `main` ou abrir PR de `dev` para `main` sozinho — só quando o usuário disser algo como "muda pra produção" ou equivalente.
+- Autenticação com o GitHub é feita via token pessoal fornecido pelo usuário quando necessário (não fica salvo em nenhum arquivo do projeto nem no remote URL entre sessões).
+
 ## Estrutura de pastas
 ```
 App_salão/
