@@ -90,7 +90,6 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
   }
 
   const statusClass = (status) => {
-    if (status === 'canceled') return ' tl-appt-canceled'
     if (status === 'completed') return ' tl-appt-completed'
     return ''
   }

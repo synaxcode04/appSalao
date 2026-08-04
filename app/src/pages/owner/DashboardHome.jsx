@@ -10,12 +10,17 @@ import BlockSlotModal from '../../components/BlockSlotModal'
 import { sendPushNotification } from '../../utils/notification'
 import toast from 'react-hot-toast'
 
+// Data LOCAL no formato 'YYYY-MM-DD' (evita o shift de fuso do toISOString, que é UTC).
+function localDateStr(d = new Date()) {
+  return d.toLocaleDateString('en-CA')
+}
+
 function DashboardHome() {
   const { salon } = useOutletContext()
   const location = useLocation()
   const [avisoPagamento, setAvisoPagamento] = useState(location.state?.avisoPagamento || null)
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = localDateStr()
   const [selectedDate, setSelectedDate] = useState(todayStr)
 
   const [appointments, setAppointments] = useState([])
@@ -226,7 +231,7 @@ function DashboardHome() {
   const canMarkAsCompleted = (appt) => {
     if (!appt || appt.status !== 'scheduled') return false
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = localDateStr()
     if (appt.appointment_date > today) return false
 
     if (appt.appointment_date === today) {
@@ -268,7 +273,7 @@ function DashboardHome() {
     const today = new Date()
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
-    const tomorrowStr = tomorrow.toISOString().split('T')[0]
+    const tomorrowStr = localDateStr(tomorrow)
 
     const dayText = appt.appointment_date === tomorrowStr ? 'Amanhã' : `No dia ${formattedDate}`
 

@@ -27,8 +27,8 @@ function BlockSlotModal({ salonId, professionals, prefill, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
 
   const professionalLabel = () => {
-    if (!prefill?.professionalId) return 'Todos os profissionais'
-    const prof = professionals.find(p => p.id === prefill.professionalId)
+    if (!professionalId) return 'Todos os profissionais'
+    const prof = professionals.find(p => p.id === professionalId)
     return prof ? prof.name : 'Todos os profissionais'
   }
 
