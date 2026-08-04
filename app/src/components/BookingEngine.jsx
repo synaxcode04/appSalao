@@ -53,7 +53,10 @@ export function computeAvailableSlots({ workingHours, appointments, timeBlocks =
 
     if (slotEndMin > timeToMinutes(workingHours.end_time.substring(0, 5))) return false
 
-    if (breakStart && breakEnd) {
+    // has_lunch_break=false desabilita explicitamente a pausa, mesmo que break_start/end existam no banco.
+    // has_lunch_break=undefined (registro antigo antes da migração) cai no comportamento legado: bloqueia se break_start/end existirem.
+    const lunchEnabled = workingHours.has_lunch_break !== false
+    if (lunchEnabled && breakStart && breakEnd) {
       if (slotStartMin < breakEnd && slotEndMin > breakStart) return false
     }
 

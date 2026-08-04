@@ -11,6 +11,7 @@ const DEFAULT_HOURS = DAYS_OF_WEEK.map((name, index) => ({
   isOpen: index >= 1 && index <= 5, // Seg a Sex aberto por padrão
   start_time: '09:00',
   end_time: '18:00',
+  has_lunch_break: true,
   break_start_time: '12:00',
   break_end_time: '13:00'
 }))
@@ -57,6 +58,7 @@ function WorkingHoursManager() {
             isOpen: true,
             start_time: savedDay.start_time.substring(0, 5), // '09:00:00' -> '09:00'
             end_time: savedDay.end_time.substring(0, 5),
+            has_lunch_break: savedDay.has_lunch_break ?? Boolean(savedDay.break_start_time && savedDay.break_end_time),
             break_start_time: savedDay.break_start_time ? savedDay.break_start_time.substring(0, 5) : '',
             break_end_time: savedDay.break_end_time ? savedDay.break_end_time.substring(0, 5) : ''
           }
@@ -86,8 +88,9 @@ function WorkingHoursManager() {
       day_of_week: h.day_of_week,
       start_time: h.start_time,
       end_time: h.end_time,
-      break_start_time: h.break_start_time || null,
-      break_end_time: h.break_end_time || null
+      has_lunch_break: h.has_lunch_break,
+      break_start_time: h.has_lunch_break ? (h.break_start_time || null) : null,
+      break_end_time: h.has_lunch_break ? (h.break_end_time || null) : null
     }))
 
     if (openDays.length > 0) {
@@ -159,28 +162,46 @@ function WorkingHoursManager() {
                     </div>
                   </div>
 
-                  {/* Intervalo */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', borderTop: '1px dashed var(--border-color)', paddingTop: '1rem' }}>
-                    <div style={{ flex: 1, minWidth: '120px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Início Pausa / Almoço</label>
-                      <input 
-                        type="time" 
-                        value={day.break_start_time}
-                        onChange={(e) => handleDayChange(index, 'break_start_time', e.target.value)}
-                        className="auth-form input"
-                        style={{ padding: '0.5rem', width: '100%', marginTop: '0.2rem' }}
+                  {/* Pausa para almoço (opcional por dia) */}
+                  <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      <input
+                        type="checkbox"
+                        checked={day.has_lunch_break}
+                        onChange={(e) => handleDayChange(index, 'has_lunch_break', e.target.checked)}
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary-green)' }}
                       />
-                    </div>
-                    <div style={{ flex: 1, minWidth: '120px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fim Pausa / Almoço</label>
-                      <input 
-                        type="time" 
-                        value={day.break_end_time}
-                        onChange={(e) => handleDayChange(index, 'break_end_time', e.target.value)}
-                        className="auth-form input"
-                        style={{ padding: '0.5rem', width: '100%', marginTop: '0.2rem' }}
-                      />
-                    </div>
+                      Configurar pausa para almoço
+                    </label>
+
+                    {day.has_lunch_break ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                        <div style={{ flex: 1, minWidth: '120px' }}>
+                          <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Início Pausa / Almoço</label>
+                          <input
+                            type="time"
+                            value={day.break_start_time}
+                            onChange={(e) => handleDayChange(index, 'break_start_time', e.target.value)}
+                            className="auth-form input"
+                            style={{ padding: '0.5rem', width: '100%', marginTop: '0.2rem' }}
+                          />
+                        </div>
+                        <div style={{ flex: 1, minWidth: '120px' }}>
+                          <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fim Pausa / Almoço</label>
+                          <input
+                            type="time"
+                            value={day.break_end_time}
+                            onChange={(e) => handleDayChange(index, 'break_end_time', e.target.value)}
+                            className="auth-form input"
+                            style={{ padding: '0.5rem', width: '100%', marginTop: '0.2rem' }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                        Sem pausa: disponível o dia todo dentro do expediente.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

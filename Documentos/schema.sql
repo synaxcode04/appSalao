@@ -22,6 +22,7 @@
 --   3. add_slot_interval_minutes.sql  (adiciona slot_interval_minutes em salons)
 --   4. add_structured_address.sql     (adiciona logradouro/numero/bairro/cep/cidade/estado em salons)
 --   5. add_google_review_link.sql     (adiciona google_review_link em salons)
+--   6. migration_working_hours_has_lunch_break.sql  (adiciona has_lunch_break em working_hours)
 --
 -- =============================================================================
 
@@ -105,6 +106,10 @@ CREATE TABLE public.working_hours (
   end_time TIME NOT NULL,
   break_start_time TIME NULL,
   break_end_time TIME NULL,
+  -- has_lunch_break: flag que indica se a pausa de almoço está ativa para este dia.
+  -- false → BookingEngine ignora break_start/end mesmo que estejam preenchidos.
+  -- Adicionada via migration_working_hours_has_lunch_break.sql (ADD COLUMN IF NOT EXISTS).
+  has_lunch_break BOOLEAN NOT NULL DEFAULT true,
   UNIQUE(salon_id, day_of_week)
 );
 

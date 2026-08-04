@@ -992,6 +992,74 @@ describe('computeAvailableSlots — função pura', () => {
   })
 })
 
+// ─── Testes de has_lunch_break ────────────────────────────────────────────
+
+describe('computeAvailableSlots — has_lunch_break', () => {
+  const futureDate = '2099-12-31'
+  const pastNow = new Date('2099-01-01T00:00:00')
+
+  it('has_lunch_break=true com break 12:00–13:00 → slot das 12:00 é bloqueado', () => {
+    const workingHours = {
+      start_time: '08:00:00',
+      end_time: '18:00:00',
+      break_start_time: '12:00:00',
+      break_end_time: '13:00:00',
+      has_lunch_break: true,
+    }
+    const slots = computeAvailableSlots({
+      workingHours,
+      appointments: [],
+      totalDurationMinutes: 60,
+      slotIntervalMinutes: null,
+      selectedDate: futureDate,
+      now: pastNow,
+    })
+    expect(slots).not.toContain('12:00')
+    expect(slots).toContain('11:00')
+    expect(slots).toContain('13:00')
+  })
+
+  it('has_lunch_break=false com break_start/end preenchidos → slot das 12:00 NÃO é bloqueado', () => {
+    const workingHours = {
+      start_time: '08:00:00',
+      end_time: '18:00:00',
+      break_start_time: '12:00:00',
+      break_end_time: '13:00:00',
+      has_lunch_break: false,
+    }
+    const slots = computeAvailableSlots({
+      workingHours,
+      appointments: [],
+      totalDurationMinutes: 60,
+      slotIntervalMinutes: null,
+      selectedDate: futureDate,
+      now: pastNow,
+    })
+    expect(slots).toContain('12:00')
+    expect(slots.length).toBe(10)
+  })
+
+  it('has_lunch_break=undefined (registro legado) com break_start/end preenchidos → slot das 12:00 é bloqueado (retrocompatibilidade)', () => {
+    const workingHours = {
+      start_time: '08:00:00',
+      end_time: '18:00:00',
+      break_start_time: '12:00:00',
+      break_end_time: '13:00:00',
+    }
+    const slots = computeAvailableSlots({
+      workingHours,
+      appointments: [],
+      totalDurationMinutes: 60,
+      slotIntervalMinutes: null,
+      selectedDate: futureDate,
+      now: pastNow,
+    })
+    expect(slots).not.toContain('12:00')
+    expect(slots).toContain('11:00')
+    expect(slots).toContain('13:00')
+  })
+})
+
 // ─── Testes da variante inline ─────────────────────────────────────────────
 
 describe('BookingEngine — variante inline', () => {
