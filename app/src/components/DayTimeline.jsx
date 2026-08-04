@@ -53,10 +53,11 @@ function deriveRange(workingHours, appointments, timeBlocks) {
 }
 
 // Timeline vertical por hora, uma coluna por profissional (estilo Google Agenda).
-function DayTimeline({ appointments, professionals, timeBlocks, workingHours, date, onAppointmentClick, onEmptySlotClick }) {
+function DayTimeline({ appointments, professionals, timeBlocks, workingHours, date, onAppointmentClick, onEmptySlotClick, slotMinutes }) {
   const { startMin, endMin } = deriveRange(workingHours, appointments, timeBlocks)
   const totalMin = endMin - startMin
   const bodyHeight = (totalMin / 60) * HOUR_HEIGHT
+  const step = Number(slotMinutes) > 0 ? Number(slotMinutes) : 60
 
   // Colunas: profissionais ativos + coluna "Sem profissional" se houver agendamento sem profissional.
   const columns = professionals.map(p => ({ id: p.id, name: p.name }))
@@ -66,7 +67,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
   }
 
   const hourLines = []
-  for (let m = startMin; m <= endMin; m += 60) {
+  for (let m = startMin; m <= endMin; m += step) {
     hourLines.push(m)
   }
 

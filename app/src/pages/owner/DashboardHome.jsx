@@ -345,6 +345,7 @@ function DashboardHome() {
           date={selectedDate}
           onAppointmentClick={setActionsAppt}
           onEmptySlotClick={setBlockPrefill}
+          slotMinutes={salon?.slot_interval_minutes ?? 60}
         />
       )}
 

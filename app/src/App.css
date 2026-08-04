@@ -267,29 +267,17 @@
     display: none; /* Esconde a palavra "Sair" no celular, deixa só o ícone */
   }
 
-  /* Adicionar espaço no fim do conteúdo para a barra não cobrir nada */
+  /* Menos padding lateral no mobile: a agenda (e as demais páginas do dono)
+     usa quase toda a largura do viewport SEM margem negativa (que cortava
+     texto). O padding-bottom reserva espaço para a bottom bar fixa. */
   .dashboard-content {
-    padding-bottom: 80px;
+    padding: 0.75rem 0.5rem 80px 0.5rem;
   }
 
-  /* Agenda: "fura" o padding lateral de 2rem do .dashboard-content só nesta
-     página, para a timeline usar quase toda a largura do viewport no mobile.
-     O texto de header/seletor recebe padding de volta para não colar na borda. */
-  .agenda-page {
-    margin-left: -1.5rem;
-    margin-right: -1.5rem;
-  }
-
-  .agenda-page .agenda-header,
-  .agenda-page .week-selector,
-  .agenda-page .aviso-banner {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  /* Menos altura reservada no mobile (top bar + header + seletor + bottom nav). */
+  /* Timeline edge-to-edge no mobile — apenas visual (remove bordas laterais e
+     cantos). Sem margem negativa, sem max-height mágico: a altura é resolvida
+     pela cadeia flexbox (ver .agenda-page / .timeline-wrap no base). */
   .agenda-page .timeline-wrap {
-    max-height: calc(100dvh - 300px);
     border-left: none;
     border-right: none;
     border-radius: 0;
@@ -559,6 +547,7 @@
 
 /* ===== Banner de aviso de pagamento (DashboardHome) ===== */
 .aviso-banner {
+  flex: 0 0 auto;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
@@ -774,12 +763,22 @@
 }
 
 /* ================= Agenda em Timeline (Dashboard do dono) ================= */
+/* A agenda ocupa a altura disponível do scroller do OwnerLayout e delega o
+   scroll só à timeline: página em coluna flex, header/seletor de altura
+   natural (flex:0 0 auto), timeline crescendo e rolando (flex:1 + min-height:0).
+   min-height:0 é essencial para o filho poder encolher abaixo do conteúdo e
+   ativar o overflow interno em vez de estourar o container externo. */
 .agenda-page {
   width: 100%;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
 .agenda-header {
+  flex: 0 0 auto;
   margin-bottom: 1rem;
 }
 
@@ -796,6 +795,7 @@
 
 /* ---- Seletor de semana ---- */
 .week-selector {
+  flex: 0 0 auto;
   margin-bottom: 1rem;
 }
 
@@ -883,10 +883,13 @@
   width: 100%;
   overflow-x: auto;
   overflow-y: auto;
-  /* Só a grade de horas rola; header/seletor ficam fora deste container.
-     dvh lida melhor com a barra de endereço do mobile que vh. */
-  max-height: calc(100vh - 240px);
-  max-height: calc(100dvh - 240px);
+  /* Único elemento que cresce e rola dentro da .agenda-page. A altura vem da
+     cadeia flexbox (sem max-height calc): flex:1 absorve o espaço restante e
+     min-height:0 permite encolher abaixo do conteúdo para ativar o overflow.
+     header/seletor ficam fora deste container; o .timeline-header-row interno
+     é sticky top:0 e continua fixo enquanto a grade rola. */
+  flex: 1 1 auto;
+  min-height: 0;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface-color);
