@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeStats } from '../pages/owner/DashboardHome'
+import { computeStats } from '../utils/revenue'
 
 const TODAY = '2026-08-01'
 
