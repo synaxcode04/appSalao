@@ -549,6 +549,141 @@ describe('create — cota do plano é por ciclo rolante de 30 dias da data de as
 })
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Regressão (2026-08-04): agendamento SEM profissional deve usar .is('professional_id', null)
+// na checagem de conflito — NUNCA .eq('professional_id', null).
+// O padrão bugado `.eq('professional_id', professional_id || null)` causou 500 em
+// produção (2026-08-01), pois o PostgREST não trata .eq() com null como igualdade.
+// Sem estes testes, reverter para o padrão bugado ainda passaria no CI.
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('create — sem profissional usa .is(professional_id, null), não .eq(professional_id, null)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('caminho COM profissional: checagem de conflito chama .eq("professional_id", "prof-1")', async () => {
+    let conflictChain = null
+    let apptCall = 0
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'salon_clients') return makeChain({ is_active: true })
+        if (table === 'services') return makeChain([{ id: 'svc1', name: 'Corte', duration_minutes: 60 }])
+        if (table === 'client_subscriptions') return makeChain([]) // sem plano ativo
+        if (table === 'salons') return makeChain({ owner_id: 'owner1' })
+        if (table === 'clients') return makeChain({ full_name: 'Cliente Teste' })
+        if (table === 'notifications') return makeChain(null)
+        if (table === 'appointment_services') return makeChain(null)
+        if (table === 'appointments') {
+          apptCall++
+          if (apptCall === 1) { conflictChain = makeChain([]); return conflictChain } // conflito — sem conflito
+          return makeChain({ id: 'new-appt', salon_id: 'salon1', service_id: 'svc1', professional_id: 'prof-1', appointment_date: '2026-08-02', start_time: '10:00', end_time: '11:00', status: 'scheduled' })
+        }
+        return makeChain(null)
+      },
+    })
+
+    const req = makeReq({
+      action: 'create',
+      salon_id: 'salon1',
+      client_id: 'client1',
+      service_id: 'svc1',
+      professional_id: 'prof-1',
+      appointment_date: '2026-08-02',
+      start_time: '10:00',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(201)
+    expect(conflictChain.eq).toHaveBeenCalledWith('professional_id', 'prof-1')
+    // com profissional, .is('professional_id', ...) não deve ser usado
+    expect(conflictChain.is).not.toHaveBeenCalledWith('professional_id', null)
+  })
+
+  it('caminho SEM profissional: checagem de conflito chama .is("professional_id", null) e NUNCA .eq com null', async () => {
+    let conflictChain = null
+    let apptCall = 0
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'salon_clients') return makeChain({ is_active: true })
+        if (table === 'services') return makeChain([{ id: 'svc1', name: 'Corte', duration_minutes: 60 }])
+        if (table === 'client_subscriptions') return makeChain([]) // sem plano ativo
+        if (table === 'salons') return makeChain({ owner_id: 'owner1' })
+        if (table === 'clients') return makeChain({ full_name: 'Cliente Teste' })
+        if (table === 'notifications') return makeChain(null)
+        if (table === 'appointment_services') return makeChain(null)
+        if (table === 'appointments') {
+          apptCall++
+          if (apptCall === 1) { conflictChain = makeChain([]); return conflictChain } // conflito — sem conflito
+          return makeChain({ id: 'new-appt', salon_id: 'salon1', service_id: 'svc1', professional_id: null, appointment_date: '2026-08-02', start_time: '10:00', end_time: '11:00', status: 'scheduled' })
+        }
+        return makeChain(null)
+      },
+    })
+
+    // professional_id ausente do payload
+    const req = makeReq({
+      action: 'create',
+      salon_id: 'salon1',
+      client_id: 'client1',
+      service_id: 'svc1',
+      appointment_date: '2026-08-02',
+      start_time: '10:00',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(201)
+    // Blindagem contra a regressão .eq(null):
+    expect(conflictChain.is).toHaveBeenCalledWith('professional_id', null)
+    expect(conflictChain.eq).not.toHaveBeenCalledWith('professional_id', null)
+  })
+})
+
+describe('reschedule — sem profissional usa .is(professional_id, null), não .eq(professional_id, null)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('agendamento sem profissional: checagem de conflito chama .is("professional_id", null) e NUNCA .eq com null', async () => {
+    let conflictChain = null
+    let appointmentsCallCount = 0
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'appointments') {
+          appointmentsCallCount++
+          if (appointmentsCallCount === 1) {
+            // Lookup do agendamento sendo reagendado — sem profissional
+            return makeChain({ id: 'appt-123', client_id: 'client1', salon_id: 'salon1', service_id: 'svc1', professional_id: null })
+          }
+          // Conflict check — retorna conflito para encerrar em 409;
+          // .is/.eq já foram registrados na construção da query.
+          conflictChain = makeChain([{ id: 'other-appt', start_time: '10:30', end_time: '11:30' }])
+          return conflictChain
+        }
+        if (table === 'salons') return makeChain({ owner_id: 'owner1' })
+        if (table === 'appointment_services') return makeChain([{ services: { duration_minutes: 60 } }])
+        return makeChain(null)
+      },
+    })
+
+    const req = makeReq({
+      action: 'reschedule',
+      appointment_id: 'appt-123',
+      client_id: 'client1',
+      appointment_date: '2026-08-02',
+      start_time: '10:00',
+      end_time: '11:00',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(conflictChain.is).toHaveBeenCalledWith('professional_id', null)
+    expect(conflictChain.eq).not.toHaveBeenCalledWith('professional_id', null)
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
 // cancel_subscription — escopo multi-tenant por salon_id (client_id é global)
 // ──────────────────────────────────────────────────────────────────────────────
 
