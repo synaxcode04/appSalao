@@ -1,17 +1,30 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
-import { Trash2, Edit2 } from 'lucide-react'
+import { Trash2, Edit2, Plus } from 'lucide-react'
 
 function ServicesManager() {
   const [salonId, setSalonId] = useState(null)
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
 
   // Form states
   const [editId, setEditId] = useState(null)
   const [name, setName] = useState('')
   const [duration, setDuration] = useState('')
   const [price, setPrice] = useState('')
+
+  const resetForm = () => {
+    setEditId(null)
+    setName('')
+    setDuration('')
+    setPrice('')
+  }
+
+  const closeModal = () => {
+    setModalOpen(false)
+    resetForm()
+  }
 
   useEffect(() => {
     const fetchSalonData = async () => {
@@ -63,12 +76,10 @@ function ServicesManager() {
       await supabase.from('services').insert([payload])
     }
 
-    // Reset Form
-    setEditId(null)
-    setName('')
-    setDuration('')
-    setPrice('')
-    
+    // Reset Form and close modal
+    resetForm()
+    setModalOpen(false)
+
     // Reload list
     await loadServices(salonId)
     setLoading(false)
@@ -79,7 +90,7 @@ function ServicesManager() {
     setName(service.name)
     setDuration(service.duration_minutes)
     setPrice(service.price)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setModalOpen(true)
   }
 
   const handleDelete = async (id) => {
@@ -97,56 +108,17 @@ function ServicesManager() {
         <p className="subtitle">Gerencie os cortes, barbas e outros serviços.</p>
       </header>
 
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <h3>{editId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
-        <form onSubmit={handleSave} className="auth-form" style={{ marginTop: '1rem' }}>
-          <input 
-            type="text" 
-            placeholder="Nome do Serviço (ex: Corte Masculino)" 
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required 
-          />
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <input 
-              type="number" 
-              placeholder="Duração (minutos)" 
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              required 
-              min="5"
-            />
-            <input 
-              type="number" 
-              placeholder="Preço (R$)" 
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              required 
-              min="0"
-              step="0.01"
-            />
-          </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Salvando...' : (editId ? 'Atualizar Serviço' : 'Adicionar Serviço')}
-            </button>
-            {editId && (
-              <button 
-                type="button" 
-                className="btn-outline" 
-                onClick={() => {
-                  setEditId(null)
-                  setName('')
-                  setDuration('')
-                  setPrice('')
-                }}
-              >
-                Cancelar
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+      <button
+        type="button"
+        className="btn-primary clients-toolbar"
+        onClick={() => {
+          resetForm()
+          setModalOpen(true)
+        }}
+      >
+        <Plus size={18} />
+        Novo Serviço
+      </button>
 
       <div className="card">
         <h3>Seus Serviços</h3>
@@ -175,6 +147,61 @@ function ServicesManager() {
           </div>
         )}
       </div>
+
+      {modalOpen && (
+        <div
+          onClick={() => !loading && closeModal()}
+          className="modal-overlay"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card modal-card"
+          >
+            <h3 className="modal-title">{editId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
+
+            <form onSubmit={handleSave} className="auth-form">
+              <input
+                type="text"
+                placeholder="Nome do Serviço (ex: Corte Masculino)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <input
+                  type="number"
+                  placeholder="Duração (minutos)"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  required
+                  min="5"
+                />
+                <input
+                  type="number"
+                  placeholder="Preço (R$)"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <button type="submit" disabled={loading} className="btn-primary">
+                {loading ? 'Salvando...' : (editId ? 'Atualizar Serviço' : 'Adicionar Serviço')}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              onClick={closeModal}
+              disabled={loading}
+              className="modal-cancel"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
