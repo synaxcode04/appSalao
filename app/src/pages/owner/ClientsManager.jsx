@@ -15,6 +15,32 @@ function formatPhone(phone) {
   return phone
 }
 
+function normalize(text) {
+  return (text || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+}
+
+export function filterClients(clients, query) {
+  const rows = clients || []
+  const trimmed = (query || '').trim()
+  if (!trimmed) return rows
+
+  const normalizedQuery = normalize(trimmed)
+  const queryDigits = trimmed.replace(/\D/g, '')
+
+  return rows.filter((row) => {
+    const name = normalize(row?.clients?.full_name)
+    const matchesName = normalizedQuery && name.includes(normalizedQuery)
+
+    const phoneDigits = (row?.clients?.phone || '').replace(/\D/g, '')
+    const matchesPhone = queryDigits && phoneDigits.includes(queryDigits)
+
+    return Boolean(matchesName || matchesPhone)
+  })
+}
+
 function ClientsManager() {
   const { salon } = useOutletContext()
 
@@ -23,6 +49,8 @@ function ClientsManager() {
   const [birthDate, setBirthDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [feedback, setFeedback] = useState(null) // { type: 'created' | 'linked' | 'error', text }
+  const [modalOpen, setModalOpen] = useState(false)
+  const [search, setSearch] = useState('')
 
   const [clients, setClients] = useState([])
   const [loadingList, setLoadingList] = useState(true)
@@ -112,6 +140,8 @@ function ClientsManager() {
 
       const mountedRef = { value: true }
       await loadClients(salon.id, mountedRef)
+
+      setModalOpen(false)
     } catch (err) {
       setFeedback({
         type: 'error',
@@ -183,6 +213,8 @@ function ClientsManager() {
     }
   }
 
+  const filteredClients = filterClients(clients, search)
+
   return (
     <div className="page-content">
       <header className="page-header">
@@ -193,93 +225,71 @@ function ClientsManager() {
         </p>
       </header>
 
-      <div className="card" style={{ marginBottom: '2rem' }}>
-        <h3>Novo Cliente</h3>
-        <form onSubmit={handleSubmit} className="auth-form" style={{ marginTop: '1rem' }}>
-          <input
-            type="tel"
-            placeholder="Telefone (ex: (11) 99999-9999)"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Nome completo do cliente"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-          />
-          <BirthdateInput value={birthDate} onChange={setBirthDate} />
-          <button type="submit" disabled={submitting} className="btn-primary">
-            <UserPlus size={18} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
-            {submitting ? 'Cadastrando...' : 'Cadastrar Cliente'}
-          </button>
-        </form>
+      <button
+        type="button"
+        className="btn-primary clients-toolbar"
+        onClick={() => setModalOpen(true)}
+      >
+        <UserPlus size={18} />
+        Novo Cliente
+      </button>
 
-        {feedback && (
-          <div
-            className="clients-feedback"
-            data-type={feedback.type}
-            role="status"
-          >
-            {feedback.text}
-          </div>
-        )}
-      </div>
+      {feedback && (
+        <div
+          className="clients-feedback clients-feedback--spaced"
+          data-type={feedback.type}
+          role="status"
+        >
+          {feedback.text}
+        </div>
+      )}
 
       <div className="card">
         <h3>Clientes do Salão</h3>
+
+        <input
+          type="search"
+          placeholder="Buscar por nome ou telefone"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="clients-search"
+        />
+
         {loadingList ? (
-          <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Carregando...</p>
+          <p className="clients-empty">Carregando...</p>
         ) : clients.length === 0 ? (
-          <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>
+          <p className="clients-empty">
             Nenhum cliente cadastrado ainda.
           </p>
+        ) : filteredClients.length === 0 ? (
+          <p className="clients-empty">
+            Nenhum cliente encontrado para a busca.
+          </p>
         ) : (
-          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {clients.map((row) => {
+          <div className="clients-list">
+            {filteredClients.map((row) => {
               const isInactive = row.is_active === false
               const isToggling = togglingId === row.id
               return (
                 <div
                   key={row.id}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '1rem',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-md)',
-                    opacity: isInactive ? 0.6 : 1
-                  }}
+                  className="client-row"
+                  style={{ opacity: isInactive ? 0.6 : 1 }}
                 >
                   <div>
-                    <h4 style={{ color: 'var(--dark-green)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <h4 className="client-row-name">
                       {row.clients?.full_name || 'Cliente'}
                       {isInactive && (
-                        <span
-                          style={{
-                            fontSize: '0.7rem',
-                            fontWeight: 600,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.03em',
-                            padding: '0.15rem 0.5rem',
-                            borderRadius: 'var(--radius-sm)',
-                            background: 'var(--border-color)',
-                            color: 'var(--text-secondary)'
-                          }}
-                        >
+                        <span className="client-badge-inactive">
                           Inativo
                         </span>
                       )}
                     </h4>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <p className="client-row-phone">
                       <Phone size={14} /> {formatPhone(row.clients?.phone)}
                     </p>
                     {isInactive && (
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                      <p className="client-row-note">
                         Continua na lista, mas bloqueado para novos agendamentos.
                       </p>
                     )}
@@ -302,6 +312,61 @@ function ClientsManager() {
           </div>
         )}
       </div>
+
+      {modalOpen && (
+        <div
+          onClick={() => !submitting && setModalOpen(false)}
+          className="modal-overlay"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card modal-card"
+          >
+            <h3 className="modal-title">Novo Cliente</h3>
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              <input
+                type="tel"
+                placeholder="Telefone (ex: (11) 99999-9999)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Nome completo do cliente"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+              <BirthdateInput value={birthDate} onChange={setBirthDate} />
+              <button type="submit" disabled={submitting} className="btn-primary">
+                <UserPlus size={18} className="btn-icon-inline" />
+                {submitting ? 'Cadastrando...' : 'Cadastrar Cliente'}
+              </button>
+            </form>
+
+            {feedback && feedback.type === 'error' && (
+              <div
+                className="clients-feedback"
+                data-type={feedback.type}
+                role="status"
+              >
+                {feedback.text}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setModalOpen(false)}
+              disabled={submitting}
+              className="modal-cancel"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

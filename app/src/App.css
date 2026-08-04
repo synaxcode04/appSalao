@@ -634,3 +634,118 @@
   color: #b91c1c;
   border-color: #fecaca;
 }
+
+/* ===== Barra de ações e busca (ClientsManager) ===== */
+.clients-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.clients-search {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+/* ===== Modal genérico (padrão inline compartilhado) ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modal-card {
+  padding: 1.5rem;
+  max-width: 480px;
+  width: 100%;
+  background-color: var(--surface-color);
+}
+
+.modal-cancel {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.6rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.modal-title {
+  color: var(--dark-green);
+  margin-bottom: 1rem;
+}
+
+/* ===== Lista de clientes (ClientsManager) ===== */
+.clients-empty {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+}
+
+.clients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.client-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.client-row-name {
+  color: var(--dark-green);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.client-badge-inactive {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.client-row-phone {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.client-row-note {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.clients-feedback--spaced {
+  margin-bottom: 1rem;
+}
+
+.btn-icon-inline {
+  vertical-align: middle;
+  margin-right: 0.4rem;
+}
