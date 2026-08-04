@@ -71,6 +71,26 @@ function OwnerLayout() {
     }
   }, [salon])
 
+  // PWA com marca do salão para o dono: troca o href do manifest existente (#main-manifest)
+  // para /api/manifest?slug=<id>&type=owner (start_url/scope = /painel). Espelha o padrão
+  // do SalonLayout, sem criar segunda tag. Cleanup restaura o manifest estático para não
+  // vazar a marca do salão para outras rotas ao desmontar.
+  useEffect(() => {
+    if (!salon?.id) return
+
+    const mainManifest = document.getElementById('main-manifest')
+    if (mainManifest) {
+      mainManifest.href = `/api/manifest?slug=${salon.id}&type=owner`
+    }
+
+    return () => {
+      const link = document.getElementById('main-manifest')
+      if (link) {
+        link.href = '/manifest.webmanifest'
+      }
+    }
+  }, [salon])
+
   const handleNavClick = () => {
     if (window.innerWidth <= 768) {
       setIsCadastrosOpen(false)

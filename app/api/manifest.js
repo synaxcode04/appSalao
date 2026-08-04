@@ -1,6 +1,9 @@
 export default async function handler(req, res) {
-  // Ler slug de query parameter
-  const { slug } = req.query;
+  // Ler slug e type de query parameters
+  const { slug, type } = req.query;
+
+  // type controla start_url/scope: 'owner' → /painel; ausente/'client' → /s/:slug (retrocompatível)
+  const isOwner = type === 'owner';
 
   // Validar slug: deve ter pelo menos 36 caracteres (UUID)
   if (!slug || slug.length < 36) {
@@ -53,8 +56,8 @@ export default async function handler(req, res) {
       short_name: name && name.length > 12 ? name.slice(0, 12) : name || 'Salão',
       description: `${name || 'Salão'} - Agendamentos`,
       display: 'standalone',
-      start_url: `/s/${slug}`,
-      scope: `/s/${slug}`,
+      start_url: isOwner ? '/painel' : `/s/${slug}`,
+      scope: isOwner ? '/painel' : `/s/${slug}`,
       background_color: '#ffffff',
       theme_color: '#ffffff',
       icons: [
