@@ -47,19 +47,30 @@ export function ClientSessionProvider({ slug, children }) {
     let removePushListener = null;
 
     window.OneSignalDeferred.push(async function(OneSignal) {
-      try {
-        await OneSignal.login(clientSession.client_id)
-        const handler = async (event) => {
-          const cur = event?.current ?? event
-          if (cur?.optedIn && (cur?.token || cur?.id)) {
+      const attemptLogin = async () => {
+        try {
+          await OneSignal.login(clientSession.client_id)
+        } catch {
+          try {
+            await OneSignal.logout()
             await OneSignal.login(clientSession.client_id)
+          } catch {
+            // device will not receive push — alias conflict unresolvable client-side
           }
         }
-        OneSignal.User.PushSubscription.addEventListener('change', handler)
-        removePushListener = () => {
-          OneSignal.User.PushSubscription.removeEventListener('change', handler)
+      }
+
+      await attemptLogin()
+
+      const handler = async (event) => {
+        const cur = event?.current ?? event
+        if (cur?.optedIn && (cur?.token || cur?.id)) {
+          await attemptLogin()
         }
-      } catch {
+      }
+      OneSignal.User.PushSubscription.addEventListener('change', handler)
+      removePushListener = () => {
+        OneSignal.User.PushSubscription.removeEventListener('change', handler)
       }
     })
 
