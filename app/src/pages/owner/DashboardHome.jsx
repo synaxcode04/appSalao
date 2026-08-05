@@ -318,8 +318,8 @@ function DashboardHome() {
       )}
 
       <header className="agenda-header">
-        <h1>Agenda do Salão</h1>
-        <p className="subtitle">Toque num horário vago para bloquear, ou num agendamento para gerenciar.</p>
+        <h1>Agenda</h1>
+        <p className="subtitle">Toque em horário vazio para bloquear e no agendamento para interagir</p>
       </header>
 
       <WeekDaySelector selectedDate={selectedDate} onSelectDay={setSelectedDate} />

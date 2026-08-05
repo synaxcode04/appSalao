@@ -801,8 +801,9 @@
 }
 
 .agenda-header .subtitle {
-  font-size: 0.9rem;
+  font-size: clamp(0.58rem, 2.7vw, 0.82rem);
   margin-top: 0.3rem;
+  white-space: nowrap;
 }
 
 /* ---- Seletor de semana ---- */
@@ -842,21 +843,49 @@
   background: var(--light-green);
 }
 
+.week-days-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
 .week-days {
   display: flex;
   gap: 0.4rem;
   overflow-x: auto;
   padding-bottom: 0.3rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Setinhas próprias do carrossel de dias — só no desktop (não-touch). */
+.week-days-nav {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--dark-green);
+  border-radius: var(--radius-md);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.week-days-nav:hover {
+  background: var(--light-green);
 }
 
 .week-day {
   flex: 1 0 auto;
-  min-width: 44px;
+  min-width: 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
-  padding: 0.5rem 0.3rem;
+  padding: 0.35rem 0.25rem;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   background: var(--surface-color);
@@ -866,12 +895,12 @@
 }
 
 .week-day-label {
-  font-size: 0.7rem;
+  font-size: 0.62rem;
   text-transform: uppercase;
 }
 
 .week-day-num {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: bold;
   color: var(--text-primary);
 }
@@ -1187,5 +1216,9 @@
 @media (min-width: 769px) {
   .agenda-header h1 {
     font-size: 2rem;
+  }
+
+  .week-days-nav {
+    display: flex;
   }
 }

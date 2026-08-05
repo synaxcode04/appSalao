@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 
 const WEEK_DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
@@ -40,30 +40,61 @@ function WeekDaySelector({ selectedDate, onSelectDay }) {
     onSelectDay(toDateStr(d))
   }
 
+  // Troca de mês mantendo o dia (com clamp para o último dia do mês de destino).
+  const goMonth = (delta) => {
+    const day = base.getDate()
+    const targetMonthFirst = new Date(base.getFullYear(), base.getMonth() + delta, 1)
+    const lastDay = new Date(targetMonthFirst.getFullYear(), targetMonthFirst.getMonth() + 1, 0).getDate()
+    const d = new Date(targetMonthFirst.getFullYear(), targetMonthFirst.getMonth(), Math.min(day, lastDay))
+    onSelectDay(toDateStr(d))
+  }
+
+  // Swipe horizontal (mobile) sobre a tira de dias para navegar semanas.
+  const touchStartX = useRef(null)
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches[0].clientX
+  }
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current
+    const THRESHOLD = 40
+    if (deltaX <= -THRESHOLD) goWeek(1)
+    else if (deltaX >= THRESHOLD) goWeek(-1)
+    touchStartX.current = null
+  }
+
   return (
     <div className="week-selector">
       <div className="week-selector-head">
-        <button type="button" className="week-nav-btn" onClick={() => goWeek(-1)} aria-label="Semana anterior">‹</button>
+        <button type="button" className="week-nav-btn" onClick={() => goMonth(-1)} aria-label="Mês anterior">‹</button>
         <span className="week-selector-month">{monthLabel} {base.getFullYear()}</span>
-        <button type="button" className="week-nav-btn" onClick={() => goWeek(1)} aria-label="Próxima semana">›</button>
+        <button type="button" className="week-nav-btn" onClick={() => goMonth(1)} aria-label="Próximo mês">›</button>
       </div>
-      <div className="week-days">
-        {days.map(d => {
-          const dateStr = toDateStr(d)
-          const isActive = dateStr === selectedDate
-          const isToday = dateStr === todayStr
-          return (
-            <button
-              key={dateStr}
-              type="button"
-              className={`week-day${isActive ? ' active' : ''}${isToday ? ' today' : ''}`}
-              onClick={() => onSelectDay(dateStr)}
-            >
-              <span className="week-day-label">{WEEK_DAY_LABELS[d.getDay()]}</span>
-              <span className="week-day-num">{d.getDate()}</span>
-            </button>
-          )
-        })}
+      <div className="week-days-wrap">
+        <button type="button" className="week-days-nav" onClick={() => goWeek(-1)} aria-label="Semana anterior">‹</button>
+        <div
+          className="week-days"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {days.map(d => {
+            const dateStr = toDateStr(d)
+            const isActive = dateStr === selectedDate
+            const isToday = dateStr === todayStr
+            return (
+              <button
+                key={dateStr}
+                type="button"
+                className={`week-day${isActive ? ' active' : ''}${isToday ? ' today' : ''}`}
+                onClick={() => onSelectDay(dateStr)}
+              >
+                <span className="week-day-label">{WEEK_DAY_LABELS[d.getDay()]}</span>
+                <span className="week-day-num">{d.getDate()}</span>
+              </button>
+            )
+          })}
+        </div>
+        <button type="button" className="week-days-nav" onClick={() => goWeek(1)} aria-label="Próxima semana">›</button>
       </div>
     </div>
   )

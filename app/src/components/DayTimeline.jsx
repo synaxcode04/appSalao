@@ -4,6 +4,7 @@ const HOUR_HEIGHT = 46 // px por hora (piso; altura efetiva sobe com granularida
 const MIN_SLOT_HEIGHT = 30 // altura mínima confortável por linha de intervalo (px)
 const SNAP_MIN = 30 // granularidade do clique em vaga vazia
 const NONE_COL = '__none__'
+const TOP_PAD = 8 // respiro no topo para o primeiro rótulo de hora não cortar
 
 // "HH:MM:SS" ou "HH:MM" -> minutos totais.
 function timeToMinutes(timeStr) {
@@ -63,13 +64,16 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
   // pelo menos MIN_SLOT_HEIGHT px, evitando linhas espremidas em granularidade fina.
   const slotsPerHour = 60 / step
   const effectiveHourHeight = Math.max(HOUR_HEIGHT, MIN_SLOT_HEIGHT * slotsPerHour)
-  const bodyHeight = (totalMin / 60) * effectiveHourHeight
+  const bodyHeight = (totalMin / 60) * effectiveHourHeight + TOP_PAD
 
   // Colunas: profissionais ativos + coluna "Sem profissional" se houver agendamento sem profissional.
   const columns = professionals.map(p => ({ id: p.id, name: p.name }))
   const hasUnassigned = appointments.some(a => !a.professional_id)
   if (hasUnassigned || columns.length === 0) {
-    columns.push({ id: NONE_COL, name: 'Sem profissional' })
+    // Só rotula "Sem profissional" quando há profissionais cadastrados e um agendamento sem atribuição.
+    // Sem nenhum profissional cadastrado, o cabeçalho fica vazio.
+    const noneName = professionals.length === 0 ? '' : 'Sem profissional'
+    columns.push({ id: NONE_COL, name: noneName })
   }
 
   const hourLines = []
@@ -78,14 +82,14 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
   }
 
   const posStyle = (blockStart, blockEnd) => {
-    const top = ((timeToMinutes(blockStart) - startMin) / 60) * effectiveHourHeight
+    const top = ((timeToMinutes(blockStart) - startMin) / 60) * effectiveHourHeight + TOP_PAD
     const rawHeight = ((timeToMinutes(blockEnd) - timeToMinutes(blockStart)) / 60) * effectiveHourHeight
     return { top: `${top}px`, height: `${Math.max(rawHeight, 36)}px` }
   }
 
   const handleColumnClick = (e, colId) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    const y = e.clientY - rect.top
+    const y = e.clientY - rect.top - TOP_PAD
     let clickedMin = startMin + Math.floor(y / effectiveHourHeight * 60 / SNAP_MIN) * SNAP_MIN
     if (clickedMin < startMin) clickedMin = startMin
     if (clickedMin > endMin - SNAP_MIN) clickedMin = endMin - SNAP_MIN
@@ -108,7 +112,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
         <div className="timeline-header-row">
           <div className="timeline-axis-head" />
           {columns.map(col => (
-            <div key={col.id} className="timeline-col-head">{col.name}</div>
+            <div key={col.id} className="timeline-col-head">{col.name || ' '}</div>
           ))}
         </div>
 
@@ -119,7 +123,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
               <div
                 key={m}
                 className="timeline-axis-hour"
-                style={{ top: `${((m - startMin) / 60) * effectiveHourHeight}px` }}
+                style={{ top: `${((m - startMin) / 60) * effectiveHourHeight + TOP_PAD}px` }}
               >
                 {minutesToLabel(m)}
               </div>
@@ -145,7 +149,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
                   <div
                     key={m}
                     className="timeline-hour-line"
-                    style={{ top: `${((m - startMin) / 60) * effectiveHourHeight}px` }}
+                    style={{ top: `${((m - startMin) / 60) * effectiveHourHeight + TOP_PAD}px` }}
                   />
                 ))}
 
