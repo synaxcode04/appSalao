@@ -17,3 +17,11 @@ Melhorias de UI na tela "Agenda" do painel do dono (DashboardHome.jsx + WeekDayS
 ## Notas técnicas
 - React 19 puro, CSS próprio, sem libs novas. Build (`npm run build`) verde.
 - Code-reviewer: 0 bloqueantes, aprovado para deploy SIM. Dois IMPORTANTES: (a) ellipsis truncava o subtitle — já corrigido com clamp responsivo; (b) bloco de salão (professional_id null) aparece também na coluna NONE — comportamento PRÉ-EXISTENTE, fora do escopo desta mudança.
+
+## Rodada 2 (mesmo dia) — sugestões não-bloqueantes tratadas
+7. Setinhas do carrossel de dias (`.week-days-nav`) agora só renderizam em dispositivos sem touch: `WeekDaySelector.jsx` calcula `isTouch` uma vez por módulo (`'ontouchstart' in window || navigator.maxTouchPoints > 0`, com guard `typeof window`) e as esconde via `{!isTouch && (...)}`. Evita coexistência de seta+swipe em tablets touch com viewport ≥769px. `App.css`: media query redundante removida, `.week-days-nav` volta a `display:flex` por padrão (visibilidade controlada pelo JS, não CSS).
+8. Último rótulo de hora cortado no fim do scroll: `DayTimeline.jsx` ganhou `BOTTOM_PAD = 8` somado **só** ao `bodyHeight` (não mexe em nenhum `top` de rótulo/linha/bloco nem no `handleColumnClick`).
+- Code-reviewer (2ª rodada): 0 bloqueantes, 0 importantes, 1 sugestão trivial (guard de `navigator`, risco zero). Aprovado para deploy SIM. Confirmou: swipe intacto, `isTouch=false` em jsdom (setas aparecem nos testes sem efeito colateral), sem regressão em desktop não-touch.
+
+## Deploy
+Commits: `9fa3732` (rodada 1) + `737d6cc` (rodada 2), push em `origin/dev`. Deploy de produção via `vercel --prod` a partir da RAIZ do repo (não de `app/` — rodar de dentro de `app/` falha com "path app/app does not exist" pela config de Root Directory do projeto Vercel). Alias `appsalao-psi.vercel.app` confirmado apontando pro novo deployment.
