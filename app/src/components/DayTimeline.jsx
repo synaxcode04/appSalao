@@ -5,6 +5,7 @@ const MIN_SLOT_HEIGHT = 30 // altura mínima confortável por linha de intervalo
 const SNAP_MIN = 30 // granularidade do clique em vaga vazia
 const NONE_COL = '__none__'
 const TOP_PAD = 8 // respiro no topo para o primeiro rótulo de hora não cortar
+const BOTTOM_PAD = 8 // respiro no fim para o último rótulo de hora não cortar
 
 // "HH:MM:SS" ou "HH:MM" -> minutos totais.
 function timeToMinutes(timeStr) {
@@ -64,7 +65,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
   // pelo menos MIN_SLOT_HEIGHT px, evitando linhas espremidas em granularidade fina.
   const slotsPerHour = 60 / step
   const effectiveHourHeight = Math.max(HOUR_HEIGHT, MIN_SLOT_HEIGHT * slotsPerHour)
-  const bodyHeight = (totalMin / 60) * effectiveHourHeight + TOP_PAD
+  const bodyHeight = (totalMin / 60) * effectiveHourHeight + TOP_PAD + BOTTOM_PAD
 
   // Colunas: profissionais ativos + coluna "Sem profissional" se houver agendamento sem profissional.
   const columns = professionals.map(p => ({ id: p.id, name: p.name }))

@@ -858,9 +858,11 @@
   min-width: 0;
 }
 
-/* Setinhas próprias do carrossel de dias — só no desktop (não-touch). */
+/* Setinhas próprias do carrossel de dias — só no desktop (não-touch).
+   A existência no DOM é controlada por JS (WeekDaySelector renderiza apenas
+   quando o dispositivo não tem suporte a toque), então basta display:flex aqui. */
 .week-days-nav {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
@@ -1216,9 +1218,5 @@
 @media (min-width: 769px) {
   .agenda-header h1 {
     font-size: 2rem;
-  }
-
-  .week-days-nav {
-    display: flex;
   }
 }
