@@ -149,7 +149,7 @@ function OwnerLayout() {
 
             {/* Dropdown Notificações */}
             {showNotifications && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, width: '320px', maxWidth: '90vw', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', zIndex: 1000, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+              <div className="owner-notif-dropdown">
                 <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
                   <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>Notificações</h3>
                   {unreadCount > 0 && (
@@ -158,7 +158,7 @@ function OwnerLayout() {
                     </button>
                   )}
                 </div>
-                <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                <div className="owner-notif-list">
                   {notifications.length === 0 ? (
                     <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Nenhuma notificação.</div>
                   ) : (
