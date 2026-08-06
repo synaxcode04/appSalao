@@ -142,6 +142,33 @@ input:focus, select:focus, textarea:focus {
   font-size: 0.82rem;
 }
 
+.plan-services {
+  margin-top: 0.4rem;
+}
+
+.plan-services-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.plan-services-empty {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.plan-services-list {
+  list-style: disc;
+  padding-left: 1.2rem;
+  margin: 0.2rem 0 0;
+}
+
+.plan-services-item {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 .birthdate-input {
   display: flex;
   gap: 0.5rem;

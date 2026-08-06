@@ -39,6 +39,28 @@ export function PlanDescription({ text }) {
   )
 }
 
+// Lista de serviços do plano, um por linha, para não quebrar o nome no meio no mobile.
+// Named export para permitir teste isolado; export default do módulo continua sendo PlansManager.
+export function PlanServicesList({ services }) {
+  const items = services || []
+  return (
+    <div className="plan-services">
+      <p className="plan-services-label"><strong>Serviços:</strong></p>
+      {items.length === 0 ? (
+        <p className="plan-services-empty">nenhum</p>
+      ) : (
+        <ul className="plan-services-list">
+          {items.map(sps => (
+            <li className="plan-services-item" key={sps.service_id}>
+              {`${sps.services?.name || 'Serviço'} (${sps.monthly_quota}x)`}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // Convenção de dia da semana idêntica a working_hours e subscription_plan_days:
 // 0 = Domingo ... 6 = Sábado.
 const WEEK_DAYS = [
@@ -600,14 +622,7 @@ function PlansManager() {
                     <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.4rem' }}>
                       R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
                     </p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
-                      <strong>Serviços:</strong>{' '}
-                      {(plan.subscription_plan_services || []).length === 0
-                        ? 'nenhum'
-                        : plan.subscription_plan_services
-                            .map(sps => `${sps.services?.name || 'Serviço'} (${sps.monthly_quota}x)`)
-                            .join(', ')}
-                    </p>
+                    <PlanServicesList services={plan.subscription_plan_services} />
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                       <strong>Dias:</strong> {formatDays(plan.subscription_plan_days)}
                     </p>
