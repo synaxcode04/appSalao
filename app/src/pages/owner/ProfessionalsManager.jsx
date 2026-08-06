@@ -8,8 +8,22 @@ function ProfessionalsManager() {
   const { salon } = useOutletContext()
   const [professionals, setProfessionals] = useState([])
   const [loading, setLoading] = useState(true)
-  const [newName, setNewName] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Form states
+  const [editId, setEditId] = useState(null)
+  const [name, setName] = useState('')
+
+  const resetForm = () => {
+    setEditId(null)
+    setName('')
+  }
+
+  const closeModal = () => {
+    setModalOpen(false)
+    resetForm()
+  }
 
   useEffect(() => {
     if (salon) fetchProfessionals()
@@ -17,7 +31,7 @@ function ProfessionalsManager() {
 
   const fetchProfessionals = async () => {
     setLoading(true)
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('professionals')
       .select('*')
       .eq('salon_id', salon.id)
@@ -27,25 +41,43 @@ function ProfessionalsManager() {
     setLoading(false)
   }
 
-  const handleAddProfessional = async (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    if (!newName) return
+    if (!name || !salon) return
 
     setIsSubmitting(true)
-    const { error } = await supabase.from('professionals').insert([{
-      salon_id: salon.id,
-      name: newName,
-      is_active: true
-    }])
+
+    let error
+    if (editId) {
+      ({ error } = await supabase
+        .from('professionals')
+        .update({ name })
+        .eq('id', editId))
+    } else {
+      ({ error } = await supabase
+        .from('professionals')
+        .insert([{
+          salon_id: salon.id,
+          name,
+          is_active: true
+        }]))
+    }
 
     setIsSubmitting(false)
     if (error) {
-      toast.error('Erro ao adicionar profissional: ' + error.message)
+      toast.error('Erro ao salvar profissional: ' + error.message)
     } else {
-      setNewName('')
+      resetForm()
+      setModalOpen(false)
       fetchProfessionals()
-      toast.success('Profissional cadastrado com sucesso!')
+      toast.success(editId ? 'Profissional atualizado com sucesso!' : 'Profissional cadastrado com sucesso!')
     }
+  }
+
+  const handleEdit = (prof) => {
+    setEditId(prof.id)
+    setName(prof.name)
+    setModalOpen(true)
   }
 
   const toggleActive = async (prof) => {
@@ -63,7 +95,7 @@ function ProfessionalsManager() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir este profissional? Agendamentos vinculados a ele podem ser afetados.')) return
-    
+
     const { error } = await supabase.from('professionals').delete().eq('id', id)
     if (!error) {
       fetchProfessionals()
@@ -84,37 +116,28 @@ function ProfessionalsManager() {
         <p className="subtitle">Cadastre os profissionais do seu salão para permitir agendas independentes.</p>
       </header>
 
-      {/* Formulário de Adição */}
-      <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem', backgroundColor: 'var(--bg-color)' }}>
-        <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Adicionar Novo Profissional</h2>
-        <form onSubmit={handleAddProfessional} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'end' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Nome do Profissional</label>
-            <input 
-              type="text" 
-              placeholder="Ex: João Silva" 
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)' }}
-              required
-            />
-          </div>
-          <button type="submit" className="btn-primary" disabled={isSubmitting} style={{ height: '45px', padding: '0 1.5rem' }}>
-            {isSubmitting ? 'Adicionando...' : <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Plus size={18} /> Adicionar</span>}
-          </button>
-        </form>
-      </div>
+      <button
+        type="button"
+        className="btn-primary clients-toolbar"
+        onClick={() => {
+          resetForm()
+          setModalOpen(true)
+        }}
+      >
+        <Plus size={18} />
+        Novo Profissional
+      </button>
 
       {/* Lista de Profissionais */}
       <div>
         <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Profissionais Cadastrados</h2>
-        
+
         {loading ? (
           <p>Carregando profissionais...</p>
         ) : professionals.length === 0 ? (
           <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
             <p style={{ color: 'var(--text-secondary)' }}>Nenhum profissional cadastrado.</p>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Adicione o primeiro profissional usando o formulário acima.</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Adicione o primeiro profissional usando o botão acima.</p>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
@@ -125,10 +148,10 @@ function ProfessionalsManager() {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                  <button 
+                  <button
                     onClick={() => toggleActive(prof)}
-                    style={{ 
-                      display: 'flex', alignItems: 'center', gap: '0.4rem', 
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.4rem',
                       padding: '0.4rem 0.8rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
                       backgroundColor: prof.is_active ? 'var(--light-green)' : '#ffebee',
                       color: prof.is_active ? 'var(--dark-green)' : '#d32f2f',
@@ -138,13 +161,23 @@ function ProfessionalsManager() {
                     {prof.is_active ? <><CheckCircle size={16} /> Ativo</> : <><XCircle size={16} /> Inativo</>}
                   </button>
 
-                  <button 
-                    onClick={() => handleDelete(prof.id)}
-                    style={{ background: 'transparent', border: 'none', color: '#d32f2f', cursor: 'pointer', padding: '0.4rem' }}
-                    title="Excluir"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => handleEdit(prof)}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--primary-green)', cursor: 'pointer', padding: '0.4rem' }}
+                      title="Editar"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(prof.id)}
+                      style={{ background: 'transparent', border: 'none', color: '#d32f2f', cursor: 'pointer', padding: '0.4rem' }}
+                      title="Excluir"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -152,6 +185,46 @@ function ProfessionalsManager() {
         )}
       </div>
 
+      {modalOpen && (
+        <div
+          onClick={() => !isSubmitting && closeModal()}
+          className="modal-overlay"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card modal-card"
+          >
+            <h3 className="modal-title">{editId ? 'Editar Profissional' : 'Novo Profissional'}</h3>
+
+            <form onSubmit={handleSave} className="auth-form">
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Nome do Profissional
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: João Silva"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+              <button type="submit" disabled={isSubmitting} className="btn-primary">
+                {isSubmitting ? 'Salvando...' : (editId ? 'Atualizar Profissional' : 'Adicionar Profissional')}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              onClick={closeModal}
+              disabled={isSubmitting}
+              className="modal-cancel"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
