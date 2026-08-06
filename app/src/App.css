@@ -1335,6 +1335,17 @@
   gap: 0.8rem;
 }
 
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.form-field-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
 .block-form-field {
   display: flex;
   flex-direction: column;

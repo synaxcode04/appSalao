@@ -325,21 +325,36 @@ function ClientsManager() {
             <h3 className="modal-title">Novo Cliente</h3>
 
             <form onSubmit={handleSubmit} className="auth-form">
-              <input
-                type="tel"
-                placeholder="Telefone (ex: (11) 99999-9999)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Nome completo do cliente"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-              <BirthdateInput value={birthDate} onChange={setBirthDate} />
+              <div className="form-field">
+                <label className="form-field-label" htmlFor="client-phone">
+                  Telefone
+                </label>
+                <input
+                  id="client-phone"
+                  type="tel"
+                  placeholder="Ex: (11) 99999-9999"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-field-label" htmlFor="client-name">
+                  Nome completo
+                </label>
+                <input
+                  id="client-name"
+                  type="text"
+                  placeholder="Nome completo do cliente"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-field">
+                <span className="form-field-label">Data de nascimento</span>
+                <BirthdateInput value={birthDate} onChange={setBirthDate} />
+              </div>
               <button type="submit" disabled={submitting} className="btn-primary">
                 <UserPlus size={18} className="btn-icon-inline" />
                 {submitting ? 'Cadastrando...' : 'Cadastrar Cliente'}
