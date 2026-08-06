@@ -152,6 +152,27 @@
   font-weight: 700;
 }
 
+/* ===== Dropdown de Notificações (Owner) ===== */
+/* Desktop: ancorado ao sino dentro da sidebar-header */
+.owner-notif-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 320px;
+  max-width: 90vw;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1300;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.owner-notif-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
 .sidebar-nav {
   flex: 1;
   padding: 1.5rem 0;
@@ -250,6 +271,22 @@
     padding: 1rem;
     flex: 1;
     border-bottom: none;
+  }
+
+  /* Mobile: fixed abaixo do header, com respiro nas duas bordas.
+     Fixed escapa do overflow:hidden da .dashboard-layout que clipava o painel. */
+  .owner-notif-dropdown {
+    position: fixed;
+    top: 72px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: 360px;
+    margin-left: auto;
+  }
+
+  .owner-notif-list {
+    max-height: min(350px, 70vh);
   }
 
   .sidebar-footer {
@@ -664,6 +701,111 @@
   align-items: center;
   gap: 0.4rem;
   margin-bottom: 1rem;
+}
+
+/* ===== ProfessionalsManager ===== */
+.professionals-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.professionals-header {
+  margin-bottom: 2rem;
+}
+
+.professionals-title {
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.professionals-list-title {
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.professionals-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.professionals-empty-title {
+  color: var(--text-secondary);
+}
+
+.professionals-empty-hint {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+}
+
+.professionals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.professional-card {
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.professional-card-name {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.professional-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.professional-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.85rem;
+}
+
+.professional-card-icons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.professional-icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem;
+}
+
+.professional-icon-edit {
+  color: var(--primary-green);
+}
+
+.professional-icon-delete {
+  color: #d32f2f;
+}
+
+.professional-form-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 .clients-search {

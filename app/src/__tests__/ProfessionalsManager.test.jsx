@@ -8,10 +8,13 @@ vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }))
 
-const updateEq = vi.fn().mockResolvedValue({ error: null })
+// .eq() é encadeável (2 filtros: id + salon_id) e também é "thenable" ao resolver
+const updateEqSalon = vi.fn().mockResolvedValue({ error: null })
+const updateEq = vi.fn(() => ({ eq: updateEqSalon }))
 const update = vi.fn(() => ({ eq: updateEq }))
 const insert = vi.fn().mockResolvedValue({ error: null })
-const deleteEq = vi.fn().mockResolvedValue({ error: null })
+const deleteEqSalon = vi.fn().mockResolvedValue({ error: null })
+const deleteEq = vi.fn(() => ({ eq: deleteEqSalon }))
 const del = vi.fn(() => ({ eq: deleteEq }))
 
 const professionalsData = [
@@ -48,7 +51,7 @@ describe('ProfessionalsManager', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     order.mockResolvedValue({ data: professionalsData, error: null })
-    updateEq.mockResolvedValue({ error: null })
+    updateEqSalon.mockResolvedValue({ error: null })
     insert.mockResolvedValue({ error: null })
   })
 
@@ -85,6 +88,7 @@ describe('ProfessionalsManager', () => {
     await waitFor(() => {
       expect(update).toHaveBeenCalledWith({ name: 'João Silva' })
       expect(updateEq).toHaveBeenCalledWith('id', 'p1')
+      expect(updateEqSalon).toHaveBeenCalledWith('salon_id', 'salon-1')
     })
     expect(insert).not.toHaveBeenCalled()
   })

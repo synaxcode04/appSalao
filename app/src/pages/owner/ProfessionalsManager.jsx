@@ -52,7 +52,8 @@ function ProfessionalsManager() {
       ({ error } = await supabase
         .from('professionals')
         .update({ name })
-        .eq('id', editId))
+        .eq('id', editId)
+        .eq('salon_id', salon.id))
     } else {
       ({ error } = await supabase
         .from('professionals')
@@ -85,6 +86,7 @@ function ProfessionalsManager() {
       .from('professionals')
       .update({ is_active: !prof.is_active })
       .eq('id', prof.id)
+      .eq('salon_id', salon.id)
 
     if (!error) {
       fetchProfessionals()
@@ -96,7 +98,7 @@ function ProfessionalsManager() {
   const handleDelete = async (id) => {
     if (!window.confirm('Tem certeza que deseja excluir este profissional? Agendamentos vinculados a ele podem ser afetados.')) return
 
-    const { error } = await supabase.from('professionals').delete().eq('id', id)
+    const { error } = await supabase.from('professionals').delete().eq('id', id).eq('salon_id', salon.id)
     if (!error) {
       fetchProfessionals()
     } else {
@@ -108,8 +110,8 @@ function ProfessionalsManager() {
 
   return (
     <div className="page-content">
-      <header className="page-header" style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+      <header className="page-header professionals-header">
+        <h1 className="professionals-title">
           <Users size={28} color="var(--primary-green)" />
           Gerenciar Profissionais
         </h1>
@@ -118,7 +120,7 @@ function ProfessionalsManager() {
 
       <button
         type="button"
-        className="btn-primary clients-toolbar"
+        className="btn-primary professionals-toolbar"
         onClick={() => {
           resetForm()
           setModalOpen(true)
@@ -130,41 +132,39 @@ function ProfessionalsManager() {
 
       {/* Lista de Profissionais */}
       <div>
-        <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Profissionais Cadastrados</h2>
+        <h2 className="professionals-list-title">Profissionais Cadastrados</h2>
 
         {loading ? (
           <p>Carregando profissionais...</p>
         ) : professionals.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-            <p style={{ color: 'var(--text-secondary)' }}>Nenhum profissional cadastrado.</p>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Adicione o primeiro profissional usando o botão acima.</p>
+          <div className="card professionals-empty">
+            <p className="professionals-empty-title">Nenhum profissional cadastrado.</p>
+            <p className="professionals-empty-hint">Adicione o primeiro profissional usando o botão acima.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+          <div className="professionals-grid">
             {professionals.map(prof => (
-              <div key={prof.id} className="card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '1rem', opacity: prof.is_active ? 1 : 0.6 }}>
+              <div key={prof.id} className="card professional-card" style={{ opacity: prof.is_active ? 1 : 0.6 }}>
                 <div>
-                  <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>{prof.name}</h3>
+                  <h3 className="professional-card-name">{prof.name}</h3>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                <div className="professional-card-actions">
                   <button
                     onClick={() => toggleActive(prof)}
+                    className="professional-toggle"
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '0.4rem',
-                      padding: '0.4rem 0.8rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
                       backgroundColor: prof.is_active ? 'var(--light-green)' : '#ffebee',
-                      color: prof.is_active ? 'var(--dark-green)' : '#d32f2f',
-                      fontWeight: 'bold', fontSize: '0.85rem'
+                      color: prof.is_active ? 'var(--dark-green)' : '#d32f2f'
                     }}
                   >
                     {prof.is_active ? <><CheckCircle size={16} /> Ativo</> : <><XCircle size={16} /> Inativo</>}
                   </button>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="professional-card-icons">
                     <button
                       onClick={() => handleEdit(prof)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--primary-green)', cursor: 'pointer', padding: '0.4rem' }}
+                      className="professional-icon-btn professional-icon-edit"
                       title="Editar"
                     >
                       <Edit2 size={18} />
@@ -172,7 +172,7 @@ function ProfessionalsManager() {
 
                     <button
                       onClick={() => handleDelete(prof.id)}
-                      style={{ background: 'transparent', border: 'none', color: '#d32f2f', cursor: 'pointer', padding: '0.4rem' }}
+                      className="professional-icon-btn professional-icon-delete"
                       title="Excluir"
                     >
                       <Trash2 size={18} />
@@ -198,7 +198,7 @@ function ProfessionalsManager() {
 
             <form onSubmit={handleSave} className="auth-form">
               <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                <label className="professional-form-label">
                   Nome do Profissional
                 </label>
                 <input
