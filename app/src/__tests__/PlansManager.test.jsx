@@ -153,6 +153,60 @@ describe('PlansManager — economia no card "Seus Planos"', () => {
     expect(await screen.findByText('Economize R$ 20,00 por mês')).toBeInTheDocument()
   })
 
+  it('renderiza o valor cheio riscado (fullValue) quando há economia real', async () => {
+    // 2x serviço de R$ 30 = R$ 60 de valor cheio; plano R$ 40 → mostra "De R$ 60,00" riscado
+    setTableData({
+      salons: { id: 'salon-1' },
+      services: [],
+      client_subscriptions: [],
+      subscription_plans: [
+        {
+          id: 'plan-1',
+          name: 'Plano Barba',
+          description: null,
+          price: 40,
+          is_active: true,
+          subscription_plan_services: [
+            { service_id: 1, monthly_quota: 2, services: { id: 1, name: 'Barba', price: 30 } }
+          ],
+          subscription_plan_days: []
+        }
+      ]
+    })
+
+    render(<PlansManager />)
+
+    const fullValue = await screen.findByText('De R$ 60,00')
+    expect(fullValue).toBeInTheDocument()
+    expect(fullValue.className).toContain('plan-full-value')
+  })
+
+  it('não renderiza o valor cheio riscado quando não há economia (fullValue <= planPrice)', async () => {
+    setTableData({
+      salons: { id: 'salon-1' },
+      services: [],
+      client_subscriptions: [],
+      subscription_plans: [
+        {
+          id: 'plan-2',
+          name: 'Plano Caro',
+          description: null,
+          price: 50,
+          is_active: true,
+          subscription_plan_services: [
+            { service_id: 1, monthly_quota: 1, services: { id: 1, name: 'Barba', price: 30 } }
+          ],
+          subscription_plan_days: []
+        }
+      ]
+    })
+
+    render(<PlansManager />)
+
+    expect(await screen.findByText('Plano Caro')).toBeInTheDocument()
+    expect(screen.queryByText(/^De R\$/)).not.toBeInTheDocument()
+  })
+
   it('não renderiza linha de economia quando o preço do plano não gera economia', async () => {
     // 1x serviço de R$ 30 = R$ 30 de valor cheio; plano R$ 50 → economia 0
     setTableData({

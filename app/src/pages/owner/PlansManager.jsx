@@ -629,7 +629,12 @@ function PlansManager() {
                     <div className="plan-preview">
                       <p className="plan-preview-hint">Assim o cliente verá seu plano:</p>
                       <h4 style={{ color: 'var(--dark-green)' }}>{name || 'Nome do plano'}</h4>
-                      <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                      {savingsData.fullValue > savingsData.planPrice && (
+                        <p className="plan-full-value" style={{ fontSize: '0.85rem', marginTop: '0.2rem' }}>
+                          De R$ {Number(savingsData.fullValue).toFixed(2).replace('.', ',')}
+                        </p>
+                      )}
+                      <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: savingsData.fullValue > savingsData.planPrice ? '0.1rem' : '0.2rem' }}>
                         R$ {(parseFloat(price) || 0).toFixed(2).replace('.', ',')} / mês
                       </p>
                       {description && (
@@ -703,7 +708,7 @@ function PlansManager() {
         ) : (
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {plans.map(plan => {
-              const { savings } = computePlanSavings({
+              const { savings, fullValue, planPrice } = computePlanSavings({
                 price: plan.price,
                 services: (plan.subscription_plan_services || []).map(ps => ({
                   monthly_quota: ps.monthly_quota,
@@ -723,7 +728,12 @@ function PlansManager() {
                       )}
                     </h4>
                     {plan.description && <PlanDescription text={plan.description} />}
-                    <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.4rem' }}>
+                    {fullValue > planPrice && (
+                      <p className="plan-full-value" style={{ fontSize: '0.85rem', marginTop: '0.4rem' }}>
+                        De R$ {Number(fullValue).toFixed(2).replace('.', ',')}
+                      </p>
+                    )}
+                    <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: fullValue > planPrice ? '0.1rem' : '0.4rem' }}>
                       R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
                     </p>
                     <PlanServicesList services={plan.subscription_plan_services} />
