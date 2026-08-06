@@ -663,6 +663,11 @@ function PlansManager() {
                           Economize R$ {savingsData.savings.toFixed(2).replace('.', ',')} por mês
                         </p>
                       )}
+                      {savingsData.fullValue > savingsData.planPrice && (
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                          Valor total avulso: R$ {Number(savingsData.fullValue).toFixed(2).replace('.', ',')}
+                        </p>
+                      )}
                     </div>
                   )
                 })()}
@@ -743,6 +748,11 @@ function PlansManager() {
                     {savings > 0 && (
                       <p className="plan-preview-savings">
                         Economize R$ {savings.toFixed(2).replace('.', ',')} por mês
+                      </p>
+                    )}
+                    {fullValue > planPrice && (
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                        Valor total avulso: R$ {Number(fullValue).toFixed(2).replace('.', ',')}
                       </p>
                     )}
                   </div>

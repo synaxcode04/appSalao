@@ -83,6 +83,31 @@ describe('ClientPlans — valor cheio riscado no card de planos disponíveis', (
     expect(screen.getByText('Economize R$ 20,00 por mês')).toBeInTheDocument()
   })
 
+  it('renderiza a linha "Valor total avulso: R$ ..." quando fullValue > planPrice', async () => {
+    // 2x serviço de R$ 30 = R$ 60 de valor cheio; plano R$ 40 → linha adicional "R$ 60,00"
+    plansData = [
+      {
+        id: 'plan-1',
+        name: 'Plano Barba',
+        description: null,
+        price: 40,
+        is_active: true,
+        subscription_plan_services: [
+          { service_id: 1, monthly_quota: 2, services: { id: 1, name: 'Barba', price: 30 } }
+        ],
+        subscription_plan_days: []
+      }
+    ]
+
+    render(<ClientPlans />)
+
+    const line = await screen.findByText('Valor total avulso: R$ 60,00')
+    expect(line).toBeInTheDocument()
+    expect(line.className).toContain('client-plan-card-full-value-line')
+    // O valor riscado existente permanece (linha adicional, não substituição).
+    expect(document.querySelector('.client-plan-card-full-value')).not.toBeNull()
+  })
+
   it('não renderiza o valor cheio riscado quando não há economia (fullValue <= planPrice)', async () => {
     // 1x serviço de R$ 30 = R$ 30 de valor cheio; plano R$ 50 → sem economia
     plansData = [

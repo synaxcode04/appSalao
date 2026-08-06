@@ -433,6 +433,12 @@ function ClientPlans() {
                 </p>
               )}
 
+              {fullValue > planPrice && (
+                <p className="client-plan-card-full-value-line" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  Valor total avulso: R$ {Number(fullValue).toFixed(2).replace('.', ',')}
+                </p>
+              )}
+
               {plan.description && (
                 <p className="client-plan-card-description">{plan.description}</p>
               )}

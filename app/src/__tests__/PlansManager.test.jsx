@@ -181,6 +181,34 @@ describe('PlansManager — economia no card "Seus Planos"', () => {
     expect(fullValue.className).toContain('plan-full-value')
   })
 
+  it('renderiza a linha "Valor total avulso: R$ ..." quando fullValue > planPrice', async () => {
+    // 2x serviço de R$ 30 = R$ 60 de valor cheio; plano R$ 40 → linha adicional "R$ 60,00"
+    setTableData({
+      salons: { id: 'salon-1' },
+      services: [],
+      client_subscriptions: [],
+      subscription_plans: [
+        {
+          id: 'plan-1',
+          name: 'Plano Barba',
+          description: null,
+          price: 40,
+          is_active: true,
+          subscription_plan_services: [
+            { service_id: 1, monthly_quota: 2, services: { id: 1, name: 'Barba', price: 30 } }
+          ],
+          subscription_plan_days: []
+        }
+      ]
+    })
+
+    render(<PlansManager />)
+
+    expect(await screen.findByText('Valor total avulso: R$ 60,00')).toBeInTheDocument()
+    // A linha do valor riscado existente permanece.
+    expect(screen.getByText('De R$ 60,00')).toBeInTheDocument()
+  })
+
   it('não renderiza o valor cheio riscado quando não há economia (fullValue <= planPrice)', async () => {
     setTableData({
       salons: { id: 'salon-1' },
