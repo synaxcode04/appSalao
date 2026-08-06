@@ -4,6 +4,7 @@ import { supabase } from '../../supabase'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 import { CheckCircle, XCircle, CalendarDays, Package, Clock, CreditCard, MessageCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { computePlanSavings } from '../../utils/planSavings'
 
 // Convenção de dia da semana idêntica a working_hours e subscription_plan_days:
 // 0 = Domingo ... 6 = Sábado.
@@ -39,7 +40,7 @@ function ClientPlans() {
     // Planos ofertados pelo salão (SELECT público via anon key — RLS permite)
     const plansPromise = supabase
       .from('subscription_plans')
-      .select('id, name, description, price, is_active, subscription_plan_services(service_id, monthly_quota, services(id, name)), subscription_plan_days(day_of_week)')
+      .select('id, name, description, price, is_active, subscription_plan_services(service_id, monthly_quota, services(id, name, price)), subscription_plan_days(day_of_week)')
       .eq('salon_id', salon.id)
       .eq('is_active', true)
       .order('price', { ascending: true })
@@ -405,42 +406,56 @@ function ClientPlans() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {plans.filter(p => !subscribedPlanIds.has(p.id)).map(plan => (
-            <div key={plan.id} className="card" style={{ padding: '1.2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.6rem' }}>
-                <h3 style={{ color: 'var(--dark-green)', fontSize: '1.2rem' }}>{plan.name}</h3>
-                <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                  R$ {Number(plan.price).toFixed(2).replace('.', ',')}<span style={{ fontSize: '0.8rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>/mês</span>
+        <div className="client-plans-available-list">
+          {plans.filter(p => !subscribedPlanIds.has(p.id)).map(plan => {
+            const { savings } = computePlanSavings({
+              price: plan.price,
+              services: (plan.subscription_plan_services || []).map(ps => ({
+                monthly_quota: ps.monthly_quota,
+                price: ps.services?.price
+              }))
+            })
+            return (
+            <div key={plan.id} className="card client-plan-card">
+              <div className="client-plan-card-header">
+                <h3 className="client-plan-card-name">{plan.name}</h3>
+                <span className="client-plan-card-price">
+                  R$ {Number(plan.price).toFixed(2).replace('.', ',')}<span className="client-plan-card-price-suffix">/mês</span>
                 </span>
               </div>
 
-              {plan.description && (
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>{plan.description}</p>
+              {savings > 0 && (
+                <p className="client-plan-card-savings">
+                  Economize R$ {savings.toFixed(2).replace('.', ',')} por mês
+                </p>
               )}
 
-              <div style={{ marginBottom: '0.6rem' }}>
+              {plan.description && (
+                <p className="client-plan-card-description">{plan.description}</p>
+              )}
+
+              <div className="client-plan-card-services">
                 {(plan.subscription_plan_services || []).map(ps => (
-                  <p key={ps.service_id} style={{ fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <p key={ps.service_id} className="client-plan-card-service-item">
                     <CheckCircle size={14} color="var(--primary-green)" /> {ps.services?.name || 'Serviço'} — {ps.monthly_quota}x por ciclo de 30 dias
                   </p>
                 ))}
               </div>
 
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1rem' }}>
+              <p className="client-plan-card-days">
                 <CalendarDays size={16} /> Válido: {formatDays(plan.subscription_plan_days)}
               </p>
 
               <button
                 onClick={() => setPayingPlan(plan)}
                 disabled={busy}
-                className="btn-primary"
-                style={{ width: 'auto', padding: '0.7rem 1.4rem' }}
+                className="btn-primary client-plan-card-subscribe"
               >
                 Assinar
               </button>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

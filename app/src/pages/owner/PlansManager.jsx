@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { supabase } from '../../supabase'
 import { Trash2, Edit2, ToggleLeft, ToggleRight, CheckCircle, Users, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { computePlanSavings } from '../../utils/planSavings'
 
 // Descrição do plano com clamp de 2 linhas no card do dono, com botão "ver mais/ver menos".
 // O botão só aparece quando o texto realmente excede o clamp (medido via scrollHeight > clientHeight).
@@ -111,6 +112,8 @@ function PlansManager() {
   const [serviceQuotas, setServiceQuotas] = useState({})
   // Array de day_of_week selecionados
   const [selectedDays, setSelectedDays] = useState([])
+  // Etapa atual do wizard do modal (1: dados básicos, 2: serviços/dias, 3: prévia)
+  const [step, setStep] = useState(1)
 
   useEffect(() => {
     const fetchSalonData = async () => {
@@ -208,7 +211,7 @@ function PlansManager() {
   const loadPlans = async (sId) => {
     const { data } = await supabase
       .from('subscription_plans')
-      .select('id, name, description, price, is_active, subscription_plan_services(service_id, monthly_quota, services(id, name)), subscription_plan_days(day_of_week)')
+      .select('id, name, description, price, is_active, subscription_plan_services(service_id, monthly_quota, services(id, name, price)), subscription_plan_days(day_of_week)')
       .eq('salon_id', sId)
       .order('created_at', { ascending: false })
 
@@ -222,6 +225,7 @@ function PlansManager() {
     setPrice('')
     setServiceQuotas({})
     setSelectedDays([])
+    setStep(1)
   }
 
   const closeModal = () => {
@@ -251,6 +255,28 @@ function PlansManager() {
       prev.includes(dayValue) ? prev.filter(d => d !== dayValue) : [...prev, dayValue]
     )
   }
+
+  const validateStep1 = () => {
+    if (!name.trim()) { toast.error('Informe o nome do plano.'); return false }
+    if (!price || parseFloat(price) <= 0) { toast.error('Informe um preço mensal maior que zero.'); return false }
+    return true
+  }
+
+  const validateStep2 = () => {
+    const chosen = Object.entries(serviceQuotas)
+      .filter(([, v]) => v.selected)
+      .map(([, v]) => parseInt(v.quota, 10))
+    if (chosen.length === 0) { toast.error('Selecione ao menos um serviço para o plano.'); return false }
+    if (chosen.some(q => !q || q < 1)) { toast.error('A quantidade por ciclo de cada serviço deve ser no mínimo 1.'); return false }
+    return true
+  }
+
+  const goNext = () => {
+    if (step === 1) { if (validateStep1()) setStep(2); return }
+    if (step === 2) { if (validateStep2()) setStep(3) }
+  }
+
+  const goBack = () => setStep(s => Math.max(1, s - 1))
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -372,6 +398,7 @@ function PlansManager() {
     setServiceQuotas(quotas)
 
     setSelectedDays((plan.subscription_plan_days || []).map(d => d.day_of_week))
+    setStep(1)
     setModalOpen(true)
   }
 
@@ -470,122 +497,179 @@ function PlansManager() {
         onClick={(e) => e.stopPropagation()}
         className="card modal-card"
       >
-        <h3 className="modal-title">{editId ? 'Editar Plano' : 'Novo Plano'}</h3>
+        <h3 className="modal-title">{editId ? 'Editar Plano' : 'Novo Plano'} — Etapa {step} de 3</h3>
         <form onSubmit={handleSave} className="auth-form" style={{ marginTop: '1rem' }}>
-          <input
-            type="text"
-            placeholder="Nome do Plano (ex: Plano Barba & Cabelo)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <textarea
-            placeholder="Descrição / vantagens do plano (opcional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            style={{ width: '100%', padding: '0.8rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', minHeight: '70px', fontFamily: 'inherit', fontSize: '1rem' }}
-          />
-          <input
-            type="number"
-            placeholder="Preço mensal (R$)"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            required
-            min="0"
-            step="0.01"
-          />
+          <div className="plan-wizard-viewport">
+            <div
+              className="plan-wizard-track"
+              style={{ transform: `translateX(calc(-${step - 1} * 100%))` }}
+            >
+              {/* Etapa 1 — dados básicos */}
+              <div className="plan-wizard-panel">
+                <input
+                  type="text"
+                  placeholder="Nome do Plano (ex: Plano Barba & Cabelo)"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+                <textarea
+                  placeholder="Descrição / vantagens do plano (opcional)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="plan-wizard-textarea"
+                />
+                <input
+                  type="number"
+                  placeholder="Preço mensal (R$)"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required
+                  min="0"
+                  step="0.01"
+                />
+              </div>
 
-          {/* Seleção de serviços com cota */}
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Serviços incluídos e quantidade por ciclo (30 dias):
-            </label>
-            {services.length === 0 ? (
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                Cadastre serviços antes de criar um plano.
-              </p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {services.map(s => {
-                  const entry = serviceQuotas[s.id]
-                  const isChecked = !!entry?.selected
+              {/* Etapa 2 — serviços + dias */}
+              <div className="plan-wizard-panel">
+                <div>
+                  <label className="plan-wizard-label">
+                    Serviços incluídos e quantidade por ciclo (30 dias):
+                  </label>
+                  {services.length === 0 ? (
+                    <p className="plan-wizard-hint">
+                      Cadastre serviços antes de criar um plano.
+                    </p>
+                  ) : (
+                    <div className="plan-wizard-service-list">
+                      {services.map(s => {
+                        const entry = serviceQuotas[s.id]
+                        const isChecked = !!entry?.selected
+                        return (
+                          <div
+                            key={s.id}
+                            className={`plan-wizard-service-row${isChecked ? ' plan-wizard-service-row--checked' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleService(s.id)}
+                              className="plan-wizard-checkbox"
+                            />
+                            <span className="plan-wizard-service-name">
+                              {s.name}
+                            </span>
+                            {isChecked && (
+                              <div className="plan-wizard-quota">
+                                <span>Qtd/ciclo (30 dias):</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={entry.quota}
+                                  onChange={(e) => setServiceQuota(s.id, e.target.value)}
+                                  className="plan-wizard-quota-input"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="plan-wizard-label">
+                    Dias da semana permitidos:
+                  </label>
+                  <div className="plan-wizard-days">
+                    {WEEK_DAYS.map(d => {
+                      const isSel = selectedDays.includes(d.value)
+                      return (
+                        <button
+                          type="button"
+                          key={d.value}
+                          onClick={() => toggleDay(d.value)}
+                          className={`plan-wizard-day${isSel ? ' plan-wizard-day--selected' : ''}`}
+                        >
+                          {d.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="plan-wizard-hint">
+                    Se nenhum dia for marcado, o plano vale para todos os dias da semana.
+                  </p>
+                </div>
+              </div>
+
+              {/* Etapa 3 — prévia */}
+              <div className="plan-wizard-panel">
+                {(() => {
+                  const previewServices = Object.entries(serviceQuotas)
+                    .filter(([, v]) => v.selected)
+                    .map(([serviceId, v]) => {
+                      const svc = services.find(s => String(s.id) === String(serviceId))
+                      return { name: svc?.name || 'Serviço', monthly_quota: Number(v.quota), price: svc?.price }
+                    })
+                  const savingsData = computePlanSavings({ price, services: previewServices })
                   return (
-                    <div
-                      key={s.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.7rem 0.9rem',
-                        borderRadius: 'var(--radius-md)',
-                        border: isChecked ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
-                        backgroundColor: isChecked ? 'var(--light-green)' : 'transparent'
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => toggleService(s.id)}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
-                      />
-                      <span style={{ flex: 1, fontWeight: '500', color: isChecked ? 'var(--dark-green)' : 'var(--text-primary)' }}>
-                        {s.name}
-                      </span>
-                      {isChecked && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Qtd/ciclo (30 dias):</span>
-                          <input
-                            type="number"
-                            min="1"
-                            value={entry.quota}
-                            onChange={(e) => setServiceQuota(s.id, e.target.value)}
-                            style={{ width: '70px', padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}
-                          />
-                        </div>
+                    <div className="plan-preview">
+                      <p className="plan-preview-hint">Assim o cliente verá seu plano:</p>
+                      <h4 style={{ color: 'var(--dark-green)' }}>{name || 'Nome do plano'}</h4>
+                      <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                        R$ {(parseFloat(price) || 0).toFixed(2).replace('.', ',')} / mês
+                      </p>
+                      {description && (
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.3rem' }}>{description}</p>
+                      )}
+                      <p className="plan-services-label" style={{ marginTop: '0.6rem' }}><strong>Serviços:</strong></p>
+                      {previewServices.length === 0 ? (
+                        <p className="plan-services-empty">nenhum</p>
+                      ) : (
+                        <ul className="plan-services-list">
+                          {previewServices.map((s, i) => (
+                            <li className="plan-services-item" key={i}>
+                              {`${s.name} — ${s.monthly_quota}x por ciclo de 30 dias`}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                        <strong>Dias válidos:</strong>{' '}
+                        {selectedDays.length === 0
+                          ? 'Todos os dias'
+                          : WEEK_DAYS.filter(w => selectedDays.includes(w.value)).map(w => w.label).join(', ')}
+                      </p>
+                      {savingsData.savings > 0 && (
+                        <p className="plan-preview-savings">
+                          Economize R$ {savingsData.savings.toFixed(2).replace('.', ',')} por mês
+                        </p>
                       )}
                     </div>
                   )
-                })}
+                })()}
               </div>
+            </div>
+          </div>
+
+          <div className="plan-wizard-nav">
+            {step > 1 && (
+              <button type="button" onClick={goBack} disabled={saving} className="modal-cancel" style={{ marginTop: 0 }}>
+                Voltar
+              </button>
+            )}
+            {step < 3 && (
+              <button type="button" onClick={goNext} className="btn-primary">
+                Avançar
+              </button>
+            )}
+            {step === 3 && (
+              <button type="submit" disabled={saving} className="btn-primary">
+                {saving ? 'Salvando...' : (editId ? 'Atualizar Plano' : 'Confirmar')}
+              </button>
             )}
           </div>
-
-          {/* Seleção de dias da semana */}
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
-              Dias da semana permitidos:
-            </label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {WEEK_DAYS.map(d => {
-                const isSel = selectedDays.includes(d.value)
-                return (
-                  <button
-                    type="button"
-                    key={d.value}
-                    onClick={() => toggleDay(d.value)}
-                    style={{
-                      padding: '0.5rem 0.9rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: isSel ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
-                      backgroundColor: isSel ? 'var(--light-green)' : 'transparent',
-                      color: isSel ? 'var(--dark-green)' : 'var(--text-primary)',
-                      fontWeight: isSel ? 'bold' : 'normal',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {d.label}
-                  </button>
-                )
-              })}
-            </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-              Se nenhum dia for marcado, o plano vale para todos os dias da semana.
-            </p>
-          </div>
-
-          <button type="submit" disabled={saving} className="btn-primary">
-            {saving ? 'Salvando...' : (editId ? 'Atualizar Plano' : 'Adicionar Plano')}
-          </button>
         </form>
 
         <button
