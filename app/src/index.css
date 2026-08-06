@@ -173,6 +173,7 @@ input:focus, select:focus, textarea:focus {
 .plan-wizard-viewport {
   overflow: hidden;
   width: 100%;
+  transition: height 0.3s ease;
 }
 
 .plan-wizard-track {

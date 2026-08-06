@@ -114,6 +114,15 @@ function PlansManager() {
   const [selectedDays, setSelectedDays] = useState([])
   // Etapa atual do wizard do modal (1: dados básicos, 2: serviços/dias, 3: prévia)
   const [step, setStep] = useState(1)
+  // Altura do painel ativo do wizard, medida via ref — evita que o container do
+  // slide fique com a altura do painel mais alto entre os 3 (ver knowledge base).
+  const [wizardHeight, setWizardHeight] = useState(null)
+  const wizardPanelRefs = useRef([])
+
+  useEffect(() => {
+    const activePanel = wizardPanelRefs.current[step - 1]
+    if (activePanel) setWizardHeight(activePanel.offsetHeight)
+  }, [step, services, serviceQuotas, selectedDays, name, description, price, modalOpen])
 
   useEffect(() => {
     const fetchSalonData = async () => {
@@ -499,13 +508,16 @@ function PlansManager() {
       >
         <h3 className="modal-title">{editId ? 'Editar Plano' : 'Novo Plano'} — Etapa {step} de 3</h3>
         <form onSubmit={handleSave} className="auth-form" style={{ marginTop: '1rem' }}>
-          <div className="plan-wizard-viewport">
+          <div
+            className="plan-wizard-viewport"
+            style={wizardHeight ? { height: `${wizardHeight}px` } : undefined}
+          >
             <div
               className="plan-wizard-track"
               style={{ transform: `translateX(calc(-${step - 1} * 100%))` }}
             >
               {/* Etapa 1 — dados básicos */}
-              <div className="plan-wizard-panel">
+              <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[0] = el }}>
                 <input
                   type="text"
                   placeholder="Nome do Plano (ex: Plano Barba & Cabelo)"
@@ -531,7 +543,7 @@ function PlansManager() {
               </div>
 
               {/* Etapa 2 — serviços + dias */}
-              <div className="plan-wizard-panel">
+              <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[1] = el }}>
                 <div>
                   <label className="plan-wizard-label">
                     Serviços incluídos e quantidade por ciclo (30 dias):
@@ -604,7 +616,7 @@ function PlansManager() {
               </div>
 
               {/* Etapa 3 — prévia */}
-              <div className="plan-wizard-panel">
+              <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[2] = el }}>
                 {(() => {
                   const previewServices = Object.entries(serviceQuotas)
                     .filter(([, v]) => v.selected)
