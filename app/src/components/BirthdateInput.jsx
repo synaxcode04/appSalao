@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 
 const MONTHS = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -31,8 +31,34 @@ export function composeISODate({ day, month, year }) {
 
 const MAX_YEAR = new Date().getFullYear()
 
+// ISO que o componente emitiria (via onChange) para um dado estado local,
+// aplicando a regra incremental: '' quando o ano tem menos de 4 dígitos ou
+// a data está incompleta; senão a ISO válida via composeISODate.
+function emittedFor(fields) {
+  const yearComplete = String(fields.year).length === 4
+  return yearComplete ? composeISODate(fields) : ''
+}
+
 function BirthdateInput({ value, onChange }) {
-  const { day, month, year } = parseISODate(value)
+  const [fields, setFields] = useState(() => parseISODate(value))
+
+  // Ressincroniza o estado local a partir de `value` apenas quando `value`
+  // divergir do que os campos LOCAIS atuais representam (`localEmitted`). Se
+  // forem iguais, `value` é apenas o eco do nosso próprio onChange (ou um
+  // reset para o mesmo estado incompleto que já mostramos) e não deve
+  // sobrescrever a digitação parcial. Quando divergem — reset externo real
+  // ('' vindo de campos completos) ou troca para outra ISO — ressincroniza.
+  useEffect(() => {
+    const incoming = value || ''
+    const localEmitted = emittedFor(fields)
+    if (incoming !== localEmitted) {
+      setFields(parseISODate(incoming))
+    }
+    // Só reage a mudanças de `value`; `fields` é lido do render corrente.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
+  const { day, month, year } = fields
 
   const handleChange = (field, fieldValue) => {
     const next = {
@@ -40,7 +66,12 @@ function BirthdateInput({ value, onChange }) {
       month: field === 'month' ? fieldValue : month,
       year: field === 'year' ? fieldValue : year,
     }
-    onChange(composeISODate(next))
+    // Estado local (o que aparece na tela) nunca é apagado por incompletude.
+    setFields(next)
+
+    // Só valida a faixa do ano quando ele tiver 4 dígitos, para não
+    // penalizar a digitação incremental ("1" → "19" → "199" → "1990").
+    onChange(emittedFor(next))
   }
 
   return (

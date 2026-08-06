@@ -1,5 +1,21 @@
 import { describe, it, expect } from 'vitest'
-import { parseISODate, composeISODate } from '../components/BirthdateInput'
+import React, { useState } from 'react'
+import { render, screen, fireEvent } from '@testing-library/react'
+import BirthdateInput, { parseISODate, composeISODate } from '../components/BirthdateInput'
+
+// Wrapper stateful que simula o pai controlado (value/onChange).
+function ControlledWrapper({ initial = '', onChangeSpy }) {
+  const [value, setValue] = useState(initial)
+  return (
+    <BirthdateInput
+      value={value}
+      onChange={(iso) => {
+        if (onChangeSpy) onChangeSpy(iso)
+        setValue(iso)
+      }}
+    />
+  )
+}
 
 describe('composeISODate', () => {
   it('retorna YYYY-MM-DD com zero-padding para dia e mês de um dígito', () => {
@@ -67,5 +83,123 @@ describe('round-trip parse → compose', () => {
   it('preserva data com dia e mês de um dígito', () => {
     const iso = '2001-01-09'
     expect(composeISODate(parseISODate(iso))).toBe(iso)
+  })
+})
+
+describe('BirthdateInput (componente)', () => {
+  it('mantém cada dígito ao digitar o ano dígito a dígito (regressão do bug)', () => {
+    render(<ControlledWrapper />)
+    const yearInput = screen.getByLabelText('Ano')
+
+    fireEvent.change(yearInput, { target: { value: '1' } })
+    expect(yearInput.value).toBe('1')
+
+    fireEvent.change(yearInput, { target: { value: '19' } })
+    expect(yearInput.value).toBe('19')
+
+    fireEvent.change(yearInput, { target: { value: '199' } })
+    expect(yearInput.value).toBe('199')
+
+    fireEvent.change(yearInput, { target: { value: '1990' } })
+    expect(yearInput.value).toBe('1990')
+  })
+
+  it('chama onChange com ISO correta quando dia, mês e ano estão completos', () => {
+    let lastIso
+    render(<ControlledWrapper onChangeSpy={(iso) => { lastIso = iso }} />)
+
+    fireEvent.change(screen.getByLabelText('Dia'), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText('Mês'), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText('Ano'), { target: { value: '1990' } })
+
+    expect(lastIso).toBe('1990-03-05')
+  })
+
+  it('mantém o dígito do ano na tela e emite "" quando dia/mês estão vazios', () => {
+    let lastIso
+    render(<ControlledWrapper onChangeSpy={(iso) => { lastIso = iso }} />)
+    const yearInput = screen.getByLabelText('Ano')
+
+    fireEvent.change(yearInput, { target: { value: '1990' } })
+
+    expect(yearInput.value).toBe('1990')
+    expect(lastIso).toBe('')
+  })
+
+  it('reflete nos três campos quando a prop value muda externamente', () => {
+    const { rerender } = render(<BirthdateInput value="" onChange={() => {}} />)
+
+    rerender(<BirthdateInput value="1985-07-20" onChange={() => {}} />)
+
+    expect(screen.getByLabelText('Dia').value).toBe('20')
+    expect(screen.getByLabelText('Mês').value).toBe('7')
+    expect(screen.getByLabelText('Ano').value).toBe('1985')
+  })
+
+  // Caso 1 + reset: digitar ano parcial (sem dia/mês) preserva os dígitos
+  // mesmo quando o pai reenvia value='' (eco do onChange('')). É o cenário
+  // que a heurística antiga (lastEmittedRef) quebrava no reset.
+  it('preserva o ano parcial quando o pai reenvia value="" (eco do reset)', () => {
+    render(<ControlledWrapper />)
+    const yearInput = screen.getByLabelText('Ano')
+
+    fireEvent.change(yearInput, { target: { value: '1' } })
+    fireEvent.change(yearInput, { target: { value: '19' } })
+    fireEvent.change(yearInput, { target: { value: '199' } })
+    fireEvent.change(yearInput, { target: { value: '1990' } })
+
+    // Todos emitiram '' (dia/mês vazios) e o pai ecoou value='';
+    // os dígitos digitados devem permanecer na tela.
+    expect(yearInput.value).toBe('1990')
+  })
+
+  // Caso 2 (crítico): data completa via prop, usuário apaga um dígito do ano
+  // tornando-a incompleta → emite '' → o eco de value='' NÃO deve limpar
+  // dia/mês nem apagar o ano parcial.
+  it('não limpa dia/mês nem o ano parcial ao tornar incompleta uma data que veio completa', () => {
+    function Wrapper() {
+      const [value, setValue] = useState('1990-03-05')
+      return <BirthdateInput value={value} onChange={setValue} />
+    }
+    render(<Wrapper />)
+
+    const dayInput = screen.getByLabelText('Dia')
+    const monthInput = screen.getByLabelText('Mês')
+    const yearInput = screen.getByLabelText('Ano')
+
+    expect(dayInput.value).toBe('5')
+    expect(monthInput.value).toBe('3')
+    expect(yearInput.value).toBe('1990')
+
+    // Usuário apaga um dígito do ano: '1990' → '199'
+    fireEvent.change(yearInput, { target: { value: '199' } })
+
+    expect(yearInput.value).toBe('199')
+    expect(dayInput.value).toBe('5')
+    expect(monthInput.value).toBe('3')
+  })
+
+  // Caso 3: reset externo real — campos completos e o pai força value=''.
+  it('limpa os três campos quando o pai reseta value="" a partir de uma data completa', () => {
+    const { rerender } = render(<BirthdateInput value="1990-03-05" onChange={() => {}} />)
+
+    expect(screen.getByLabelText('Ano').value).toBe('1990')
+
+    rerender(<BirthdateInput value="" onChange={() => {}} />)
+
+    expect(screen.getByLabelText('Dia').value).toBe('')
+    expect(screen.getByLabelText('Mês').value).toBe('')
+    expect(screen.getByLabelText('Ano').value).toBe('')
+  })
+
+  // Caso 4: value externo muda de uma ISO válida para outra ISO válida.
+  it('reflete a nova data quando value muda de uma ISO válida para outra', () => {
+    const { rerender } = render(<BirthdateInput value="1990-03-05" onChange={() => {}} />)
+
+    rerender(<BirthdateInput value="2001-11-22" onChange={() => {}} />)
+
+    expect(screen.getByLabelText('Dia').value).toBe('22')
+    expect(screen.getByLabelText('Mês').value).toBe('11')
+    expect(screen.getByLabelText('Ano').value).toBe('2001')
   })
 })
