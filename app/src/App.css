@@ -858,20 +858,20 @@
   min-width: 0;
 }
 
-/* Setinhas próprias do carrossel de dias — só no desktop (não-touch).
-   A existência no DOM é controlada por JS (WeekDaySelector renderiza apenas
-   quando o dispositivo não tem suporte a toque), então basta display:flex aqui. */
+/* Setinhas próprias do carrossel de dias — sempre visíveis (inclusive mobile),
+   como affordance discreta de navegação de semana. O swipe touch sobre a tira
+   continua funcionando em paralelo. Visual leve: sem fundo, borda sutil. */
 .week-days-nav {
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 28px;
+  width: 26px;
   border: 1px solid var(--border-color);
-  background: var(--surface-color);
-  color: var(--dark-green);
+  background: transparent;
+  color: var(--text-secondary);
   border-radius: var(--radius-md);
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -1009,8 +1009,8 @@
   position: absolute;
   left: 3px;
   right: 3px;
-  background: var(--light-green);
-  border-left: 3px solid var(--primary-green);
+  background: #fff5e9;
+  border-left: 3px solid #f0a04b;
   border-radius: 6px;
   padding: 0.25rem 0.4rem;
   overflow: hidden;
@@ -1036,7 +1036,7 @@
   flex: 0 0 auto;
   font-size: 0.68rem;
   font-weight: bold;
-  color: var(--dark-green);
+  color: #b26a00;
 }
 
 .tl-appt-client {
@@ -1062,6 +1062,11 @@
   background: #e6f4ea;
   border-left-color: #10b981;
   opacity: 0.85;
+}
+
+/* Concluído (verde): a hora não deve herdar o laranja do card em aberto. */
+.tl-appt-completed .tl-appt-time {
+  color: var(--dark-green);
 }
 
 .tl-block {

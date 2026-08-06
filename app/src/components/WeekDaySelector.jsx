@@ -1,9 +1,5 @@
 import React, { useRef } from 'react'
 
-// Suporte a toque detectado uma única vez no carregamento do módulo.
-// Em dispositivos touch o swipe já basta, então as setinhas do carrossel não são renderizadas.
-const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
-
 const WEEK_DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
@@ -75,9 +71,9 @@ function WeekDaySelector({ selectedDate, onSelectDay }) {
         <button type="button" className="week-nav-btn" onClick={() => goMonth(1)} aria-label="Próximo mês">›</button>
       </div>
       <div className="week-days-wrap">
-        {!isTouch && (
-          <button type="button" className="week-days-nav" onClick={() => goWeek(-1)} aria-label="Semana anterior">‹</button>
-        )}
+        {/* Setas discretas de navegação de semana — sempre visíveis (inclusive mobile),
+            como affordance; o swipe touch sobre a tira continua funcionando em paralelo. */}
+        <button type="button" className="week-days-nav" onClick={() => goWeek(-1)} aria-label="Semana anterior">‹</button>
         <div
           className="week-days"
           onTouchStart={handleTouchStart}
@@ -100,9 +96,7 @@ function WeekDaySelector({ selectedDate, onSelectDay }) {
             )
           })}
         </div>
-        {!isTouch && (
-          <button type="button" className="week-days-nav" onClick={() => goWeek(1)} aria-label="Próxima semana">›</button>
-        )}
+        <button type="button" className="week-days-nav" onClick={() => goWeek(1)} aria-label="Próxima semana">›</button>
       </div>
     </div>
   )
