@@ -1,7 +1,43 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { supabase } from '../../supabase'
 import { Trash2, Edit2, ToggleLeft, ToggleRight, CheckCircle, Users, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+// Descrição do plano com clamp de 2 linhas no card do dono, com botão "ver mais/ver menos".
+// O botão só aparece quando o texto realmente excede o clamp (medido via scrollHeight > clientHeight).
+// Named export para permitir teste isolado; export default do módulo continua sendo PlansManager.
+export function PlanDescription({ text }) {
+  const [expanded, setExpanded] = useState(false)
+  const [isClamped, setIsClamped] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    // Mede no estado recolhido: se o conteúdo transborda o clamp, há o que expandir.
+    setIsClamped(el.scrollHeight > el.clientHeight)
+  }, [text])
+
+  return (
+    <div>
+      <p
+        ref={ref}
+        className={`plan-description${expanded ? '' : ' plan-description--clamped'}`}
+      >
+        {text}
+      </p>
+      {isClamped && (
+        <button
+          type="button"
+          className="plan-description-toggle"
+          onClick={() => setExpanded(prev => !prev)}
+        >
+          {expanded ? 'ver menos' : 'ver mais'}
+        </button>
+      )}
+    </div>
+  )
+}
 
 // Convenção de dia da semana idêntica a working_hours e subscription_plan_days:
 // 0 = Domingo ... 6 = Sábado.
@@ -560,9 +596,7 @@ function PlansManager() {
                         </span>
                       )}
                     </h4>
-                    {plan.description && (
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{plan.description}</p>
-                    )}
+                    {plan.description && <PlanDescription text={plan.description} />}
                     <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.4rem' }}>
                       R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
                     </p>
