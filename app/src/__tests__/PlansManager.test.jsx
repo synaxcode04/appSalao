@@ -153,8 +153,8 @@ describe('PlansManager — economia no card "Seus Planos"', () => {
     expect(await screen.findByText('Economize R$ 20,00 por mês')).toBeInTheDocument()
   })
 
-  it('renderiza o valor cheio riscado (fullValue) quando há economia real', async () => {
-    // 2x serviço de R$ 30 = R$ 60 de valor cheio; plano R$ 40 → mostra "De R$ 60,00" riscado
+  it('NÃO renderiza mais o valor cheio riscado "De R$ ..." (removido da UI)', async () => {
+    // 2x serviço de R$ 30 = R$ 60 de valor cheio; plano R$ 40 → o riscado "De R$ 60,00" não deve aparecer
     setTableData({
       salons: { id: 'salon-1' },
       services: [],
@@ -176,9 +176,10 @@ describe('PlansManager — economia no card "Seus Planos"', () => {
 
     render(<PlansManager />)
 
-    const fullValue = await screen.findByText('De R$ 60,00')
-    expect(fullValue).toBeInTheDocument()
-    expect(fullValue.className).toContain('plan-full-value')
+    // Espera o card carregar antes de afirmar a ausência do riscado.
+    expect(await screen.findByText('Plano Barba')).toBeInTheDocument()
+    expect(screen.queryByText('De R$ 60,00')).not.toBeInTheDocument()
+    expect(document.querySelector('.plan-full-value')).toBeNull()
   })
 
   it('renderiza a linha "Valor total avulso: R$ ..." quando fullValue > planPrice', async () => {
@@ -205,8 +206,8 @@ describe('PlansManager — economia no card "Seus Planos"', () => {
     render(<PlansManager />)
 
     expect(await screen.findByText('Valor total avulso: R$ 60,00')).toBeInTheDocument()
-    // A linha do valor riscado existente permanece.
-    expect(screen.getByText('De R$ 60,00')).toBeInTheDocument()
+    // O valor riscado "De R$" foi removido da UI e não deve aparecer.
+    expect(screen.queryByText('De R$ 60,00')).not.toBeInTheDocument()
   })
 
   it('não renderiza o valor cheio riscado quando não há economia (fullValue <= planPrice)', async () => {

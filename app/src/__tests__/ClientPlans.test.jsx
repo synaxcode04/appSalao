@@ -58,8 +58,8 @@ afterEach(() => {
 })
 
 describe('ClientPlans — valor cheio riscado no card de planos disponíveis', () => {
-  it('renderiza o valor cheio riscado (fullValue) quando o preço do plano gera economia', async () => {
-    // 2x serviço de R$ 30 = R$ 60 de valor cheio; plano R$ 40 → mostra "R$ 60,00" riscado
+  it('NÃO renderiza mais o valor cheio riscado ao lado do preço (removido da UI)', async () => {
+    // 2x serviço de R$ 30 = R$ 60 de valor cheio; plano R$ 40 → o riscado não deve aparecer
     plansData = [
       {
         id: 'plan-1',
@@ -76,9 +76,9 @@ describe('ClientPlans — valor cheio riscado no card de planos disponíveis', (
 
     render(<ClientPlans />)
 
-    const fullValue = await screen.findByText('R$ 60,00', { exact: false, selector: '.client-plan-card-full-value' })
-    expect(fullValue).toBeInTheDocument()
-    expect(fullValue.className).toContain('client-plan-card-full-value')
+    // Espera o card carregar antes de afirmar a ausência do riscado.
+    expect(await screen.findByText('Plano Barba')).toBeInTheDocument()
+    expect(document.querySelector('.client-plan-card-full-value')).toBeNull()
     // A linha de economia existente permanece.
     expect(screen.getByText('Economize R$ 20,00 por mês')).toBeInTheDocument()
   })
@@ -104,8 +104,8 @@ describe('ClientPlans — valor cheio riscado no card de planos disponíveis', (
     const line = await screen.findByText('Valor total avulso: R$ 60,00')
     expect(line).toBeInTheDocument()
     expect(line.className).toContain('client-plan-card-full-value-line')
-    // O valor riscado existente permanece (linha adicional, não substituição).
-    expect(document.querySelector('.client-plan-card-full-value')).not.toBeNull()
+    // O valor riscado ao lado do preço foi removido — só a linha "Valor total avulso" permanece.
+    expect(document.querySelector('.client-plan-card-full-value')).toBeNull()
   })
 
   it('não renderiza o valor cheio riscado quando não há economia (fullValue <= planPrice)', async () => {

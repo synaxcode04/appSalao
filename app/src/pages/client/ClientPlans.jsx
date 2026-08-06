@@ -420,9 +420,6 @@ function ClientPlans() {
               <div className="client-plan-card-header">
                 <h3 className="client-plan-card-name">{plan.name}</h3>
                 <span className="client-plan-card-price">
-                  {fullValue > planPrice && (
-                    <span className="client-plan-card-full-value">R$ {Number(fullValue).toFixed(2).replace('.', ',')} </span>
-                  )}
                   R$ {Number(plan.price).toFixed(2).replace('.', ',')}<span className="client-plan-card-price-suffix">/mês</span>
                 </span>
               </div>
