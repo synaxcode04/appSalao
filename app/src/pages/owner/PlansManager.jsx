@@ -702,7 +702,15 @@ function PlansManager() {
           <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Nenhum plano cadastrado ainda.</p>
         ) : (
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {plans.map(plan => (
+            {plans.map(plan => {
+              const { savings } = computePlanSavings({
+                price: plan.price,
+                services: (plan.subscription_plan_services || []).map(ps => ({
+                  monthly_quota: ps.monthly_quota,
+                  price: ps.services?.price
+                }))
+              })
+              return (
               <div key={plan.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', opacity: plan.is_active ? 1 : 0.6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
                   <div style={{ flex: 1 }}>
@@ -722,6 +730,11 @@ function PlansManager() {
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
                       <strong>Dias:</strong> {formatDays(plan.subscription_plan_days)}
                     </p>
+                    {savings > 0 && (
+                      <p className="plan-preview-savings">
+                        Economize R$ {savings.toFixed(2).replace('.', ',')} por mês
+                      </p>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                     <button
@@ -740,7 +753,8 @@ function PlansManager() {
                   </div>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
