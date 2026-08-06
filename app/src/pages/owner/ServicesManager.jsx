@@ -160,31 +160,48 @@ function ServicesManager() {
             <h3 className="modal-title">{editId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
 
             <form onSubmit={handleSave} className="auth-form">
-              <input
-                type="text"
-                placeholder="Nome do Serviço (ex: Corte Masculino)"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                  Nome do Serviço
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Corte Masculino"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <input
-                  type="number"
-                  placeholder="Duração (minutos)"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  required
-                  min="5"
-                />
-                <input
-                  type="number"
-                  placeholder="Preço (R$)"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  min="0"
-                  step="0.01"
-                />
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                    Duração (minutos)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Ex: 30"
+                    value={duration}
+                    onChange={(e) => setDuration(e.target.value)}
+                    required
+                    min="5"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
+                    Preço (R$)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Ex: 40.00"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                    min="0"
+                    step="0.01"
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </div>
               <button type="submit" disabled={loading} className="btn-primary">
                 {loading ? 'Salvando...' : (editId ? 'Atualizar Serviço' : 'Adicionar Serviço')}
