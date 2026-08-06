@@ -716,52 +716,51 @@ function PlansManager() {
                 }))
               })
               return (
-              <div key={plan.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', opacity: plan.is_active ? 1 : 0.6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ color: 'var(--dark-green)' }}>
-                      {plan.name}
-                      {!plan.is_active && (
-                        <span style={{ marginLeft: '0.5rem', fontSize: '0.75rem', fontWeight: 'bold', color: '#d32f2f', backgroundColor: '#ffebee', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
-                          Inativo
-                        </span>
-                      )}
-                    </h4>
-                    {plan.description && <PlanDescription text={plan.description} />}
-                    <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.4rem' }}>
-                      R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
-                    </p>
-                    <PlanServicesList services={plan.subscription_plan_services} />
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                      <strong>Dias:</strong> {formatDays(plan.subscription_plan_days)}
-                    </p>
-                    {savings > 0 && (
-                      <p className="plan-preview-savings">
-                        Economize R$ {savings.toFixed(2).replace('.', ',')} por mês
-                      </p>
+              <div key={plan.id} className="plan-card" style={{ opacity: plan.is_active ? 1 : 0.6 }}>
+                <div className="plan-card-header">
+                  <h4 className="plan-card-title">
+                    {plan.name}
+                    {!plan.is_active && (
+                      <span className="plan-card-inactive-badge">
+                        Inativo
+                      </span>
                     )}
-                    {fullValue > planPrice && (
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                        Valor total avulso: R$ {Number(fullValue).toFixed(2).replace('.', ',')}
-                      </p>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                  </h4>
+                  <div className="plan-card-actions">
                     <button
                       onClick={() => handleToggleActive(plan)}
                       title={plan.is_active ? 'Desativar plano' : 'Ativar plano'}
-                      style={{ padding: '0.5rem', color: plan.is_active ? 'var(--primary-green)' : 'var(--text-secondary)', backgroundColor: 'transparent', border: 'none', cursor: 'pointer' }}
+                      className="plan-card-action-toggle"
+                      style={{ color: plan.is_active ? 'var(--primary-green)' : 'var(--text-secondary)' }}
                     >
                       {plan.is_active ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
                     </button>
-                    <button onClick={() => handleEdit(plan)} style={{ padding: '0.5rem', color: 'var(--primary-green)', backgroundColor: 'var(--light-green)', borderRadius: 'var(--radius-md)' }}>
+                    <button onClick={() => handleEdit(plan)} className="plan-card-action-edit" title="Editar plano">
                       <Edit2 size={18} />
                     </button>
-                    <button onClick={() => handleDelete(plan.id)} style={{ padding: '0.5rem', color: '#d32f2f', backgroundColor: '#ffebee', borderRadius: 'var(--radius-md)' }}>
+                    <button onClick={() => handleDelete(plan.id)} className="plan-card-action-delete" title="Excluir plano">
                       <Trash2 size={18} />
                     </button>
                   </div>
                 </div>
+                {plan.description && <PlanDescription text={plan.description} />}
+                <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.4rem' }}>
+                  R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
+                </p>
+                <PlanServicesList services={plan.subscription_plan_services} />
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  <strong>Dias:</strong> {formatDays(plan.subscription_plan_days)}
+                </p>
+                {savings > 0 && (
+                  <p className="plan-preview-savings">
+                    Economize R$ {savings.toFixed(2).replace('.', ',')} por mês
+                  </p>
+                )}
+                {fullValue > planPrice && (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    Valor total avulso: R$ {Number(fullValue).toFixed(2).replace('.', ',')}
+                  </p>
+                )}
               </div>
               )
             })}
