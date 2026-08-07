@@ -480,11 +480,20 @@
    app do cliente) e toda página filha usa .page-content, que soma seu
    próprio padding lateral de 1rem por cima — dobrando o respiro nas
    laterais (2rem/32px de cada lado em telas pequenas). Zeramos o padding
-   horizontal de .page-content neste escopo para não duplicar o do shell. */
+   horizontal de .page-content neste escopo para não duplicar o do shell.
+
+   Mesma duplicação existia no padding vertical: .client-content já reserva
+   1.5rem no topo e 80px na base (espaço fixo pro bottom nav) e .page-content
+   soma mais 1.5rem de padding-top/bottom por cima — dobrando o respiro
+   vertical (~3rem no topo). Zeramos padding-top/bottom de .page-content
+   neste escopo também, mantendo o respiro único de 1.5rem no topo e os 80px
+   de reserva do bottom nav vindos só de .client-content. */
 .client-content .page-content {
   max-width: 100%;
   padding-left: 0;
   padding-right: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .page-header {
