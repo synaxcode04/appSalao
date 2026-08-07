@@ -21,12 +21,17 @@ TOOL=$(echo "$PARSE" | node -e "let b='';process.stdin.on('data',c=>b+=c);proces
 CMD=$(echo  "$PARSE" | node -e "let b='';process.stdin.on('data',c=>b+=c);process.stdin.on('end',()=>console.log(JSON.parse(b).cmd))")
 
 if [ "$TOOL" = "Bash" ]; then
-  # Bloqueia vercel deploy — requer confirmação explícita do usuário
-  if echo "$CMD" | grep -qiE '\bvercel\s+(deploy|--prod)\b'; then
-    echo "❌ BLOQUEADO [devops]: 'vercel deploy' requer confirmação explícita do usuário." >&2
-    echo "   Relate os resultados das verificações e peça ao usuário para autorizar o deploy." >&2
-    echo "   Instrução do PLAN.md: confirme .env, build e variaveis ANTES de fazer deploy." >&2
-    exit 2
+  # Bloqueia qualquer invocação do binário vercel que não seja consulta pura (deploy, --prod,
+  # bare "vercel", "vercel link" etc. todos disparam deploy ou criam/linkam projeto novo) —
+  # requer confirmação explícita do usuário. Incidente 2026-08-07: "vercel" bare rodado dentro
+  # de app/ sem link criou um projeto Vercel novo e não intencional ("app").
+  if echo "$CMD" | grep -qiE '(^|[;&|]|\bnpx\s+)vercel(\.exe)?\b'; then
+    if ! echo "$CMD" | grep -qiE '\bvercel\s+(logs|ls|list|inspect|env\s+ls|whoami|--version|-v)\b'; then
+      echo "❌ BLOQUEADO [devops]: comandos 'vercel' (deploy, --prod, ou bare) requerem confirmação explícita do usuário." >&2
+      echo "   Relate os resultados das verificações e peça ao usuário para autorizar o deploy." >&2
+      echo "   Instrução do PLAN.md: confirme .env, build e variaveis ANTES de fazer deploy." >&2
+      exit 2
+    fi
   fi
 
   # Bloqueia git push --force
