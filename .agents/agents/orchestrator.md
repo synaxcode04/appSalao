@@ -19,7 +19,7 @@ Antes de responder, leia em paralelo: `GEMINI.md`/`CLAUDE.md` (convenções, res
 | Categoria | Exemplos | Ação |
 |-----------|---------|------|
 | **Simples** | "gere o rls_fix.sql", "rode os testes" | Delegue diretamente sem plano |
-| **Composto** | "implemente os 8 eventos de notificação e teste tudo" | Crie plano, confirme, execute |
+| **Composto** | "implemente os 7 eventos de notificação e teste tudo" | Crie plano, confirme, execute |
 | **Ambíguo** | "arruma o bug do agendamento" | Faça no máx. 3 perguntas de clarificação |
 | **Fora do escopo** | pagamento online, app nativo, WhatsApp, multi-owner | Informe que está fora do escopo do SPEC e pare |
 
@@ -44,7 +44,7 @@ Reporte o que cada agent fez, o que passou vs. falhou e próximos passos. TDD é
 | `rls-security` | Banco, RLS, schema SQL | Segurança, permissões ou estrutura do banco |
 | `booking-engine` | `BookingEngine.jsx`, slots, conflitos | Bug em agendamento, slots errados, testes do motor |
 | `auth-guard` | `ProtectedRoute`, `SuspendedScreen`, `status` | Controle de acesso, licença suspensa, roles |
-| `notifier` | 8 eventos push, `notification.js`, `notify.js` | Notificações, novo evento, testes de push |
+| `notifier` | 7 eventos push, `notification.js`, `notify.js` | Notificações, novo evento, testes de push |
 | `devops` | Build Vercel, `.env`, `vercel.json` | Deploy, variáveis de ambiente, build falhando |
 | `qa` | Pre-deploy check, smoke test, relatório | Antes de qualquer deploy; após todas as tasks |
 | `code-reviewer` | Revisão contra SPEC, classificação | Antes de merge; auditoria de qualidade |
@@ -59,7 +59,7 @@ Reporte o que cada agent fez, o que passou vs. falhou e próximos passos. TDD é
 | 1.2 RLS + is_active | `rls-security` | — |
 | 2.1 BookingEngine testes | `booking-engine` | Vitest |
 | 2.2 ProtectedRoute testes | `auth-guard` | Vitest |
-| 3.1 8 eventos de notificação | `notifier` | Task 1.2 |
+| 3.1 7 eventos de notificação | `notifier` | Task 1.2 |
 | 3.2 SuspendedScreen + bloqueio | `auth-guard` | Task 1.2 |
 | 4.1 Config Vercel | `devops` | Tasks 1–3 |
 | 4.2 Smoke test produção | `qa` | Task 4.1 |

@@ -83,11 +83,11 @@
 > Dependências: Fase 1 (Vitest) e Fase 2 (RLS corrigido com campo `is_active`)
 > Paralelismo: Task 3.1 e Task 3.2 rodam em paralelo
 
-#### Task 3.1 — Validar e completar os 8 eventos de notificação
+#### Task 3.1 — Validar e completar os 7 eventos de notificação
 - Agent: developer
 - Input: `app/api/notify.js`, `app/src/utils/notification.js` e tabela de eventos do SPEC
 - Output:
-  - `app/api/notify.js` atualizado para cobrir os 8 eventos definidos no SPEC com payload tipado por evento
+  - `app/api/notify.js` atualizado para cobrir os 7 eventos definidos no SPEC com payload tipado por evento
   - `app/src/utils/notification.js` com função `dispatchNotification(event, payload)` que chama `/api/notify`
   - `app/src/__tests__/notification.test.js` com mocks de fetch cobrindo cada evento
 - Testes críticos:

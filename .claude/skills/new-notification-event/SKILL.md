@@ -5,7 +5,7 @@ description: Adiciona um novo evento de notificação push ao sistema, atualizan
 
 ## O que esta skill faz
 
-Dado o nome de um novo evento de notificação, atualiza os três arquivos envolvidos no fluxo de push (serverless, utilitário e testes) seguindo o padrão dos 8 eventos já definidos no SPEC.
+Dado o nome de um novo evento de notificação, atualiza os três arquivos envolvidos no fluxo de push (serverless, utilitário e testes) seguindo o padrão dos 7 eventos já definidos no SPEC.
 
 ## Arquivos envolvidos
 
@@ -15,7 +15,7 @@ Dado o nome de um novo evento de notificação, atualiza os três arquivos envol
 
 ## Instruções
 
-1. Leia `Documentos/SPEC.md` seção de Notificações para entender os 8 eventos existentes e o padrão de `recipientRole`.
+1. Leia `Documentos/SPEC.md` seção de Notificações para entender os 7 eventos existentes e o padrão de `recipientRole`.
 2. Leia `app/api/notify.js` e `app/src/utils/notification.js` para entender a estrutura atual.
 3. Adicione o novo evento seguindo este contrato:
 
@@ -47,6 +47,6 @@ Dado o nome de um novo evento de notificação, atualiza os três arquivos envol
 
 ## Quando NÃO usar
 
-- Não use se o evento já existe nos 8 do SPEC — apenas corrija o existente.
+- Não use se o evento já existe nos 7 do SPEC — apenas corrija o existente.
 - Não use para notificações in-app (toast via `react-hot-toast`) — essa skill é exclusiva para push via OneSignal.
 - Não crie eventos que não tenham sido validados no SPEC ou aprovados como requisito — evita lógica órfã.

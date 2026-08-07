@@ -102,7 +102,6 @@ function validateInput(action, body) {
   // create: salon_id, client_id, service_id, professional_id, appointment_date, start_time, end_time
   // reschedule: appointment_id, client_id, appointment_date, start_time, end_time
   // cancel: appointment_id, client_id
-  // complete: appointment_id, client_id
   // create_review: salon_id, client_id, rating, comment
   // mark_notifications_read: client_id (id opcional)
   // list_notifications: client_id
@@ -135,7 +134,7 @@ function validateInput(action, body) {
     if (!body.end_time) return 'end_time is required';
   }
 
-  if (action === 'cancel' || action === 'complete') {
+  if (action === 'cancel') {
     if (!body.appointment_id) return 'appointment_id is required';
     if (!body.client_id) return 'client_id is required';
   }
@@ -234,7 +233,6 @@ export default async function handler(req, res) {
     'create',
     'reschedule',
     'cancel',
-    'complete',
     'create_review',
     'mark_notifications_read',
     'list_notifications',
@@ -381,12 +379,24 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
+      // O histórico inclui: (1) todos os 'completed' e (2) os 'scheduled' com
+      // data <= hoje (candidatos a já terem expirado). A DECISÃO de expiração por
+      // TEMPO (>15 min após o horário de início) NÃO é feita aqui: o Node roda em
+      // UTC na Vercel enquanto o browser roda no fuso local (Brasil UTC-3), e
+      // replicar a regra dos minutos aqui abriria uma janela de ~3h em que o mesmo
+      // agendamento apareceria na agenda ativa E no histórico. A fonte única de
+      // verdade é o util `isAppointmentExpired` aplicado no browser (ClientHistory),
+      // o MESMO usado pela agenda ativa (ClientAppointments) — mesmo fuso, sem
+      // divergência. Aqui só filtramos por DATA (futuros nunca entram no histórico).
+      const todayStr = new Date().toISOString().split('T')[0];
+
       const { data, error } = await supabase
         .from('appointments')
         .select('id, appointment_date, start_time, status, services(name, price), salons(id, name, logo_url, address), appointment_services(service_id, services(id, name, price))')
         .eq('client_id', client_id)
         .eq('salon_id', salon_id)
-        .eq('status', 'completed')
+        .in('status', ['completed', 'scheduled'])
+        .lte('appointment_date', todayStr)
         .order('appointment_date', { ascending: false });
 
       if (error) {
@@ -927,60 +937,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'Agendamento cancelado com sucesso', owner_id: salon.owner_id });
     }
 
-    // ==========================================
-    // AÇÃO: complete — marcar agendamento como concluído
-    // ==========================================
-    if (action === 'complete') {
-      // 1. Validar posse
-      const { data: appt, error: apptError } = await supabase
-        .from('appointments')
-        .select('id, client_id, salon_id, services(name)')
-        .eq('id', appointment_id)
-        .single();
-
-      if (apptError || !appt) {
-        if (apptError && apptError.code !== 'PGRST116') {
-          console.error('Supabase complete lookup error:', { appointment_id, error: apptError });
-        }
-        return res.status(404).json({ error: 'Agendamento não encontrado' });
-      }
-
-      if (appt.client_id !== client_id) {
-        return res.status(403).json({ error: 'Acesso negado' });
-      }
-
-      // 2. Buscar owner_id do salão
-      const { data: salon, error: salonError } = await supabase
-        .from('salons')
-        .select('owner_id')
-        .eq('id', appt.salon_id)
-        .single();
-
-      if (salonError || !salon) {
-        console.error('Supabase complete salon lookup error:', { salon_id: appt.salon_id, error: salonError });
-        return res.status(500).json({ error: 'Erro ao buscar informações do salão' });
-      }
-
-      // 3. Atualizar status
-      const { error: updateError } = await supabase
-        .from('appointments')
-        .update({ status: 'completed' })
-        .eq('id', appointment_id);
-
-      if (updateError) {
-        console.error('Supabase complete update error:', { appointment_id, error: updateError });
-        return res.status(500).json({ error: 'Erro ao concluir agendamento' });
-      }
-
-      // 4. Notificação
-      await supabase.from('notifications').insert([{
-        salon_id: appt.salon_id,
-        title: 'Serviço Concluído',
-        message: `O cliente confirmou a conclusão do serviço ${appt.services?.name || 'serviço'}.`
-      }]);
-
-      return res.status(200).json({ message: 'Agendamento marcado como concluído', owner_id: salon.owner_id });
-    }
+    // NOTA: a conclusão de atendimento é feita EXCLUSIVAMENTE pelo dono, direto via
+    // Supabase client (sessão Auth real, RLS) em pages/owner/DashboardHome.jsx — o
+    // cliente não conclui mais atendimentos. Não existe mais action 'complete' aqui;
+    // nunca reintroduza uma via de conclusão pelo cliente.
 
     // ==========================================
     // AÇÃO: create_review — criar avaliação

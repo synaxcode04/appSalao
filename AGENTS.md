@@ -40,7 +40,7 @@ Leia `CLAUDE.md` primeiro — este arquivo apenas adiciona, não repete.
 ## Módulo: Notificações
 > `utils/notification.js`, `api/notify.js`
 
-8 eventos obrigatórios e seus destinatários:
+7 eventos obrigatórios e seus destinatários:
 
 | Evento | Destinatário |
 |--------|-------------|
@@ -50,7 +50,6 @@ Leia `CLAUDE.md` primeiro — este arquivo apenas adiciona, não repete.
 | `client_reschedule` | owner |
 | `owner_reschedule` | client |
 | `owner_complete` | client |
-| `client_complete` | owner |
 | `new_review` | owner |
 
 - `recipientRole` errado = notificação para a pessoa errada. Verifique a tabela acima antes de implementar.

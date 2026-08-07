@@ -57,6 +57,43 @@ describe('ClientHistory — exibição de múltiplos serviços num único card',
     expect(screen.getByText('R$ 90,00')).toBeInTheDocument()
   })
 
+  it('mantém no histórico completed e scheduled expirado; oculta scheduled recente/futuro', async () => {
+    appointmentsData = [
+      {
+        id: 'done',
+        appointment_date: '2026-08-01',
+        start_time: '10:00:00',
+        status: 'completed',
+        salons: { name: 'Salão Teste' },
+        services: { id: 1, name: 'Corte Concluído', price: 50 }
+      },
+      {
+        id: 'expired',
+        appointment_date: '2026-08-01',
+        start_time: '10:00:00',
+        status: 'scheduled',
+        salons: { name: 'Salão Teste' },
+        services: { id: 2, name: 'Barba Expirada', price: 40 }
+      },
+      {
+        id: 'future',
+        appointment_date: '2999-01-01',
+        start_time: '10:00:00',
+        status: 'scheduled',
+        salons: { name: 'Salão Teste' },
+        services: { id: 3, name: 'Sobrancelha Futura', price: 20 }
+      }
+    ]
+
+    render(<ClientHistory />)
+
+    await waitFor(() => expect(screen.getByText('Corte Concluído')).toBeInTheDocument())
+    // scheduled já expirado migra para o histórico
+    expect(screen.getByText('Barba Expirada')).toBeInTheDocument()
+    // scheduled futuro/recente NÃO aparece (segue só na agenda ativa)
+    expect(screen.queryByText('Sobrancelha Futura')).not.toBeInTheDocument()
+  })
+
   it('renderiza o serviço único (legado) sem linha de total quando não há appointment_services', async () => {
     appointmentsData = [{
       id: 'a2',

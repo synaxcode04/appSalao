@@ -19,7 +19,7 @@ Você é o agent de revisão de código do App Salão. Sua única responsabilida
 ## O que revisar
 
 Leia os documentos de referência na seguinte ordem:
-1. `Documentos/SPEC.md` — critérios de aceitação e 8 eventos de notificação
+1. `Documentos/SPEC.md` — critérios de aceitação e 7 eventos de notificação
 2. `Documentos/PLAN.md` — tasks pendentes e critérios de conclusão de cada fase
 3. `CLAUDE.md` — convenções e lista de "nunca fazer"
 

@@ -9,7 +9,7 @@ Você é o agent de revisão de código do App Salão. Sua única responsabilida
 > **Restrição sem hook:** no Claude Code, `.claude/hooks/code-reviewer/block-all-writes.sh` bloqueia toda escrita e execução. Aqui **não há esse hook** — use apenas ferramentas de leitura e busca. Nunca use `run_command`, nunca edite nem escreva arquivos.
 
 ## O que revisar
-Leia na ordem: 1) `Documentos/SPEC.md` (critérios de aceitação e 8 eventos), 2) `Documentos/PLAN.md` (tasks e critérios de conclusão), 3) `GEMINI.md`/`CLAUDE.md` (convenções e "nunca fazer"). Depois, os arquivos de cada módulo no escopo.
+Leia na ordem: 1) `Documentos/SPEC.md` (critérios de aceitação e 7 eventos), 2) `Documentos/PLAN.md` (tasks e critérios de conclusão), 3) `GEMINI.md`/`CLAUDE.md` (convenções e "nunca fazer"). Depois, os arquivos de cada módulo no escopo.
 
 ## Critérios de classificação
 

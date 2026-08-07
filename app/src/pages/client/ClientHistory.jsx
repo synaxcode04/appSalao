@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { History, Calendar, Clock } from 'lucide-react'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 import { getAppointmentServices, getAppointmentTotal, formatBRL } from '../../utils/appointmentServices'
+import { isAppointmentExpired } from '../../utils/appointmentExpiry'
 
 function ClientHistory() {
   const { salon } = useOutletContext()
@@ -27,7 +28,14 @@ function ClientHistory() {
         })
         if (mounted && res.ok) {
           const data = await res.json()
-          setHistory(data.appointments || [])
+          // Fonte única de verdade de expiração: o MESMO util usado pela agenda
+          // ativa (ClientAppointments), no fuso local do browser — sem divergência
+          // com o servidor (Node roda em UTC na Vercel). O histórico mantém todos
+          // os 'completed' e apenas os 'scheduled' JÁ EXPIRADOS (>15 min após o
+          // início); scheduled recentes/futuros continuam só na agenda ativa.
+          const all = data.appointments || []
+          const visible = all.filter(a => a.status === 'completed' || isAppointmentExpired(a))
+          setHistory(visible)
         }
       }
 

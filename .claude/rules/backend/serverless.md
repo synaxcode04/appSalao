@@ -12,7 +12,7 @@ Contexto que não emerge da leitura de `notify.js`.
 - Sem estado persistente entre chamadas — cada invocação é isolada (sem variáveis de módulo mutáveis).
 
 **`notify.js` — regras específicas**
-- O mapa de eventos é a fonte de verdade dos 8 eventos do SPEC. Qualquer evento fora do mapa retorna HTTP 400 — nunca 200 silencioso.
+- O mapa de eventos é a fonte de verdade dos 7 eventos do SPEC. Qualquer evento fora do mapa retorna HTTP 400 — nunca 200 silencioso.
 - O campo `recipientRole` (`'owner'` | `'client'`) determina o filtro de destinatário na chamada ao OneSignal. Inverta e você notifica a pessoa errada.
 - A API key do OneSignal vem de variável de ambiente sem prefixo `VITE_` — ela nunca é exposta ao cliente.
 - Erros da API do OneSignal: logue com `console.error` mas não vaze detalhes no corpo da resposta para o cliente.

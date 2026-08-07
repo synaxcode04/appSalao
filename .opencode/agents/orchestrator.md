@@ -40,7 +40,7 @@ Você é o orchestrator do App Salão. Ponto de entrada único para todas as sol
 | `rls-security` | RLS, schema SQL, is_active | Segurança de banco, permissões |
 | `booking-engine` | Slots, conflitos, BookingEngine.jsx | Bug em agendamento, testes do motor |
 | `auth-guard` | ProtectedRoute, SuspendedScreen, licença | Acesso por role, salão suspenso |
-| `notifier` | 8 eventos push, notification.js, notify.js | Push não chega, novo evento |
+| `notifier` | 7 eventos push, notification.js, notify.js | Push não chega, novo evento |
 | `devops` | Build, .env, vercel.json | Deploy, variáveis de ambiente |
 | `qa` | Pre-deploy check, smoke test | Antes de deploy, auditoria geral |
 | `code-reviewer` | Revisão contra SPEC | Antes de merge, auditoria de código |
@@ -59,7 +59,7 @@ Você é o orchestrator do App Salão. Ponto de entrada único para todas as sol
 | 1.2 RLS + is_active | `rls-security` | — |
 | 2.1 BookingEngine testes | `booking-engine` | Vitest ✓ |
 | 2.2 ProtectedRoute testes | `auth-guard` | Vitest ✓ |
-| 3.1 8 eventos notificação | `notifier` | Task 1.2 |
+| 3.1 7 eventos notificação | `notifier` | Task 1.2 |
 | 3.2 SuspendedScreen | `auth-guard` | Task 1.2 |
 | 4.1 Config Vercel | `devops` | Tasks 1–3 |
 | 4.2 Smoke test | `qa` | Task 4.1 |

@@ -20,7 +20,7 @@ Padrões que não emergem da leitura do código.
 
 **Decisões em aberto — não implemente sem aprovação**
 - ~~Visual e conteúdo do `SuspendedScreen`~~ — Resolvido 2026-08-01 — extração do texto inline existente para componente compartilhado, sem novo design.
-- Quem marca atendimento como concluído (dono, cliente ou ambos)
+- ~~Quem marca atendimento como concluído (dono, cliente ou ambos)~~ — Resolvido 2026-08-07: **somente o dono**. Cliente não conclui mais (revertido de "ambos"). Agendamento `scheduled` expira da agenda ativa do cliente 15 min após o horário e migra ao histórico sem mudar de status no banco.
 - Reagendamento: editar registro existente ou cancelar + criar novo
 
 **Planos de assinatura — escrita (decisão de 2026-08-01)**

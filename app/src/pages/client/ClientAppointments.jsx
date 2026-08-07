@@ -4,14 +4,9 @@ import { useClientSession } from '../../contexts/ClientSessionContext'
 import { Calendar, Clock, MapPin, XCircle, RefreshCw, Navigation, MessageCircle, User, Bell } from 'lucide-react'
 import BookingEngine from '../../components/BookingEngine'
 import { getAppointmentServices, getAppointmentTotal, formatBRL } from '../../utils/appointmentServices'
+import { isAppointmentExpired } from '../../utils/appointmentExpiry'
 import { sendPushNotification } from '../../utils/notification'
 import toast from 'react-hot-toast'
-
-// DECISÃO EM ABERTO: confirmar com o usuário se o cliente pode marcar atendimento
-// como concluído (ver CLAUDE.md — "Quem pode marcar um atendimento como concluído").
-// Altere esta constante para false para desabilitar o botão "Confirmar Atendimento"
-// sem precisar mexer em mais nenhuma linha.
-const CLIENT_CAN_COMPLETE = true
 
 function ClientAppointments() {
   const { salon, profile } = useOutletContext()
@@ -27,10 +22,6 @@ function ClientAppointments() {
 
   const [notifications, setNotifications] = useState([])
   const [showNotifications, setShowNotifications] = useState(false)
-
-  // Convite para avaliação no Google exibido após concluir um atendimento,
-  // quando o salão tem google_review_link configurado.
-  const [showGoogleReview, setShowGoogleReview] = useState(false)
 
   useEffect(() => {
     if (clientId) fetchAppointments()
@@ -100,9 +91,13 @@ function ClientAppointments() {
     if (res.ok) {
       const data = await res.json()
       const allAppts = data.appointments || []
+      // Oculta da agenda ativa os agendamentos 'scheduled' já expirados
+      // (>15 min após o horário de início) — eles migram para o histórico
+      // sem mudar de status no banco. Cancelados seguem o checkbox abaixo.
+      const notExpired = allAppts.filter(a => !isAppointmentExpired(a))
       const filtered = showCanceled
-        ? allAppts
-        : allAppts.filter(a => a.status !== 'canceled')
+        ? notExpired
+        : notExpired.filter(a => a.status !== 'canceled')
       setAppointments(filtered)
     }
 
@@ -134,61 +129,6 @@ function ClientAppointments() {
 
     await fetchAppointments()
     toast.success('Agendamento cancelado.')
-  }
-
-  const handleComplete = async (appt) => {
-    if (!window.confirm('Confirma a conclusão deste serviço?')) return
-    setLoading(true)
-
-    const res = await fetch('/api/appointments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'complete', appointment_id: appt.id, client_id: clientId })
-    })
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      setLoading(false)
-      toast.error(err.error || 'Erro ao concluir agendamento.')
-      return
-    }
-
-    const completeData = await res.json().catch(() => ({}))
-    if (completeData.owner_id) {
-      await sendPushNotification('completed_by_client', completeData.owner_id, 'Serviço Concluído', `O cliente confirmou a conclusão do serviço ${getAppointmentServices(appt).map(s => s.name).join(', ')}.`)
-    }
-
-    await fetchAppointments()
-
-    // Se o salão tiver link de avaliação do Google, convida o cliente a avaliar
-    // (sem depender de nota). Caso contrário, mantém o feedback simples.
-    if (salon?.google_review_link) {
-      setShowGoogleReview(true)
-    } else {
-      toast.success('Serviço marcado como concluído!')
-    }
-  }
-
-  const canMarkAsCompleted = (appt) => {
-    if (!CLIENT_CAN_COMPLETE) return false
-    if (appt.status !== 'scheduled') return false
-
-    const todayStr = new Date().toISOString().split('T')[0]
-    if (appt.appointment_date > todayStr) return false // Futuro
-
-    if (appt.appointment_date === todayStr) {
-      const nowStr = new Date().toTimeString().substring(0, 5) // "HH:MM"
-      if (nowStr < appt.start_time.substring(0, 5)) {
-        return false // Hoje, mas o horário ainda não passou
-      }
-    }
-
-    // Calcula se está dentro dos 2 dias de tolerância
-    const apptDate = new Date(appt.appointment_date + 'T00:00:00')
-    const todayObj = new Date(todayStr + 'T00:00:00')
-    const diffDays = (todayObj - apptDate) / (1000 * 60 * 60 * 24)
-    
-    return diffDays >= 0 && diffDays <= 2
   }
 
   const handleOpenReschedule = (appt) => {
@@ -390,15 +330,6 @@ function ClientAppointments() {
                     </button>
                   </>
                 )}
-
-                {canMarkAsCompleted(appt) && (
-                  <button 
-                    onClick={() => handleComplete(appt)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1rem', background: '#10b981', border: 'none', color: '#fff', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-                  >
-                    Confirmar Atendimento
-                  </button>
-                )}
               </div>
             </div>
             )
@@ -424,45 +355,6 @@ function ClientAppointments() {
           onSuccess={handleRescheduleSuccess}
           slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
         />
-      )}
-
-      {/* Convite para avaliação no Google após concluir atendimento */}
-      {showGoogleReview && salon?.google_review_link && (
-        <div
-          onClick={() => setShowGoogleReview(false)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="card"
-            style={{ maxWidth: '420px', width: '100%', padding: '2rem', textAlign: 'center' }}
-          >
-            <h3 style={{ fontSize: '1.3rem', color: 'var(--dark-green)', marginBottom: '0.8rem' }}>
-              Atendimento concluído!
-            </h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-              Que tal deixar uma avaliação no Google? Leva menos de um minuto e ajuda muito o salão.
-            </p>
-            <a
-              href={salon.google_review_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setShowGoogleReview(false)}
-              className="btn-primary"
-              style={{ display: 'inline-block', width: 'auto', padding: '0.7rem 1.4rem', fontSize: '0.95rem', textDecoration: 'none', marginBottom: '0.8rem' }}
-            >
-              Avaliar no Google
-            </a>
-            <div>
-              <button
-                onClick={() => setShowGoogleReview(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}
-              >
-                Agora não
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
     </div>

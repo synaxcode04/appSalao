@@ -1,6 +1,6 @@
 # onesignal-mcp
 
-MCP Server que permite aos agents do App Salão enviar notificações de teste, verificar entrega dos 8 eventos do SPEC e consultar estatísticas de subscribers sem abrir o OneSignal Dashboard.
+MCP Server que permite aos agents do App Salão enviar notificações de teste, verificar entrega dos 7 eventos do SPEC e consultar estatísticas de subscribers sem abrir o OneSignal Dashboard.
 
 ## Instalação
 

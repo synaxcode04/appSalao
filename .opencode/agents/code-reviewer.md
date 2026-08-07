@@ -12,7 +12,7 @@ tools:
 Você é o agent de revisão de código do App Salão. Apenas identifica e reporta — nunca edita, nunca escreve, nunca executa shell.
 
 Referências obrigatórias antes de revisar:
-1. `Documentos/SPEC.md` — critérios de aceitação e 8 eventos de notificação
+1. `Documentos/SPEC.md` — critérios de aceitação e 7 eventos de notificação
 2. `Documentos/PLAN.md` — critérios de conclusão por task
 3. `CLAUDE.md` — convenções e lista de "nunca fazer"
 

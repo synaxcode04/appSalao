@@ -42,7 +42,7 @@ Definições completas em `.agents/agents/<nome>.md` (Antigravity). No Gemini CL
 | `rls-security` | Banco, políticas RLS, schema SQL | Mudança em segurança, permissões ou estrutura do banco. Só SQL. |
 | `booking-engine` | `BookingEngine.jsx`, cálculo de slots, conflitos | Bug em agendamento, slots errados, testes do motor. |
 | `auth-guard` | `ProtectedRoute`, `SuspendedScreen`, `status` | Controle de acesso, licença suspensa, roles. |
-| `notifier` | 8 eventos push, `notification.js`, `notify.js` | Notificações, novo evento, testes de push. |
+| `notifier` | 7 eventos push, `notification.js`, `notify.js` | Notificações, novo evento, testes de push. |
 | `devops` | Build Vercel, `.env`, `vercel.json` | Deploy, variáveis de ambiente, build falhando. Nunca edita JSX. |
 | `qa` | Pre-deploy check, smoke test, relatório | Antes de qualquer deploy; após todas as tasks. |
 | `code-reviewer` | Revisão contra SPEC, classificação de problemas | Antes de merge; auditoria de qualidade. Somente leitura. |
@@ -194,7 +194,7 @@ npm run test:run  # testes (Vitest) — exit 0 é critério de conclusão
 
 ## Decisões em aberto — não implemente sem aprovação explícita
 - [ ] Visual e conteúdo da tela exibida quando a licença do salão está suspensa (`SuspendedScreen`)
-- [x] Quem pode marcar um atendimento como concluído — **ambos** (dono e cliente). Decidido em 2026-07-11.
+- [x] Quem pode marcar um atendimento como concluído — **somente o dono**. Decidido em 2026-07-11 como "ambos"; **revertido em 2026-08-07: o cliente NÃO conclui mais atendimento** (botão e evento `completed_by_client` removidos). Um agendamento `scheduled` some da agenda ativa do cliente 15 min após o horário de início e passa ao histórico, sem mudar de status no banco (só apresentação/filtro).
 - [ ] Reagendamento: edita o registro existente ou cancela e cria um novo
 - [ ] Framework e cobertura mínima de testes além do Vitest já configurado
 - [x] Planos de assinatura (2026-08-01): sem integração de pagamento por ora (Mercado Pago como feature futura separada, com `client_subscriptions` extensível via `ADD COLUMN`); ciclo de cota em janela rolante de 30 dias sem acúmulo (contados da data de assinatura `client_subscriptions.started_at`, não mês-calendário; contagem derivada, sem job); plano por salão (não global); cancelamento por cliente ou dono, sem automação sobre agendamentos remanescentes (dono gerencia manualmente). Tabelas: `subscription_plans`, `subscription_plan_services`, `client_subscriptions`. Ver seção "Feature em desenvolvimento — Planos de assinatura".

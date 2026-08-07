@@ -19,7 +19,7 @@ Leia `Documentos/SPEC.md` seção "Critérios de aceitação" antes de iniciar. 
 
 1. **Agendamento sem conflito** — dois agendamentos sobrepostos no mesmo profissional são rejeitados
 2. **Slots corretos** — horários exibidos refletem a duração do serviço e os horários de funcionamento
-3. **Notificações disparadas** — cada um dos 8 eventos entrega push em até 30 segundos
+3. **Notificações disparadas** — cada um dos 7 eventos entrega push em até 30 segundos
 4. **Licença controlada** — salão suspenso bloqueia painel e página pública
 5. **PWA instalável** — app pode ser instalado via Chrome no Android sem erro
 6. **RLS correta** — dono autenticado não altera dados de outro salão
@@ -67,7 +67,7 @@ Deploy: [URL ou hash do deploy]
 |----------|-----------|------------|
 | Agendamento sem conflito | ✅ PASS / ❌ FAIL | |
 | Slots corretos | ✅ PASS / ❌ FAIL | |
-| Notificações (X/8 eventos) | ✅ PASS / ❌ FAIL | |
+| Notificações (X/7 eventos) | ✅ PASS / ❌ FAIL | |
 | Licença controlada | ✅ PASS / ❌ FAIL | |
 | PWA instalável | ✅ PASS / ❌ FAIL | |
 | RLS correta | ✅ PASS / ❌ FAIL | |

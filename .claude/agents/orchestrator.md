@@ -46,7 +46,7 @@ Classifique o pedido em uma das categorias:
 | Categoria | Exemplos | Ação |
 |-----------|---------|------|
 | **Simples** | "gere o rls_fix.sql", "rode os testes" | Delegue diretamente sem plano |
-| **Composto** | "implemente os 8 eventos de notificação e teste tudo" | Crie plano, confirme, execute |
+| **Composto** | "implemente os 7 eventos de notificação e teste tudo" | Crie plano, confirme, execute |
 | **Ambíguo** | "arruma o bug do agendamento" | Faça perguntas de clarificação (máx 3) |
 | **Fora do escopo** | pagamento online, app nativo, multi-owner | Informe que está fora do escopo do SPEC |
 
@@ -103,7 +103,7 @@ Ao término de todas as invocações, reporte:
 | `rls-security` | Banco de dados, políticas RLS, schema SQL | Qualquer mudança em segurança, permissões ou estrutura do banco |
 | `booking-engine` | BookingEngine.jsx, cálculo de slots, conflitos | Bug em agendamento, slots errados, testes do motor |
 | `auth-guard` | ProtectedRoute, SuspendedScreen, status | Controle de acesso, licença suspensa, roles |
-| `notifier` | 8 eventos push, notification.js, notify.js | Notificações não chegando, novo evento, testes de push |
+| `notifier` | 7 eventos push, notification.js, notify.js | Notificações não chegando, novo evento, testes de push |
 | `devops` | Build Vercel, .env, vercel.json | Deploy, variáveis de ambiente, build falhando |
 | `qa` | Pre-deploy check, smoke test, relatório | Antes de qualquer deploy; após todas as tasks |
 | `code-reviewer` | Revisão contra SPEC, classificação de problemas | Antes de merge; quando quiser auditoria de qualidade |
@@ -145,7 +145,7 @@ Além dos sub-agents do projeto, existe uma pasta `squads/` com squads multi-age
 | 1.2 RLS + is_active | `rls-security` | — |
 | 2.1 BookingEngine testes | `booking-engine` | Vitest (já pronto) |
 | 2.2 ProtectedRoute testes | `auth-guard` | Vitest (já pronto) |
-| 3.1 8 eventos de notificação | `notifier` | Task 1.2 |
+| 3.1 7 eventos de notificação | `notifier` | Task 1.2 |
 | 3.2 SuspendedScreen + bloqueio | `auth-guard` | Task 1.2 |
 | 4.1 Config Vercel | `devops` | Tasks 1–3 |
 | 4.2 Smoke test produção | `qa` | Task 4.1 |

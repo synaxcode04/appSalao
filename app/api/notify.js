@@ -5,7 +5,6 @@ const EVENT_MAP = {
   client_rescheduled:  { recipientRole: 'owner' },
   owner_rescheduled:   { recipientRole: 'client' },
   completed_by_owner:  { recipientRole: 'client' },
-  completed_by_client: { recipientRole: 'owner' },
   new_review:          { recipientRole: 'owner' },
 }
 
@@ -69,7 +68,7 @@ export default async function handler(req, res) {
           errors: result.errors ?? null,
         });
       } else {
-        console.error('[notify] push entregue:', {
+        console.info('[notify] push entregue:', {
           event,
           targetExternalId,
           recipientRole,

@@ -176,7 +176,7 @@ npm run preview
 
 ## Decisões em aberto
 - [x] Visual e conteúdo da tela exibida quando a licença do salão está suspensa — resolvido em 2026-08-01: extraído o texto/UI já existente inline em OwnerLayout e SalonLayout para o componente compartilhado `SuspendedScreen`, sem criar copy ou design novo (não é uma decisão de copy nova, apenas centralização do que já existia).
-- [x] Quem pode marcar um atendimento como concluído — **ambos** (dono e cliente). Decidido em 2026-07-11.
+- [x] Quem pode marcar um atendimento como concluído — **somente o dono**. Decidido em 2026-07-11 como "ambos"; **revertido em 2026-08-07: o cliente NÃO conclui mais atendimento** (botão e evento `completed_by_client` removidos). Um agendamento `scheduled` some da agenda ativa do cliente 15 min após o horário de início e passa ao histórico, sem mudar de status no banco (só apresentação/filtro).
 - [ ] Reagendamento: edita o registro existente ou cancela e cria um novo
 - [ ] Framework e cobertura mínima de testes (Vitest ainda não configurado)
 - [x] Planos de assinatura (2026-08-01): sem integração de pagamento por ora (Mercado Pago como feature futura separada, com `client_subscriptions` extensível via `ADD COLUMN`); ciclo de cota em janela rolante de 30 dias sem acúmulo (contados da data de assinatura `client_subscriptions.started_at`, não mês-calendário; contagem derivada, sem job); plano por salão (não global); cancelamento por cliente ou dono, sem automação sobre agendamentos remanescentes (dono gerencia manualmente). Tabelas: `subscription_plans`, `subscription_plan_services`, `client_subscriptions`. Ver seção "Feature em desenvolvimento — Planos de assinatura".

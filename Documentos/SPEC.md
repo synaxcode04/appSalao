@@ -46,7 +46,6 @@ Peso de uso: Dono e Cliente têm importância igual no dia a dia.
 | Cliente reagenda | Dono |
 | Dono reagenda | Cliente |
 | Atendimento concluído (dono marca) | Cliente |
-| Atendimento concluído (cliente marca) | Dono |
 | Nova avaliação recebida | Dono |
 
 **Controle de Licenças (Painel Admin)**
@@ -98,7 +97,7 @@ Peso de uso: Dono e Cliente têm importância igual no dia a dia.
 
 1. **Agendamento sem conflito** — não é possível criar dois agendamentos sobrepostos no mesmo profissional (ou no salão, quando não há profissional cadastrado)
 2. **Slots corretos** — os horários exibidos ao cliente refletem exatamente a duração do serviço e os horários de funcionamento, incluindo intervalos
-3. **Notificações disparadas** — cada um dos 8 eventos de notificação entrega o push para o destinatário correto em até 30 segundos
+3. **Notificações disparadas** — cada um dos 7 eventos de notificação entrega o push para o destinatário correto em até 30 segundos
 4. **Licença controlada** — salão com licença suspensa exibe tela de aviso tanto no painel do dono quanto na página pública do cliente; nenhuma ação de agendamento é possível
 5. **PWA instalável** — o app pode ser instalado via browser em Android, iOS e desktop sem erro de manifesto ou service worker
 6. **RLS correta** — um dono autenticado não consegue alterar dados de outro salão
@@ -107,5 +106,5 @@ Peso de uso: Dono e Cliente têm importância igual no dia a dia.
 
 *Decisões em aberto:*
 - *Tela de aviso de licença suspensa: conteúdo e visual ainda não definidos*
-- *Evento "atendimento concluído": quem pode marcar como concluído — dono, cliente ou ambos?*
+- *Evento "atendimento concluído": quem pode marcar como concluído — **RESOLVIDO (2026-08-07): somente o dono.** O cliente não conclui mais atendimento. Agendamentos `scheduled` somem da agenda ativa do cliente 15 min após o horário e passam ao histórico sem mudar de status no banco.*
 - *Reagendamento: será uma edição do agendamento existente ou cancelar + criar novo?*

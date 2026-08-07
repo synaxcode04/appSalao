@@ -67,15 +67,6 @@ describe('sendPushNotification', () => {
     expect(body.targetExternalId).toBe('client-uid-3')
   })
 
-  it('completed_by_client envia para owner (recipientRole=owner no payload)', async () => {
-    mockFetchOk()
-    await sendPushNotification('completed_by_client', 'owner-uid-4', 'Concluído pelo cliente', 'Cliente confirmou conclusão.')
-    expect(fetch).toHaveBeenCalledOnce()
-    const body = JSON.parse(fetch.mock.calls[0][1].body)
-    expect(body.event).toBe('completed_by_client')
-    expect(body.targetExternalId).toBe('owner-uid-4')
-  })
-
   it('new_review envia para owner (recipientRole=owner no payload)', async () => {
     mockFetchOk()
     await sendPushNotification('new_review', 'owner-uid-5', 'Nova Avaliação', 'Você recebeu uma avaliação.')

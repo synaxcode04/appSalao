@@ -12,7 +12,7 @@ EXIT=$?
 if [ $EXIT -ne 0 ]; then
   echo "" >&2
   echo "❌ BLOQUEADO [notifier]: Testes falhando — encerramento negado." >&2
-  echo "   Task 3.1 exige 9 testes passando (8 eventos + 1 inválido)." >&2
+  echo "   Task 3.1 exige 8 testes passando (7 eventos + 1 inválido)." >&2
   echo "   Corrija os erros em notification.test.js." >&2
   exit 2
 fi
