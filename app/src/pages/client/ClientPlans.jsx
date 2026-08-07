@@ -10,6 +10,9 @@ import { computePlanSavings } from '../../utils/planSavings'
 // 0 = Domingo ... 6 = Sábado.
 const WEEK_DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
+const DAY_MS = 24 * 60 * 60 * 1000
+const CYCLE_MS = 30 * DAY_MS
+
 // Dias restantes até a renovação do ciclo corrente. Reaproveita EXATAMENTE o mesmo
 // cálculo de anchor/CYCLE_MS/cyclesElapsed de computeCycleWindow — a cota renova a cada
 // 30 dias contados da data de assinatura (started_at, fallback created_at). Ex: assinou
@@ -17,9 +20,6 @@ const WEEK_DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 // Exportada em escopo de módulo para ser exercitada diretamente nos testes (sem duplicar
 // a fórmula no arquivo de teste).
 export function cycleDaysRemaining(subscriptionDateIso) {
-  const DAY_MS = 24 * 60 * 60 * 1000
-  const CYCLE_MS = 30 * DAY_MS
-
   const anchor = new Date(subscriptionDateIso)
   anchor.setUTCHours(0, 0, 0, 0)
 
@@ -137,9 +137,6 @@ function ClientPlans() {
   // contado da DATA DE ASSINATURA (started_at, fallback created_at), sem mês-calendário
   // e sem acúmulo. Retorna as bordas como 'YYYY-MM-DD' para comparar com appointment_date.
   const computeCycleWindow = (subscriptionDateIso) => {
-    const DAY_MS = 24 * 60 * 60 * 1000
-    const CYCLE_MS = 30 * DAY_MS
-
     const anchor = new Date(subscriptionDateIso)
     anchor.setUTCHours(0, 0, 0, 0)
 
