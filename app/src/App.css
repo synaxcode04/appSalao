@@ -472,9 +472,19 @@
    a largura da tela em vez do container centralizado de 900px herdado de
    .page-content (usado também pelas páginas secundárias do dono, tipo
    formulário — essas continuam com max-width:900px, não tocamos nelas).
-   Escopo por .client-content evita qualquer efeito colateral no dono. */
+   Escopo por .client-content evita qualquer efeito colateral no dono.
+
+   Causa raiz da faixa lateral que sobrou em TODAS as páginas do cliente
+   (agenda, histórico, planos, perfil) mesmo após remover o max-width:900px:
+   .client-content já aplica padding lateral de 1rem (é o <main> shell do
+   app do cliente) e toda página filha usa .page-content, que soma seu
+   próprio padding lateral de 1rem por cima — dobrando o respiro nas
+   laterais (2rem/32px de cada lado em telas pequenas). Zeramos o padding
+   horizontal de .page-content neste escopo para não duplicar o do shell. */
 .client-content .page-content {
   max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .page-header {
