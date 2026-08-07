@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { History, Calendar, Clock } from 'lucide-react'
 import { useClientSession } from '../../contexts/ClientSessionContext'
+import { getAppointmentServices, getAppointmentTotal, formatBRL } from '../../utils/appointmentServices'
 
 function ClientHistory() {
   const { salon } = useOutletContext()
@@ -63,23 +64,30 @@ function ClientHistory() {
             {history.map(appt => {
               const dtParts = appt.appointment_date.split('-')
               const dateBr = `${dtParts[2]}/${dtParts[1]}/${dtParts[0]}`
+              const services = getAppointmentServices(appt)
               return (
                 <div key={appt.id} className="card" style={{ padding: '1rem', borderLeft: '4px solid var(--primary-green)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.8rem' }}>
-                    <div>
-                      <h3 style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{appt.services?.name}</h3>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{appt.salons?.name}</p>
-                    </div>
-                    <span style={{ fontWeight: 'bold', color: 'var(--dark-green)' }}>
-                      R$ {Number(appt.services?.price || 0).toFixed(2).replace('.', ',')}
-                    </span>
+                  <div style={{ marginBottom: '0.8rem' }}>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{appt.salons?.name}</p>
+                    {services.map((s, i) => (
+                      <div key={s.id ?? i} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                        <span>{s.name}</span>
+                        <span style={{ color: 'var(--dark-green)' }}>{formatBRL(s.price)}</span>
+                      </div>
+                    ))}
+                    {services.length > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--border-color)', fontWeight: 'bold', color: 'var(--dark-green)' }}>
+                        <span>Total</span>
+                        <span>{formatBRL(getAppointmentTotal(appt))}</span>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                       <Calendar size={14} /> {dateBr}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Clock size={14} /> {appt.start_time}
+                      <Clock size={14} /> {appt.start_time.substring(0, 5)}
                     </div>
                   </div>
                 </div>

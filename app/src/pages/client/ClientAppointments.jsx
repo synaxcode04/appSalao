@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 import { Calendar, Clock, MapPin, XCircle, RefreshCw, Navigation, MessageCircle, User, Bell } from 'lucide-react'
 import BookingEngine from '../../components/BookingEngine'
+import { getAppointmentServices, getAppointmentTotal, formatBRL } from '../../utils/appointmentServices'
 import { sendPushNotification } from '../../utils/notification'
 import toast from 'react-hot-toast'
 
@@ -128,7 +129,7 @@ function ClientAppointments() {
     const cancelData = await res.json().catch(() => ({}))
     const appt = appointments.find(a => a.id === id)
     if (appt && cancelData.owner_id) {
-      await sendPushNotification('client_canceled', cancelData.owner_id, 'Agendamento Cancelado', `O cliente cancelou o serviço de ${appt.services.name}.`)
+      await sendPushNotification('client_canceled', cancelData.owner_id, 'Agendamento Cancelado', `O cliente cancelou o serviço de ${getAppointmentServices(appt).map(s => s.name).join(', ')}.`)
     }
 
     await fetchAppointments()
@@ -154,7 +155,7 @@ function ClientAppointments() {
 
     const completeData = await res.json().catch(() => ({}))
     if (completeData.owner_id) {
-      await sendPushNotification('completed_by_client', completeData.owner_id, 'Serviço Concluído', `O cliente confirmou a conclusão do serviço ${appt.services.name}.`)
+      await sendPushNotification('completed_by_client', completeData.owner_id, 'Serviço Concluído', `O cliente confirmou a conclusão do serviço ${getAppointmentServices(appt).map(s => s.name).join(', ')}.`)
     }
 
     await fetchAppointments()
@@ -313,7 +314,9 @@ function ClientAppointments() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {appointments.map(appt => (
+          {appointments.map(appt => {
+            const services = getAppointmentServices(appt)
+            return (
             <div key={appt.id} className="card" style={{ padding: '1.2rem', borderLeft: `4px solid ${appt.status === 'canceled' ? '#d32f2f' : appt.status === 'completed' ? '#10b981' : 'var(--primary-green)'}`, opacity: appt.status === 'canceled' ? 0.6 : 1 }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
@@ -341,8 +344,19 @@ function ClientAppointments() {
                   <Clock size={18} style={{ marginLeft: '1rem' }} /> {appt.start_time.substring(0, 5)}
                 </div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                  {appt.services.name} (R$ {Number(appt.services.price).toFixed(2).replace('.', ',')})
-                  {appt.professionals && <span style={{ marginLeft: '0.5rem', paddingLeft: '0.5rem', borderLeft: '1px solid var(--border-color)' }}>Prof: {appt.professionals.name}</span>}
+                  {services.map((s, i) => (
+                    <div key={s.id ?? i} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+                      <span>{s.name}</span>
+                      <span>{formatBRL(s.price)}</span>
+                    </div>
+                  ))}
+                  {services.length > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--border-color)', fontWeight: 'bold', color: 'var(--dark-green)' }}>
+                      <span>Total</span>
+                      <span>{formatBRL(getAppointmentTotal(appt))}</span>
+                    </div>
+                  )}
+                  {appt.professionals && <div style={{ marginTop: '0.4rem' }}>Prof: {appt.professionals.name}</div>}
                 </div>
               </div>
 
@@ -387,7 +401,8 @@ function ClientAppointments() {
                 )}
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
