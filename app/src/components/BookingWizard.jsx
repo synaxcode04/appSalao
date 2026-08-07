@@ -194,7 +194,7 @@ function BookingWizard({
     <div className="modal-overlay" onClick={onClose}>
       <div className="card modal-card booking-wizard-card" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 className="modal-title" style={{ margin: 0 }}>Agendar Horário — Etapa {step} de 4</h3>
+          <h3 className="modal-title" style={{ margin: 0 }}>Agendar Horário</h3>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
             <X size={22} />
           </button>

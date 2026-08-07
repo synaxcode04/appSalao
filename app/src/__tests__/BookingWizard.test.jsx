@@ -189,6 +189,66 @@ describe('BookingWizard — salto da identificação quando cliente já identifi
   })
 })
 
+describe('BookingWizard — título do modal', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+  })
+
+  it('o header exibe apenas "Agendar Horário" sem indicador de etapa', () => {
+    const { getByText, queryByText } = render(
+      <BookingWizard
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        services={[s1]}
+        clientId="client1"
+        professionals={[]}
+        onSuccess={vi.fn()}
+      />
+    )
+
+    expect(getByText('Agendar Horário')).toBeTruthy()
+    expect(queryByText(/Etapa/)).toBeNull()
+  })
+
+  it('o título permanece "Agendar Horário" ao navegar entre etapas (avançar e voltar)', async () => {
+    const { getByText, queryByText, queryAllByRole } = render(
+      <BookingWizard
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        services={[s1]}
+        clientId="client1"
+        professionals={[]}
+        onSuccess={vi.fn()}
+      />
+    )
+
+    fireEvent.click(getByText('Corte'))
+    fireEvent.click(getByText('Próximo'))
+
+    await waitFor(() => {
+      const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
+      expect(slots.length).toBeGreaterThan(0)
+    })
+    expect(getByText('Agendar Horário')).toBeTruthy()
+    expect(queryByText(/Etapa/)).toBeNull()
+
+    fireEvent.click(getByText('Voltar'))
+
+    await waitFor(() => {
+      expect(getByText('Próximo')).toBeTruthy()
+    })
+    expect(getByText('Agendar Horário')).toBeTruthy()
+    expect(queryByText(/Etapa/)).toBeNull()
+  })
+})
+
 describe('BookingWizard — data padrão ao abrir', () => {
   beforeEach(() => {
     vi.clearAllMocks()
