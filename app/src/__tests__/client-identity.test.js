@@ -23,6 +23,7 @@ function makeChain(data, error = null) {
     update: vi.fn().mockReturnThis(),
     upsert: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue(result),
     maybeSingle: vi.fn().mockResolvedValue(result),
     then: (onFulfilled, onRejected) => Promise.resolve(result).then(onFulfilled, onRejected),
@@ -30,21 +31,35 @@ function makeChain(data, error = null) {
   return chain
 }
 
-// from() que entrega as chains de 'clients' na ordem em que o handler as consome
-// (guarda de posse → checagem de unicidade → UPDATE). Outras tabelas caem no fallback.
-function makeFrom(clientsChains) {
-  const queue = [...clientsChains]
+// from() que entrega as chains por tabela na ordem em que o handler as consome.
+// Aceita:
+//  - um array → fila da tabela 'clients' (compat. com os testes existentes:
+//    guarda de posse → checagem de unicidade → UPDATE);
+//  - um objeto { clients: [...], salon_clients: [...] } → filas por tabela, útil
+//    quando o dono edita via token (vínculo em salon_clients + UPDATE em clients).
+// Tabelas sem fila configurada caem no fallback makeChain(null).
+function makeFrom(chainsByTable) {
+  const queues = {}
+  if (Array.isArray(chainsByTable)) {
+    queues.clients = [...chainsByTable]
+  } else {
+    for (const table of Object.keys(chainsByTable)) {
+      queues[table] = [...chainsByTable[table]]
+    }
+  }
   return (table) => {
-    if (table === 'clients') {
-      return queue.shift() || makeChain(null)
+    const queue = queues[table]
+    if (queue && queue.length) {
+      return queue.shift()
     }
     return makeChain(null)
   }
 }
 
-// Helper para criar req e res simulados
-function makeReq(body) {
-  return { method: 'POST', headers: {}, body }
+// Helper para criar req e res simulados.
+// headers opcional permite simular Authorization: Bearer <token>.
+function makeReq(body, headers = {}) {
+  return { method: 'POST', headers, body }
 }
 
 function makeRes() {
@@ -502,6 +517,152 @@ describe('update — edição do perfil do cliente', () => {
     // O UPDATE deve conter { birth_date: null }.
     expect(updatePayload).toEqual({ birth_date: null })
     expect(updateChain.eq).toHaveBeenCalledWith('id', 'client1')
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
+// AÇÃO: update — autorização condicional pelo DONO via Authorization Bearer
+// Com token válido + vínculo salon_clients ao salão do dono, a edição é autorizada
+// sem exigir a prova de posse current_phone. Sem token, o fluxo de posse é mantido.
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('update — autorização do dono via Bearer token', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('dono autenticado COM vínculo edita (200) mesmo sem current_phone', async () => {
+    const updatedClient = {
+      id: 'client1',
+      phone: '11999999999',
+      full_name: 'Nome Editado pelo Dono',
+      birth_date: null,
+      avatar_url: null,
+    }
+
+    // Vínculo salon_clients existe para um salão cujo owner_id = usuário do token.
+    const linkChain = makeChain([{ id: 'sc1', salons: { owner_id: 'owner-1' } }])
+    let updatePayload = null
+    const updateChain = makeChain(updatedClient)
+    updateChain.update = vi.fn((payload) => {
+      updatePayload = payload
+      return updateChain
+    })
+
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'owner-1' } }, error: null }),
+      },
+      from: makeFrom({ salon_clients: [linkChain], clients: [updateChain] }),
+    })
+
+    // Sem current_phone: o token + vínculo autorizam.
+    const req = makeReq(
+      { action: 'update', client_id: 'client1', full_name: 'Nome Editado pelo Dono' },
+      { authorization: 'Bearer valid-token' }
+    )
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.client).toEqual(updatedClient)
+    expect(updatePayload).toEqual({ full_name: 'Nome Editado pelo Dono' })
+  })
+
+  it('dono autenticado SEM vínculo ao salão do cliente retorna 403 Sem permissão', async () => {
+    // Nenhum vínculo do cliente com salão que o dono possui.
+    const linkChain = makeChain([])
+    const updateChain = makeChain(null)
+
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'owner-1' } }, error: null }),
+      },
+      from: makeFrom({ salon_clients: [linkChain], clients: [updateChain] }),
+    })
+
+    const req = makeReq(
+      { action: 'update', client_id: 'client1', full_name: 'Tentativa' },
+      { authorization: 'Bearer valid-token' }
+    )
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.body.error).toBe('Sem permissão')
+    // Não deve prosseguir para o UPDATE.
+    expect(updateChain.update).not.toHaveBeenCalled()
+  })
+
+  it('token inválido (getUser falha) retorna 401', async () => {
+    const updateChain = makeChain(null)
+
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: { message: 'invalid token' } }),
+      },
+      from: makeFrom({ clients: [updateChain] }),
+    })
+
+    const req = makeReq(
+      { action: 'update', client_id: 'client1', full_name: 'X' },
+      { authorization: 'Bearer bad-token' }
+    )
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(401)
+    expect(res.body.error).toBe('Não autenticado')
+    expect(updateChain.update).not.toHaveBeenCalled()
+  })
+
+  it('REGRESSÃO: SEM Authorization e current_phone correto continua funcionando (200) via posse', async () => {
+    const updatedClient = {
+      id: 'client1',
+      phone: '11999999999',
+      full_name: 'Cliente Self',
+      birth_date: null,
+      avatar_url: null,
+    }
+
+    const guardChain = makeChain({ phone: '11999999999' })
+    const updateChain = makeChain(updatedClient)
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom([guardChain, updateChain]),
+    })
+
+    const req = makeReq({
+      action: 'update',
+      client_id: 'client1',
+      current_phone: '11999999999',
+      full_name: 'Cliente Self',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.client).toEqual(updatedClient)
+  })
+
+  it('REGRESSÃO: SEM Authorization e current_phone errado retorna 403 (posse falha)', async () => {
+    const guardChain = makeChain({ phone: '11999999999' })
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom([guardChain]),
+    })
+
+    const req = makeReq({
+      action: 'update',
+      client_id: 'client1',
+      current_phone: '11888888888',
+      full_name: 'Tentativa',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.body.error).toBe('Sem permissão')
   })
 })
 

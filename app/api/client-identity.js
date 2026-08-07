@@ -17,8 +17,11 @@ function normalizePhone(phone) {
 
 /**
  * Valida entrada para operações. Retorna erro ou null se válido.
+ * @param {boolean} hasAuthToken - se a requisição trouxe Authorization Bearer.
+ *   Para 'update', a prova de posse `current_phone` só é exigida quando NÃO há
+ *   token (fluxo do cliente sem sessão); com token a autorização vem do JWT + vínculo.
  */
-function validateInput(action, body) {
+function validateInput(action, body, hasAuthToken = false) {
   if (action === 'lookup' || action === 'create_or_get') {
     if (!body.phone) {
       return 'phone is required';
@@ -65,7 +68,9 @@ function validateInput(action, body) {
     if (!body.client_id) {
       return 'client_id is required';
     }
-    if (!body.current_phone) {
+    // current_phone (prova de posse) só é obrigatório no fluxo sem token (cliente).
+    // Com Authorization Bearer, a autorização vem do JWT do dono + vínculo salon_clients.
+    if (!hasAuthToken && !body.current_phone) {
       return 'current_phone is required for update action';
     }
     // Valida que pelo menos um campo editável foi fornecido.
@@ -92,8 +97,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid or missing action' });
   }
 
+  // Detecção robusta de "veio token": presença de header Authorization: Bearer <token>.
+  const authHeader = req.headers.authorization || req.headers.Authorization || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const hasBearer = bearerToken.length > 0;
+
   // Validar entrada
-  const validationError = validateInput(action, req.body);
+  const validationError = validateInput(action, req.body, hasBearer);
   if (validationError) {
     return res.status(400).json({ error: validationError });
   }
@@ -364,30 +374,70 @@ export default async function handler(req, res) {
     // AÇÃO: update — edita perfil do cliente
     // ==========================================
     if (action === 'update') {
-      // GUARDA DE AUTORIZAÇÃO: Prova de posse por telefone
-      // Busca o cliente e valida se current_phone bata com o telefone atual
-      const { data: client, error: clientError } = await supabase
-        .from('clients')
-        .select('phone')
-        .eq('id', client_id)
-        .single();
+      // ==========================================
+      // AUTORIZAÇÃO CONDICIONAL
+      // - Com Authorization Bearer (dono): valida o JWT e o vínculo salon_clients
+      //   com um salão que o dono possui. NÃO exige prova de posse current_phone.
+      // - Sem token (cliente sem sessão): mantém a guarda por posse do telefone.
+      // ==========================================
+      let authorizedByToken = false;
+      if (hasBearer) {
+        const { data: userData, error: userError } = await supabase.auth.getUser(bearerToken);
+        if (userError || !userData?.user) {
+          if (userError) {
+            console.error('Supabase getUser error:', { action, message: userError.message });
+          }
+          return res.status(401).json({ error: 'Não autenticado' });
+        }
+        const ownerId = userData.user.id;
 
-      // Se cliente não existe ou erro no banco
-      if (clientError && clientError.code !== 'PGRST116') {
-        console.error('Supabase client lookup error (update guard):', { client_id, error: clientError });
-        return res.status(500).json({ error: 'Erro ao verificar cliente' });
+        // O dono só pode editar clientes vinculados a um salão que ele possui:
+        // precisa existir salon_clients(client_id = client_id) cujo salão tem owner_id = ownerId.
+        const { data: ownedLinks, error: linkError } = await supabase
+          .from('salon_clients')
+          .select('id, salons!inner ( owner_id )')
+          .eq('client_id', client_id)
+          .eq('salons.owner_id', ownerId)
+          .limit(1);
+
+        if (linkError) {
+          console.error('Supabase owner-client link lookup error:', { client_id, message: linkError.message });
+          return res.status(403).json({ error: 'Sem permissão' });
+        }
+
+        if (!ownedLinks || ownedLinks.length === 0) {
+          return res.status(403).json({ error: 'Sem permissão' });
+        }
+
+        authorizedByToken = true;
       }
 
-      if (!client) {
-        // Cliente não encontrado
-        return res.status(404).json({ error: 'Cliente não encontrado' });
-      }
+      if (!authorizedByToken) {
+        // GUARDA DE AUTORIZAÇÃO: Prova de posse por telefone
+        // Busca o cliente e valida se current_phone bata com o telefone atual
+        const { data: client, error: clientError } = await supabase
+          .from('clients')
+          .select('phone')
+          .eq('id', client_id)
+          .single();
 
-      // Validar current_phone: normalizar e comparar com phone atual do cliente
-      const normalizedCurrentPhone = normalizePhone(current_phone);
-      if (normalizedCurrentPhone !== client.phone) {
-        // Telefone não bata — sem permissão
-        return res.status(403).json({ error: 'Sem permissão' });
+        // Se cliente não existe ou erro no banco
+        if (clientError && clientError.code !== 'PGRST116') {
+          console.error('Supabase client lookup error (update guard):', { client_id, error: clientError });
+          return res.status(500).json({ error: 'Erro ao verificar cliente' });
+        }
+
+        if (!client) {
+          // Cliente não encontrado
+          return res.status(404).json({ error: 'Cliente não encontrado' });
+        }
+
+        // Validar current_phone: normalizar e comparar com phone atual do cliente
+        const normalizedCurrentPhone = normalizePhone(current_phone);
+        if (normalizedCurrentPhone !== client.phone) {
+          // Telefone não bata — sem permissão
+          return res.status(403).json({ error: 'Sem permissão' });
+        }
       }
 
       // Se telefone foi enviado para atualizar: normalizar e validar unicidade

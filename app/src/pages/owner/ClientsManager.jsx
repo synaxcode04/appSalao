@@ -56,10 +56,17 @@ function ClientsManager() {
   const [loadingList, setLoadingList] = useState(true)
   const [togglingId, setTogglingId] = useState(null)
 
+  const [editRow, setEditRow] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [editBirthDate, setEditBirthDate] = useState('')
+  const [editSubmitting, setEditSubmitting] = useState(false)
+  const [editError, setEditError] = useState(null)
+
   const loadClients = async (salonId, mountedRef) => {
     const { data } = await supabase
       .from('salon_clients')
-      .select('id, created_at, is_active, clients ( id, phone, full_name )')
+      .select('id, created_at, is_active, clients ( id, phone, full_name, birth_date )')
       .eq('salon_id', salonId)
 
     const sorted = (data || []).slice().sort((a, b) => {
@@ -213,6 +220,81 @@ function ClientsManager() {
     }
   }
 
+  const openEdit = (row) => {
+    setEditRow(row)
+    setEditName(row.clients?.full_name || '')
+    setEditPhone(row.clients?.phone || '')
+    setEditBirthDate(row.clients?.birth_date || '')
+    setEditError(null)
+  }
+
+  const closeEdit = () => {
+    if (editSubmitting) return
+    setEditRow(null)
+    setEditError(null)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    if (!editRow?.clients?.id || editSubmitting) return
+
+    setEditSubmitting(true)
+    setEditError(null)
+    setFeedback(null)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        setEditError('Sua sessão expirou. Faça login novamente para editar o cliente.')
+        return
+      }
+
+      const response = await fetch('/api/client-identity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          action: 'update',
+          client_id: editRow.clients.id,
+          current_phone: editRow.clients.phone,
+          full_name: editName,
+          phone: editPhone,
+          birth_date: editBirthDate || null
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const text =
+          response.status === 403
+            ? 'Não foi possível confirmar a identidade deste cliente. Recarregue a página e tente novamente.'
+            : response.status === 409
+              ? 'Este telefone já pertence a outro cliente.'
+              : data?.error || 'Não foi possível atualizar o cliente. Tente novamente.'
+        setEditError(text)
+        return
+      }
+
+      setFeedback({
+        type: 'linked',
+        text: 'Dados do cliente atualizados com sucesso.'
+      })
+
+      setEditRow(null)
+
+      const mountedRef = { value: true }
+      await loadClients(salon.id, mountedRef)
+    } catch (err) {
+      setEditError('Erro de conexão ao atualizar o cliente. Tente novamente.')
+    } finally {
+      setEditSubmitting(false)
+    }
+  }
+
   const filteredClients = filterClients(clients, search)
 
   return (
@@ -220,8 +302,7 @@ function ClientsManager() {
       <header className="page-header">
         <h1>Clientes</h1>
         <p className="subtitle">
-          Cadastre um cliente pelo telefone. Se ele já existir em outro salão, a
-          mesma identidade é reutilizada e apenas vinculada ao seu salão.
+          Cadastre e gerencie seus clientes
         </p>
       </header>
 
@@ -294,18 +375,27 @@ function ClientsManager() {
                       </p>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={isToggling}
-                    onClick={() => handleToggleActive(row)}
-                  >
-                    {isToggling
-                      ? 'Salvando...'
-                      : isInactive
-                        ? 'Reativar'
-                        : 'Inativar'}
-                  </button>
+                  <div className="client-row-actions">
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => openEdit(row)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      disabled={isToggling}
+                      onClick={() => handleToggleActive(row)}
+                    >
+                      {isToggling
+                        ? 'Salvando...'
+                        : isInactive
+                          ? 'Reativar'
+                          : 'Inativar'}
+                    </button>
+                  </div>
                 </div>
               )
             })}
@@ -375,6 +465,67 @@ function ClientsManager() {
               type="button"
               onClick={() => setModalOpen(false)}
               disabled={submitting}
+              className="modal-cancel"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+      {editRow && (
+        <div onClick={closeEdit} className="modal-overlay">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="card modal-card"
+          >
+            <h3 className="modal-title">Editar Cliente</h3>
+
+            <form onSubmit={handleEditSubmit} className="auth-form">
+              <div className="form-field">
+                <label className="form-field-label" htmlFor="edit-client-phone">
+                  Telefone
+                </label>
+                <input
+                  id="edit-client-phone"
+                  type="tel"
+                  placeholder="Ex: (11) 99999-9999"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-field">
+                <label className="form-field-label" htmlFor="edit-client-name">
+                  Nome completo
+                </label>
+                <input
+                  id="edit-client-name"
+                  type="text"
+                  placeholder="Nome completo do cliente"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-field">
+                <span className="form-field-label">Data de nascimento</span>
+                <BirthdateInput value={editBirthDate} onChange={setEditBirthDate} />
+              </div>
+              <button type="submit" disabled={editSubmitting} className="btn-primary">
+                {editSubmitting ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </form>
+
+            {editError && (
+              <div className="clients-feedback" data-type="error" role="status">
+                {editError}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={closeEdit}
+              disabled={editSubmitting}
               className="modal-cancel"
             >
               Cancelar
