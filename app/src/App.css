@@ -722,6 +722,12 @@
   gap: 0.8rem;
 }
 
+/* Subtítulo reduzido para caber em uma linha a 375px (não altera o .subtitle global, compartilhado) */
+.professionals-header .subtitle {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .professionals-list-title {
   font-size: 1.3rem;
   margin-bottom: 1rem;

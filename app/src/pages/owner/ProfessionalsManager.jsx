@@ -115,7 +115,7 @@ function ProfessionalsManager() {
           <Users size={28} color="var(--primary-green)" />
           Gerenciar Profissionais
         </h1>
-        <p className="subtitle">Cadastre os profissionais do seu salão para permitir agendas independentes.</p>
+        <p className="subtitle">Cadastro de profissionais para agendas independentes</p>
       </header>
 
       <button
