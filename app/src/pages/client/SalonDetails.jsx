@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { supabase } from '../../supabase'
 import { ArrowLeft, MapPin, Home } from 'lucide-react'
-import BookingEngine from '../../components/BookingEngine'
+import BookingWizard from '../../components/BookingWizard'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 
 function SalonDetails() {
@@ -18,6 +18,7 @@ function SalonDetails() {
   const [services, setServices] = useState([])
   const [professionals, setProfessionals] = useState([])
   const [loading, setLoading] = useState(true)
+  const [wizardOpen, setWizardOpen] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -114,25 +115,35 @@ function SalonDetails() {
         </div>
       )}
 
-      {/* Agendamento inline — seleção de serviços e horário na mesma tela */}
+      {/* CTA que abre o wizard de agendamento (4 etapas) */}
       {services.length === 0 ? (
         <>
           <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Serviços Disponíveis</h2>
           <p style={{ color: 'var(--text-secondary)' }}>Este salão ainda não cadastrou nenhum serviço.</p>
         </>
       ) : (
-        <BookingEngine
-          inline
-          services={services}
-          salonId={salon.id}
-          clientId={clientSession?.client_id ?? null}
-          clientName={clientSession?.full_name || profile?.full_name || 'Cliente'}
-          professionals={professionals}
-          onSuccess={handleBookingSuccess}
-          loginByPhone={loginByPhone}
-          slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
-        />
+        <button
+          type="button"
+          className="btn-primary"
+          style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}
+          onClick={() => setWizardOpen(true)}
+        >
+          Agendar Horário
+        </button>
       )}
+
+      <BookingWizard
+        isOpen={wizardOpen}
+        onClose={() => setWizardOpen(false)}
+        services={services}
+        salonId={salon.id}
+        clientId={clientSession?.client_id ?? null}
+        clientName={clientSession?.full_name || profile?.full_name || 'Cliente'}
+        professionals={professionals}
+        onSuccess={handleBookingSuccess}
+        loginByPhone={loginByPhone}
+        slotIntervalMinutes={salon?.slot_interval_minutes ?? null}
+      />
 
     </div>
   )

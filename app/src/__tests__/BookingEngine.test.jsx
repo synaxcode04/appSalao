@@ -1,7 +1,20 @@
 import React from 'react'
 import { render, waitFor, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
 import BookingEngine, { computeAvailableSlots } from '../components/BookingEngine'
+
+// Fixa new Date() em meia-noite de 2099-12-31 para que:
+// 1) O componente defina selectedDate = '2099-12-31' (data de hoje corrigida).
+// 2) computeAvailableSlots não filtre slots passados (nowMin = 0, todos os slots >= 08:00 passam).
+// Apenas Date é falseada — setTimeout/setInterval permanecem reais para que waitFor funcione.
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date('2099-12-31T00:00:00'))
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 // Working hours that cover 08:00–18:00 with no lunch break
 const workingHoursData = {
@@ -814,6 +827,38 @@ describe('BookingEngine — compatibilidade legada: prop service singular sem se
       expect(capturedBody.service_ids).toEqual([service.id])
       expect(capturedBody.service_id).toBe(service.id)
     })
+  })
+})
+
+// ─── Teste da data padrão ─────────────────────────────────────────────────
+
+describe('BookingEngine — data padrão ao abrir', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('ao abrir (isOpen=true), o input de data exibe a data de HOJE — não amanhã', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+
+    const { container } = render(
+      <BookingEngine
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        service={{ id: 's1', name: 'Corte', duration_minutes: 60, price: 50 }}
+        clientId="client1"
+        professionals={[]}
+      />
+    )
+
+    const dateInput = container.querySelector('input[type="date"]')
+    expect(dateInput).not.toBeNull()
+    // Com fake timers em 2099-12-31T00:00:00, hoje é '2099-12-31'.
+    expect(dateInput.value).toBe('2099-12-31')
   })
 })
 

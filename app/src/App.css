@@ -870,6 +870,92 @@
   margin-bottom: 1rem;
 }
 
+/* ===== BookingWizard (agendamento do cliente) ===== */
+.booking-wizard-card {
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.booking-wizard-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.booking-wizard-service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.booking-wizard-service-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--surface-color);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.booking-wizard-service-card--checked {
+  border: 2px solid var(--primary-green);
+  background-color: var(--light-green);
+}
+
+.booking-wizard-service-card-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.booking-wizard-service-card--checked .booking-wizard-service-card-name {
+  color: var(--dark-green);
+}
+
+.booking-wizard-service-card-duration {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.booking-wizard-service-card-price {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.booking-wizard-service-card--checked .booking-wizard-service-card-price {
+  color: var(--dark-green);
+}
+
+.booking-wizard-summary-bar {
+  margin-top: 0.8rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--light-green);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  color: var(--dark-green);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.booking-wizard-summary-card {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--light-green);
+}
+
+@media (max-width: 480px) {
+  .booking-wizard-service-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+}
+
 /* ===== Lista de clientes (ClientsManager) ===== */
 .clients-empty {
   margin-top: 1rem;

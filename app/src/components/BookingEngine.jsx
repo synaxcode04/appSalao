@@ -4,82 +4,17 @@ import { X } from 'lucide-react'
 import { sendPushNotification } from '../utils/notification'
 import ClientIdentityForm from './ClientIdentityForm'
 import toast from 'react-hot-toast'
+import useAvailableSlots from '../hooks/useAvailableSlots'
+export { computeAvailableSlots } from '../utils/slotUtils'
 
 const EMPTY_ARRAY = []
 
 // 0 = Domingo ... 6 = Sábado — idêntico a subscription_plan_days.
 const WEEK_DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
-function generateTimeSlots(start, end, intervalMin) {
-  const slots = []
-  let [h, m] = start.split(':').map(Number)
-  const [endH, endM] = end.split(':').map(Number)
-
-  while (h < endH || (h === endH && m <= endM)) {
-    slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`)
-    m += intervalMin
-    if (m >= 60) {
-      h += Math.floor(m / 60)
-      m = m % 60
-    }
-  }
-  return slots
-}
-
 function timeToMinutes(timeStr) {
   const [h, m] = timeStr.split(':').map(Number)
   return h * 60 + m
-}
-
-// Função pura exportável para testes Vitest — não faz fetch, recebe dados prontos.
-// now é opcional; quando omitido usa new Date() (útil em testes para fixar a hora).
-// timeBlocks: array de { start_time, end_time } já filtrados para o profissional/salão relevante.
-export function computeAvailableSlots({ workingHours, appointments, timeBlocks = [], totalDurationMinutes, slotIntervalMinutes, selectedDate, now }) {
-  const step = slotIntervalMinutes && slotIntervalMinutes >= 15 ? slotIntervalMinutes : totalDurationMinutes
-  if (!step || step <= 0) return []
-
-  const allSlots = generateTimeSlots(
-    workingHours.start_time.substring(0, 5),
-    workingHours.end_time.substring(0, 5),
-    step
-  )
-  const breakStart = workingHours.break_start_time ? timeToMinutes(workingHours.break_start_time.substring(0, 5)) : null
-  const breakEnd = workingHours.break_end_time ? timeToMinutes(workingHours.break_end_time.substring(0, 5)) : null
-  const currentDate = now || new Date()
-
-  return allSlots.filter(slot => {
-    const slotStartMin = timeToMinutes(slot)
-    const slotEndMin = slotStartMin + totalDurationMinutes
-
-    if (slotEndMin > timeToMinutes(workingHours.end_time.substring(0, 5))) return false
-
-    // has_lunch_break=false desabilita explicitamente a pausa, mesmo que break_start/end existam no banco.
-    // has_lunch_break=undefined (registro antigo antes da migração) cai no comportamento legado: bloqueia se break_start/end existirem.
-    const lunchEnabled = workingHours.has_lunch_break !== false
-    if (lunchEnabled && breakStart && breakEnd) {
-      if (slotStartMin < breakEnd && slotEndMin > breakStart) return false
-    }
-
-    for (const appt of appointments) {
-      const apptStartMin = timeToMinutes(appt.start_time.substring(0, 5))
-      const apptEndMin = timeToMinutes(appt.end_time.substring(0, 5))
-      if (slotStartMin < apptEndMin && slotEndMin > apptStartMin) return false
-    }
-
-    for (const block of timeBlocks) {
-      const blockStartMin = timeToMinutes(block.start_time.substring(0, 5))
-      const blockEndMin = timeToMinutes(block.end_time.substring(0, 5))
-      if (slotStartMin < blockEndMin && slotEndMin > blockStartMin) return false
-    }
-
-    const todayStr = currentDate.toLocaleDateString('en-CA')
-    if (selectedDate === todayStr) {
-      const nowMin = currentDate.getHours() * 60 + currentDate.getMinutes()
-      if (slotStartMin <= nowMin) return false
-    }
-
-    return true
-  })
 }
 
 // services: lista de todos os serviços do salão para seleção múltipla.
@@ -94,7 +29,6 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
   const [selectedServiceIds, setSelectedServiceIds] = useState(() => service ? [service.id] : [])
   const [selectedProfessional, setSelectedProfessional] = useState('')
   const [selectedDate, setSelectedDate] = useState('')
-  const [availableSlots, setAvailableSlots] = useState([])
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [loading, setLoading] = useState(false)
   const [showIdentity, setShowIdentity] = useState(false)
@@ -107,9 +41,7 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
 
   useEffect(() => {
     if (effectiveIsOpen) {
-      const tmrw = new Date()
-      tmrw.setDate(tmrw.getDate() + 1)
-      setSelectedDate(tmrw.toLocaleDateString('en-CA'))
+      setSelectedDate(new Date().toLocaleDateString('en-CA'))
       setSelectedSlot(null)
       setShowIdentity(false)
       setPendingConfirm(false)
@@ -123,14 +55,18 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
   }, [effectiveIsOpen, professionals, service])
 
   useEffect(() => {
-    if (effectiveIsOpen && selectedDate && totalDurationMinutes > 0 && (professionals.length === 0 || selectedProfessional)) {
-      calculateAvailableSlots()
-    } else {
-      setAvailableSlots([])
-    }
     setSelectedSlot(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, totalDurationMinutes, effectiveIsOpen, selectedProfessional, professionals])
+
+  const { availableSlots } = useAvailableSlots({
+    salonId,
+    selectedDate: effectiveIsOpen ? selectedDate : '',
+    selectedProfessional,
+    professionals,
+    totalDurationMinutes,
+    slotIntervalMinutes,
+    existingAppointmentId,
+  })
 
   // Carrega assinaturas ativas do cliente neste salão — usadas só para o alerta
   // informativo de "fora do dia do plano" (não bloqueia o agendamento).
@@ -184,68 +120,6 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
     const daysLabel = daysUnion.length > 0 ? daysUnion.map(d => WEEK_DAY_LABELS[d]).join(', ') : 'todos os dias'
     return `Seu plano vale apenas ${daysLabel} — este agendamento será cobrado à parte, sem descontar da cota.`
   })()
-
-  const calculateAvailableSlots = async () => {
-    setAvailableSlots([])
-
-    const dateObj = new Date(selectedDate + 'T00:00:00')
-    const dayOfWeek = dateObj.getDay()
-
-    // maybeSingle retorna data: null (sem HTTP 406) quando não há linha para o dia.
-    const { data: workingHours, error: workingHoursError } = await supabase
-      .from('working_hours')
-      .select('*')
-      .eq('salon_id', salonId)
-      .eq('day_of_week', dayOfWeek)
-      .maybeSingle()
-
-    if (workingHoursError || !workingHours) return
-
-    const apptBody = { action: 'list_scheduled', salon_id: salonId, appointment_date: selectedDate }
-    if (selectedProfessional) {
-      apptBody.professional_id = selectedProfessional
-    } else if (professionals.length > 0) {
-      return
-    }
-    if (existingAppointmentId) apptBody.exclude_id = existingAppointmentId
-
-    const { data: timeBlocksRaw } = await supabase
-      .from('time_blocks')
-      .select('professional_id, start_time, end_time')
-      .eq('salon_id', salonId)
-      .eq('block_date', selectedDate)
-
-    // Filtramos em JS para evitar .eq('professional_id', null) — ver convencoes-gerais.md.
-    const timeBlocks = (timeBlocksRaw || []).filter(b =>
-      b.professional_id === null || b.professional_id === selectedProfessional
-    )
-
-    let appointments = []
-    try {
-      const apptRes = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(apptBody)
-      })
-      if (apptRes.ok) {
-        const apptData = await apptRes.json()
-        appointments = apptData.appointments || []
-      }
-    } catch (_) {
-      // Falha de rede: prossegue sem appointments (banco valida no create)
-    }
-
-    const freeSlots = computeAvailableSlots({
-      workingHours,
-      appointments,
-      timeBlocks,
-      totalDurationMinutes,
-      slotIntervalMinutes,
-      selectedDate
-    })
-
-    setAvailableSlots(freeSlots)
-  }
 
   const handleConfirm = async () => {
     if (!selectedSlot || selectedServiceIds.length === 0) return
