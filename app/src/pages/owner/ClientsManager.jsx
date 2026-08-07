@@ -104,9 +104,22 @@ function ClientsManager() {
     setFeedback(null)
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        setFeedback({
+          type: 'error',
+          text: 'Sua sessão expirou. Faça login novamente para cadastrar o cliente.'
+        })
+        return
+      }
+
       const response = await fetch('/api/client-identity', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           action: 'link_to_salon',
           phone,

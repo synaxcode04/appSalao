@@ -173,6 +173,67 @@ describe('ClientsManager - edição de cliente', () => {
     expect(select.mock.calls.length).toBeGreaterThanOrEqual(2)
   })
 
+  it('submete link_to_salon com header Authorization Bearer ao abrir modal e confirmar', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        salon_client: { created_at: new Date().toISOString() },
+      }),
+    })
+
+    renderPage()
+    await screen.findByText('João Silva')
+
+    fireEvent.click(screen.getByRole('button', { name: /Novo Cliente/i }))
+
+    const phoneInput = await screen.findByLabelText('Telefone')
+    fireEvent.change(phoneInput, { target: { value: '11999990000' } })
+    fireEvent.change(screen.getByLabelText('Nome completo'), {
+      target: { value: 'Maria Nova' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Cadastrar Cliente/i }))
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/api/client-identity', expect.any(Object))
+    })
+
+    const options = global.fetch.mock.calls[0][1]
+    const body = JSON.parse(options.body)
+    expect(body.action).toBe('link_to_salon')
+    expect(options.headers.Authorization).toBe('Bearer token-123')
+  })
+
+  it('não chama fetch de link_to_salon e exibe erro quando sessão está ausente', async () => {
+    const { supabase } = await import('../supabase')
+    supabase.auth.getSession.mockResolvedValueOnce({
+      data: { session: null },
+      error: null,
+    })
+
+    global.fetch = vi.fn()
+
+    renderPage()
+    await screen.findByText('João Silva')
+
+    fireEvent.click(screen.getByRole('button', { name: /Novo Cliente/i }))
+
+    const phoneInput = await screen.findByLabelText('Telefone')
+    fireEvent.change(phoneInput, { target: { value: '11999990000' } })
+    fireEvent.change(screen.getByLabelText('Nome completo'), {
+      target: { value: 'Maria Nova' },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Cadastrar Cliente/i }))
+
+    await waitFor(() => {
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
+    const msgs = await screen.findAllByText(/sessão expirou/i)
+    expect(msgs.length).toBeGreaterThan(0)
+  })
+
   it('exibe mensagem de erro quando o update falha (response não ok)', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
