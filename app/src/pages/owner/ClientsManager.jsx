@@ -259,7 +259,6 @@ function ClientsManager() {
         body: JSON.stringify({
           action: 'update',
           client_id: editRow.clients.id,
-          current_phone: editRow.clients.phone,
           full_name: editName,
           phone: editPhone,
           birth_date: editBirthDate || null

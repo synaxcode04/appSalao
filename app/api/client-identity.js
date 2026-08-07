@@ -246,9 +246,40 @@ export default async function handler(req, res) {
     // AÇÃO: link_to_salon — vincular cliente a salão
     // ==========================================
     if (action === 'link_to_salon') {
-      // TODO segurança: verificar ownership do salon_id (dono === auth.uid())
-      // antes de vincular — mesma lacuna corrigida em toggle_active/check_active.
-      // Não alterado aqui para não quebrar o fluxo atual do ClientsManager.
+      // ==========================================
+      // AUTORIZAÇÃO CONDICIONAL
+      // - Com Authorization Bearer (dono): valida o JWT e exige que o usuário
+      //   seja dono do salon_id de destino (salons.owner_id === user.id).
+      // - Sem token (cliente sem sessão): mantém o fluxo atual inalterado
+      //   (fallback do cliente sem sessão Auth).
+      // ==========================================
+      if (hasBearer) {
+        const { data: userData, error: userError } = await supabase.auth.getUser(bearerToken);
+        if (userError || !userData?.user) {
+          if (userError) {
+            console.error('Supabase getUser error:', { action, message: userError.message });
+          }
+          return res.status(401).json({ error: 'Não autenticado' });
+        }
+
+        const { data: salon, error: salonError } = await supabase
+          .from('salons')
+          .select('owner_id')
+          .eq('id', salon_id)
+          .single();
+
+        if (salonError || !salon) {
+          if (salonError && salonError.code !== 'PGRST116') {
+            console.error('Supabase salon ownership lookup error:', { salon_id, message: salonError.message });
+          }
+          return res.status(403).json({ error: 'Sem permissão' });
+        }
+
+        if (salon.owner_id !== userData.user.id) {
+          return res.status(403).json({ error: 'Sem permissão' });
+        }
+      }
+
       // Primeiro, garante que o cliente existe (create_or_get)
       const { data: client, error: clientError } = await supabase
         .from('clients')

@@ -667,6 +667,131 @@ describe('update — autorização do dono via Bearer token', () => {
 })
 
 // ──────────────────────────────────────────────────────────────────────────────
+// AÇÃO: link_to_salon — autorização de ownership do salão
+// Com Authorization Bearer (dono), o usuário do token precisa ser dono do salon_id
+// de destino (salons.owner_id === user.id). Sem token, mantém o fluxo atual.
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('link_to_salon authorization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('dono COM ownership do salon_id (token válido) prossegue e vincula (200)', async () => {
+    const salonChain = makeChain({ owner_id: 'owner-1' })
+    const clientChain = makeChain({ id: 'client1' })
+    const linkChain = makeChain({
+      id: 'sc1', salon_id: 'salon-1', client_id: 'client1', created_at: '2026-08-07T10:00:00Z',
+    })
+
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'owner-1' } }, error: null }),
+      },
+      from: makeFrom({ salons: [salonChain], clients: [clientChain], salon_clients: [linkChain] }),
+    })
+
+    const req = makeReq(
+      { action: 'link_to_salon', phone: '11999999999', salon_id: 'salon-1' },
+      { authorization: 'Bearer valid-token' }
+    )
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.client_id).toBe('client1')
+    expect(res.body.salon_client).toBeTruthy()
+  })
+
+  it('dono SEM ownership (token válido, owner_id difere) retorna 403 e NÃO chama upsert', async () => {
+    const salonChain = makeChain({ owner_id: 'outro-dono' })
+    const linkChain = makeChain(null)
+
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'owner-1' } }, error: null }),
+      },
+      from: makeFrom({ salons: [salonChain], salon_clients: [linkChain] }),
+    })
+
+    const req = makeReq(
+      { action: 'link_to_salon', phone: '11999999999', salon_id: 'salon-1' },
+      { authorization: 'Bearer valid-token' }
+    )
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.body.error).toBe('Sem permissão')
+    expect(linkChain.upsert).not.toHaveBeenCalled()
+  })
+
+  it('salão não encontrado (token válido) retorna 403 e NÃO chama upsert', async () => {
+    const salonChain = makeChain(null, { code: 'PGRST116', message: 'no rows' })
+    const linkChain = makeChain(null)
+
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'owner-1' } }, error: null }),
+      },
+      from: makeFrom({ salons: [salonChain], salon_clients: [linkChain] }),
+    })
+
+    const req = makeReq(
+      { action: 'link_to_salon', phone: '11999999999', salon_id: 'salon-inexistente' },
+      { authorization: 'Bearer valid-token' }
+    )
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(403)
+    expect(res.body.error).toBe('Sem permissão')
+    expect(linkChain.upsert).not.toHaveBeenCalled()
+  })
+
+  it('token inválido (getUser falha) retorna 401 e NÃO chama upsert', async () => {
+    const linkChain = makeChain(null)
+
+    vi.mocked(createClient).mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: { message: 'invalid token' } }),
+      },
+      from: makeFrom({ salon_clients: [linkChain] }),
+    })
+
+    const req = makeReq(
+      { action: 'link_to_salon', phone: '11999999999', salon_id: 'salon-1' },
+      { authorization: 'Bearer bad-token' }
+    )
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(401)
+    expect(res.body.error).toBe('Não autenticado')
+    expect(linkChain.upsert).not.toHaveBeenCalled()
+  })
+
+  it('REGRESSÃO: SEM token o fluxo atual continua vinculando (200) sem exigir autorização', async () => {
+    const clientChain = makeChain({ id: 'client1' })
+    const linkChain = makeChain({
+      id: 'sc1', salon_id: 'salon-1', client_id: 'client1', created_at: '2026-08-07T10:00:00Z',
+    })
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom({ clients: [clientChain], salon_clients: [linkChain] }),
+    })
+
+    const req = makeReq({ action: 'link_to_salon', phone: '11999999999', salon_id: 'salon-1' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.client_id).toBe('client1')
+    expect(res.body.salon_client).toBeTruthy()
+  })
+})
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Regressão de contrato: ação desconhecida continua retornando 400
 // ──────────────────────────────────────────────────────────────────────────────
 

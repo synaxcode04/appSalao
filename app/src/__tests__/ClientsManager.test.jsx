@@ -128,7 +128,7 @@ describe('ClientsManager - edição de cliente', () => {
     expect(screen.getByLabelText('Ano').value).toBe('1990')
   })
 
-  it('submete update com client_id, current_phone original e campos editados', async () => {
+  it('submete update com client_id e campos editados (sem current_phone; autoriza via Bearer)', async () => {
     renderPage()
     await screen.findByText('João Silva')
 
@@ -149,7 +149,9 @@ describe('ClientsManager - edição de cliente', () => {
     const body = JSON.parse(options.body)
     expect(body.action).toBe('update')
     expect(body.client_id).toBe('c1')
-    expect(body.current_phone).toBe('(11) 98888-7777')
+    // current_phone é redundante quando há Authorization Bearer (servidor ignora) —
+    // este caminho sempre tem sessão, então o campo não é mais enviado.
+    expect(body.current_phone).toBeUndefined()
     expect(body.full_name).toBe('João Souza')
     // A edição do dono agora autoriza via JWT: o header Authorization deve ir junto.
     expect(options.headers.Authorization).toBe('Bearer token-123')
