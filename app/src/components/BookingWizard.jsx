@@ -15,7 +15,7 @@ function timeToMinutes(timeStr) {
   return h * 60 + m
 }
 
-// Modal wizard de 4 etapas para o novo fluxo de agendamento do cliente:
+// Modal wizard (3 ou 4 etapas, conforme o fluxo) para o novo fluxo de agendamento do cliente:
 // 1) Serviços  2) Data/horário  3) Identificação (condicional)  4) Resumo/confirmação.
 // Reaproveita o mecanismo visual do wizard do PlansManager (track/panel + altura medida via ref).
 function BookingWizard({
