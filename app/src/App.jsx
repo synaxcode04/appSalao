@@ -36,13 +36,17 @@ function App() {
   useEffect(() => {
     let authSubscription;
     let removePushListener = null;
+    let lastLoggedInId = null;
 
     const attachPushListener = (OneSignal, userId) => {
       if (removePushListener) removePushListener();
       const handler = async (event) => {
         const cur = event?.current ?? event;
         if (cur?.optedIn && (cur?.token || cur?.id)) {
-          await OneSignal.login(userId);
+          if (userId !== lastLoggedInId) {
+            lastLoggedInId = userId;
+            await OneSignal.login(userId);
+          }
         }
       };
       OneSignal.User.PushSubscription.addEventListener('change', handler);
@@ -60,7 +64,10 @@ function App() {
 
         if (session?.user) {
           window.OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.login(session.user.id);
+            if (session.user.id !== lastLoggedInId) {
+              lastLoggedInId = session.user.id;
+              await OneSignal.login(session.user.id);
+            }
             attachPushListener(OneSignal, session.user.id);
           });
         }
@@ -68,10 +75,14 @@ function App() {
         const { data } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
           window.OneSignalDeferred.push(async function(OneSignal) {
             if (newSession?.user) {
-              await OneSignal.login(newSession.user.id);
+              if (newSession.user.id !== lastLoggedInId) {
+                lastLoggedInId = newSession.user.id;
+                await OneSignal.login(newSession.user.id);
+              }
               attachPushListener(OneSignal, newSession.user.id);
             } else {
               if (removePushListener) removePushListener();
+              lastLoggedInId = null;
               await OneSignal.logout();
             }
           });

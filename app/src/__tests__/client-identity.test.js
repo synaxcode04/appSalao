@@ -822,3 +822,80 @@ describe('ação desconhecida — não regride o comportamento existente', () =>
     expect(res.body.error).toBe('Invalid or missing action')
   })
 })
+
+// ──────────────────────────────────────────────────────────────────────────────
+// AÇÃO: check_active — autorização CONDICIONAL (cliente sem sessão não precisa de token)
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('check_active — autorização condicional', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('SEM token (cliente sem sessão): retorna 200 { blocked: false } quando vínculo não existe', async () => {
+    const chain = makeChain(null)
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom({ salon_clients: [chain] }),
+    })
+
+    const req = makeReq({ action: 'check_active', salon_id: 'salon-1', client_id: 'client-1' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.blocked).toBe(false)
+  })
+
+  it('SEM token (cliente sem sessão): retorna 200 { blocked: true } quando is_active = false', async () => {
+    const chain = makeChain({ is_active: false })
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom({ salon_clients: [chain] }),
+    })
+
+    const req = makeReq({ action: 'check_active', salon_id: 'salon-1', client_id: 'client-1' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.blocked).toBe(true)
+  })
+
+  it('SEM token (cliente sem sessão): retorna 200 { blocked: false } quando is_active = true', async () => {
+    const chain = makeChain({ is_active: true })
+
+    vi.mocked(createClient).mockReturnValue({
+      from: makeFrom({ salon_clients: [chain] }),
+    })
+
+    const req = makeReq({ action: 'check_active', salon_id: 'salon-1', client_id: 'client-1' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    expect(res.body.blocked).toBe(false)
+  })
+
+  it('sem salon_id retorna 400', async () => {
+    vi.mocked(createClient).mockReturnValue({ from: () => makeChain(null) })
+
+    const req = makeReq({ action: 'check_active', client_id: 'client-1' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body.error).toBe('salon_id is required')
+  })
+
+  it('sem client_id retorna 400', async () => {
+    vi.mocked(createClient).mockReturnValue({ from: () => makeChain(null) })
+
+    const req = makeReq({ action: 'check_active', salon_id: 'salon-1' })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(400)
+    expect(res.body.error).toBe('client_id is required')
+  })
+})

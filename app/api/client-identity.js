@@ -131,23 +131,18 @@ export default async function handler(req, res) {
 
   // ==========================================
   // Autenticação/autorização das ações sensíveis
-  // toggle_active e check_active bypassam RLS via service_role,
-  // então a verificação de identidade/ownership é feita aqui.
+  // toggle_active bypassa RLS via service_role,
+  // então a verificação de ownership é feita aqui.
+  // check_active é autorização CONDICIONAL: sem token (cliente sem sessão)
+  // executa direto via service_role; com token valida e prossegue.
   // ==========================================
-  const authGuardedActions = ['toggle_active', 'check_active'];
   let authUser = null;
-  if (authGuardedActions.includes(action)) {
-    // Extrai o Bearer token do header Authorization
-    const authHeader = req.headers.authorization || req.headers.Authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
-
-    if (!token) {
+  if (action === 'toggle_active') {
+    if (!hasBearer) {
       return res.status(401).json({ error: 'Não autenticado' });
     }
 
-    // Valida o token e resolve o usuário. O service_role client aceita o
-    // access_token do usuário em getUser(token) sem tocar a sessão persistida.
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    const { data: userData, error: userError } = await supabase.auth.getUser(bearerToken);
     if (userError || !userData?.user) {
       if (userError) {
         console.error('Supabase getUser error:', { action, message: userError.message });
@@ -156,29 +151,22 @@ export default async function handler(req, res) {
     }
     authUser = userData.user;
 
-    // check_active: o chamador só pode checar o próprio bloqueio.
-    if (action === 'check_active' && authUser.id !== client_id) {
+    // toggle_active: o chamador precisa ser o dono do salon_id.
+    const { data: salon, error: salonError } = await supabase
+      .from('salons')
+      .select('owner_id')
+      .eq('id', salon_id)
+      .single();
+
+    if (salonError || !salon) {
+      if (salonError && salonError.code !== 'PGRST116') {
+        console.error('Supabase salon ownership lookup error:', { salon_id, message: salonError.message });
+      }
       return res.status(403).json({ error: 'Sem permissão' });
     }
 
-    // toggle_active: o chamador precisa ser o dono do salon_id.
-    if (action === 'toggle_active') {
-      const { data: salon, error: salonError } = await supabase
-        .from('salons')
-        .select('owner_id')
-        .eq('id', salon_id)
-        .single();
-
-      if (salonError || !salon) {
-        if (salonError && salonError.code !== 'PGRST116') {
-          console.error('Supabase salon ownership lookup error:', { salon_id, message: salonError.message });
-        }
-        return res.status(403).json({ error: 'Sem permissão' });
-      }
-
-      if (salon.owner_id !== authUser.id) {
-        return res.status(403).json({ error: 'Sem permissão' });
-      }
+    if (salon.owner_id !== authUser.id) {
+      return res.status(403).json({ error: 'Sem permissão' });
     }
   }
 
