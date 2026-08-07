@@ -105,7 +105,7 @@ function ServicesManager() {
     <div className="page-content">
       <header className="page-header">
         <h1>Serviços</h1>
-        <p className="subtitle">Gerencie os cortes, barbas e outros serviços.</p>
+        <p className="subtitle">Cadastrar e editar serviços</p>
       </header>
 
       <button
