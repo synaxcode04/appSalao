@@ -836,3 +836,49 @@ describe('list_by_client — retorna campo salons para evitar crash na Agenda', 
     expect(selectCall).toContain('salons(')
   })
 })
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Timezone: list_by_client deve calcular a janela de 30 dias na data LOCAL do
+// Brasil (America/Sao_Paulo, UTC-3), não em UTC. À noite no BR (ex: 23:00 de
+// 07/08 = 02:00 UTC de 08/08), toISOString() em UTC já virou o dia seguinte e
+// encurtava a janela em ~1 dia. Base BR deve ser 07/08 → limite = 08/07.
+// ──────────────────────────────────────────────────────────────────────────────
+describe('list_by_client — janela de 30 dias na timezone do Brasil (não UTC)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('usa data local BR: 23:00 de 07/08 (02:00 UTC de 08/08) → gte = 2026-07-08', async () => {
+    // 2026-08-08T02:00:00Z = 2026-08-07 23:00 no horário do Brasil (UTC-3)
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-08T02:00:00Z'))
+
+    const linkChain = makeChain({ is_active: true })
+    const appointmentsChain = makeChain([])
+
+    vi.mocked(createClient).mockReturnValue({
+      from: (table) => {
+        if (table === 'salon_clients') return linkChain
+        if (table === 'appointments') return appointmentsChain
+        return makeChain(null)
+      },
+    })
+
+    const req = makeReq({
+      action: 'list_by_client',
+      salon_id: 'salon1',
+      client_id: 'client1',
+    })
+    const res = makeRes()
+    await handler(req, res)
+
+    expect(res.statusCode).toBe(200)
+    // 30 dias antes de 2026-08-07 (data local BR) = 2026-07-08
+    // NÃO 2026-07-09 (que seria 30 dias antes da data UTC 2026-08-08)
+    expect(appointmentsChain._gte).not.toBeNull()
+    expect(appointmentsChain._gte.col).toBe('appointment_date')
+    expect(appointmentsChain._gte.val).toBe('2026-07-08')
+
+    vi.useRealTimers()
+  })
+})

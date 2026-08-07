@@ -65,6 +65,31 @@ function computeCycleWindow(subscriptionDateIso) {
 }
 
 /**
+ * Retorna a data-calendário de "hoje menos N dias" na timezone America/Sao_Paulo
+ * (UTC-3), como string "YYYY-MM-DD". O Node roda em UTC na Vercel, mas a coluna
+ * `appointment_date` é DATE pura em horário local do Brasil — usar toISOString()
+ * (UTC) à noite no BR devolveria o dia seguinte, deslocando a janela em ~1 dia.
+ *
+ * Deriva o dia-calendário local BR via Intl (que já produz "YYYY-MM-DD"),
+ * subtrai N dias com Date.UTC (evita bug de virada de mês) e reformata.
+ *
+ * @param {number} days - quantos dias subtrair de "hoje" (data local BR)
+ * @param {Date} [now] - instante de referência (default: agora) — injetável em teste
+ * @returns {string} data "YYYY-MM-DD"
+ */
+function saoPauloDateMinusDays(days, now = new Date()) {
+  const brToday = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now); // "YYYY-MM-DD"
+  const [y, m, d] = brToday.split('-').map(Number);
+  const shifted = new Date(Date.UTC(y, m - 1, d - days));
+  return shifted.toISOString().slice(0, 10);
+}
+
+/**
  * Verifica se há conflito de horário entre [start, end] e agendamentos existentes.
  * @param {Array} existingAppointments - Agendamentos já no banco com status='scheduled'
  * @param {string} startTime - "HH:MM"
@@ -331,10 +356,10 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
-      // Busca agendamentos (últimos 30 dias até o futuro, excluindo completed)
-      const limitDate = new Date();
-      limitDate.setDate(limitDate.getDate() - 30);
-      const limitDateStr = limitDate.toISOString().split('T')[0];
+      // Busca agendamentos (últimos 30 dias até o futuro, excluindo completed).
+      // Janela calculada na data local do Brasil (America/Sao_Paulo), não em UTC:
+      // à noite no BR o UTC já virou o dia seguinte e encurtava a janela em ~1 dia.
+      const limitDateStr = saoPauloDateMinusDays(30);
 
       const { data, error } = await supabase
         .from('appointments')
