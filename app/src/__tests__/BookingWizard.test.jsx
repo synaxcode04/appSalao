@@ -1,6 +1,6 @@
 import React from 'react'
-import { render, waitFor, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
+import { render, waitFor, fireEvent, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest'
 import BookingWizard from '../components/BookingWizard'
 
 // Fixa new Date() em 2099-12-31 — mesma técnica de BookingEngine.test.jsx — para que
@@ -246,6 +246,100 @@ describe('BookingWizard — título do modal', () => {
     })
     expect(getByText('Agendar Horário')).toBeTruthy()
     expect(queryByText(/Etapa/)).toBeNull()
+  })
+})
+
+describe('BookingWizard — re-medição de altura na chegada assíncrona dos slots', () => {
+  // Regressão do bug de 2026-08-07: a viewport (.plan-wizard-viewport) tem overflow:hidden
+  // e altura fixa em px medida via offsetHeight num useEffect cujas deps NÃO incluem os
+  // slots (que chegam async dentro do filho DateTimeStep). Sem ResizeObserver, a viewport
+  // travava numa altura pequena e as linhas extras de horário só apareciam após um clique.
+
+  let observerInstances
+
+  // offsetHeight é sempre 0 em jsdom. Simulamos uma altura proporcional à quantidade de
+  // botões de horário (/^\d{2}:\d{2}$/) presentes no painel — assim, quando os slots
+  // chegam, o painel "cresce" de verdade.
+  const offsetHeightGetter = function () {
+    const btns = Array.from(this.querySelectorAll('button'))
+    const slots = btns.filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
+    return 100 + slots.length * 40
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    observerInstances = []
+
+    global.ResizeObserver = class {
+      constructor(cb) {
+        this.cb = cb
+        this.observed = []
+        observerInstances.push(this)
+      }
+      observe(el) { this.observed.push(el) }
+      unobserve() {}
+      disconnect() {}
+    }
+
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: offsetHeightGetter,
+    })
+
+    supabase.from.mockImplementation((table) => {
+      if (table === 'working_hours') return makeChain(workingHoursData)
+      return makeChain(null)
+    })
+    mockFetchForSlots([])
+  })
+
+  afterEach(() => {
+    delete HTMLElement.prototype.offsetHeight
+    delete global.ResizeObserver
+  })
+
+  it('sem clicar em nenhum slot, a altura da viewport se atualiza sozinha quando os slots chegam', async () => {
+    const { getByText, container, queryAllByRole } = render(
+      <BookingWizard
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        services={[s1]}
+        clientId="client1"
+        professionals={[]}
+        onSuccess={vi.fn()}
+      />
+    )
+
+    fireEvent.click(getByText('Corte'))
+    fireEvent.click(getByText('Próximo'))
+
+    // Aguarda os slots chegarem assincronamente (fetch/supabase resolvidos).
+    await waitFor(() => {
+      const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
+      expect(slots.length).toBeGreaterThan(1)
+    })
+
+    const viewport = container.querySelector('.plan-wizard-viewport')
+    const activePanel = container.querySelectorAll('.plan-wizard-panel')[1]
+
+    // O ResizeObserver foi instanciado e está observando o painel ativo (etapa 2).
+    const observing = observerInstances.find(o => o.observed.includes(activePanel))
+    expect(observing).toBeTruthy()
+
+    // Altura travada pela medição inicial (grade vazia), antes do observer disparar.
+    const heightBefore = parseInt(viewport.style.height, 10)
+
+    // Simula o navegador notificando a mudança de tamanho do painel (slots já no DOM).
+    act(() => {
+      observing.cb([{ target: activePanel }], observing)
+    })
+
+    const heightAfter = parseInt(viewport.style.height, 10)
+    const fullHeight = activePanel.offsetHeight
+
+    expect(heightAfter).toBe(fullHeight)
+    expect(heightAfter).toBeGreaterThan(heightBefore)
   })
 })
 

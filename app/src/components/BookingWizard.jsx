@@ -74,9 +74,25 @@ function BookingWizard({
     if (clientId && !resolvedClientId) setResolvedClientId(clientId)
   }, [clientId, resolvedClientId])
 
+  // Mede a altura do painel ativo e re-mede sempre que o conteúdo cresce/encolhe.
+  // Sem o ResizeObserver, conteúdo que chega de forma assíncrona (ex: os slots de
+  // horário da etapa 2, buscados dentro do filho DateTimeStep) trava a viewport numa
+  // altura antiga com overflow:hidden — as linhas extras só apareciam após um clique
+  // que redisparava a medição. O observer garante a re-medição sem enumerar deps.
   useEffect(() => {
+    if (!isOpen) return
     const activePanel = wizardPanelRefs.current[step - 1]
-    if (activePanel) setWizardHeight(activePanel.offsetHeight)
+    if (!activePanel) return
+
+    // Medição imediata ao trocar de step, evita flash na transição entre etapas.
+    setWizardHeight(activePanel.offsetHeight)
+
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      setWizardHeight(activePanel.offsetHeight)
+    })
+    observer.observe(activePanel)
+    return () => observer.disconnect()
   }, [step, selectedServiceIds, selectedDate, selectedSlot, selectedProfessional, isOpen])
 
   if (!isOpen) return null
