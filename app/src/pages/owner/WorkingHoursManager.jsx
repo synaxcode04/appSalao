@@ -107,7 +107,7 @@ function WorkingHoursManager() {
     <div className="page-content">
       <header className="page-header">
         <h1>Horários de Atendimento</h1>
-        <p className="subtitle">Defina seus dias de funcionamento, horário de abertura, fechamento e intervalo de almoço.</p>
+        <p className="subtitle">Defina dias e horários de funcionamento</p>
       </header>
 
       <div className="card">
