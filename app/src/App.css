@@ -467,6 +467,16 @@
   padding: 1.5rem 1rem;
 }
 
+/* Lado cliente (/s/:slug): igual ao painel do dono na Agenda (que não usa
+   .page-content e por isso já é full-bleed), o cliente deve aproveitar toda
+   a largura da tela em vez do container centralizado de 900px herdado de
+   .page-content (usado também pelas páginas secundárias do dono, tipo
+   formulário — essas continuam com max-width:900px, não tocamos nelas).
+   Escopo por .client-content evita qualquer efeito colateral no dono. */
+.client-content .page-content {
+  max-width: 100%;
+}
+
 .page-header {
   margin-bottom: 2rem;
 }
