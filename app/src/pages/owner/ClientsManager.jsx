@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { supabase } from '../../supabase'
-import { UserPlus, Phone } from 'lucide-react'
+import { UserPlus, Phone, Edit2, ToggleLeft, ToggleRight } from 'lucide-react'
 import BirthdateInput from '../../components/BirthdateInput'
 
 function formatPhone(phone) {
@@ -390,22 +390,21 @@ function ClientsManager() {
                   <div className="client-row-actions">
                     <button
                       type="button"
-                      className="btn-secondary"
+                      className="plan-card-action-edit"
+                      title="Editar"
                       onClick={() => openEdit(row)}
                     >
-                      Editar
+                      <Edit2 size={18} />
                     </button>
                     <button
                       type="button"
-                      className="btn-secondary"
+                      className="plan-card-action-toggle"
                       disabled={isToggling}
+                      title={isInactive ? 'Reativar' : 'Inativar'}
                       onClick={() => handleToggleActive(row)}
+                      style={{ color: isInactive ? 'var(--text-secondary)' : 'var(--primary-green)' }}
                     >
-                      {isToggling
-                        ? 'Salvando...'
-                        : isInactive
-                          ? 'Reativar'
-                          : 'Inativar'}
+                      {isInactive ? <ToggleLeft size={22} /> : <ToggleRight size={22} />}
                     </button>
                   </div>
                 </div>
