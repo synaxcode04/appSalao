@@ -130,3 +130,49 @@ describe('ClientPlans — valor cheio riscado no card de planos disponíveis', (
     expect(document.querySelector('.client-plan-card-full-value')).toBeNull()
   })
 })
+
+describe('ClientPlans — dias restantes do ciclo (cycleDaysRemaining)', () => {
+  // A função cycleDaysRemaining é inline no componente (decisão do usuário: NÃO extrair
+  // para utils). Aqui replicamos EXATAMENTE a mesma fórmula (mesmo anchor/CYCLE_MS/
+  // cyclesElapsed de computeCycleWindow) para testar a lógica pura de forma determinística.
+  // started_at é derivado de new Date() menos N dias, evitando flakiness com data fixa.
+  const cycleDaysRemaining = (subscriptionDateIso) => {
+    const DAY_MS = 24 * 60 * 60 * 1000
+    const CYCLE_MS = 30 * DAY_MS
+
+    const anchor = new Date(subscriptionDateIso)
+    anchor.setUTCHours(0, 0, 0, 0)
+
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+
+    const cyclesElapsed = Math.max(0, Math.floor((today.getTime() - anchor.getTime()) / CYCLE_MS))
+    const endMs = anchor.getTime() + (cyclesElapsed + 1) * CYCLE_MS
+
+    return Math.ceil((endMs - today.getTime()) / DAY_MS)
+  }
+
+  // started_at = hoje (UTC 00:00) menos `days` dias, como ISO — mesmo formato de created_at/started_at.
+  const startedAtDaysAgo = (days) => {
+    const DAY_MS = 24 * 60 * 60 * 1000
+    const t = new Date()
+    t.setUTCHours(0, 0, 0, 0)
+    return new Date(t.getTime() - days * DAY_MS).toISOString()
+  }
+
+  it('assinou hoje → 30 dias restantes', () => {
+    expect(cycleDaysRemaining(startedAtDaysAgo(0))).toBe(30)
+  })
+
+  it('assinou há 10 dias → 20 dias restantes', () => {
+    expect(cycleDaysRemaining(startedAtDaysAgo(10))).toBe(20)
+  })
+
+  it('assinou há 29 dias → 1 dia restante', () => {
+    expect(cycleDaysRemaining(startedAtDaysAgo(29))).toBe(1)
+  })
+
+  it('assinou há 30 dias → 30 dias restantes (o ciclo renovou)', () => {
+    expect(cycleDaysRemaining(startedAtDaysAgo(30))).toBe(30)
+  })
+})

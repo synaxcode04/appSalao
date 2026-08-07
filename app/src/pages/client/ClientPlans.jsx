@@ -134,6 +134,26 @@ function ClientPlans() {
     }
   }
 
+  // Dias restantes até a renovação do ciclo corrente. Reaproveita EXATAMENTE o mesmo
+  // cálculo de anchor/CYCLE_MS/cyclesElapsed de computeCycleWindow — a cota renova a cada
+  // 30 dias contados da data de assinatura (started_at, fallback created_at). Ex: assinou
+  // há 10 dias → 20 restantes; há 29 → 1; há 30 → 30 (ciclo já renovou); hoje → 30.
+  const cycleDaysRemaining = (subscriptionDateIso) => {
+    const DAY_MS = 24 * 60 * 60 * 1000
+    const CYCLE_MS = 30 * DAY_MS
+
+    const anchor = new Date(subscriptionDateIso)
+    anchor.setUTCHours(0, 0, 0, 0)
+
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+
+    const cyclesElapsed = Math.max(0, Math.floor((today.getTime() - anchor.getTime()) / CYCLE_MS))
+    const endMs = anchor.getTime() + (cyclesElapsed + 1) * CYCLE_MS
+
+    return Math.ceil((endMs - today.getTime()) / DAY_MS)
+  }
+
   // Conta agendamentos 'scheduled' do cliente neste salão, para um serviço, DENTRO da
   // janela [cycleStart, cycleEnd) do ciclo corrente da assinatura. Considera tanto o
   // service_id direto quanto os serviços em appointment_services (múltiplos serviços).
@@ -294,6 +314,7 @@ function ClientPlans() {
             if (!plan) return null
             const planServices = plan.subscription_plan_services || []
             const { start: cycleStart, end: cycleEnd } = computeCycleWindow(sub.started_at || sub.created_at)
+            const daysRemaining = cycleDaysRemaining(sub.started_at || sub.created_at)
             return (
               <div key={sub.id} className="card" style={{ padding: '1.2rem', marginBottom: '1rem', borderLeft: '4px solid var(--primary-green)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.8rem' }}>
@@ -312,8 +333,12 @@ function ClientPlans() {
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>{plan.description}</p>
                 )}
 
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.8rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
                   <CalendarDays size={16} /> Válido: {formatDays(plan.subscription_plan_days)}
+                </p>
+
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.8rem' }}>
+                  <Clock size={16} /> Renova em {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}
                 </p>
 
                 {/* Contador de uso por ciclo (30 dias rolantes) por serviço */}
