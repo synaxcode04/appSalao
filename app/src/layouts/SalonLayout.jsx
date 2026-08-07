@@ -23,14 +23,14 @@ function SalonLayoutInner({ salon, profile, slug }) {
 
       {showNav && (
         <nav className="client-bottom-nav">
-          <NavLink to={`/s/${slug}`} end className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
-            <Store size={24} />
-            <span>Salão</span>
-          </NavLink>
-
           <NavLink to={`/s/${slug}/agenda`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
             <CalendarDays size={24} />
             <span>Agenda</span>
+          </NavLink>
+
+          <NavLink to={`/s/${slug}`} end className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
+            <Store size={24} />
+            <span>Salão</span>
           </NavLink>
 
           <NavLink to={`/s/${slug}/planos`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
