@@ -41,7 +41,7 @@ vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() }
 }))
 
-import ClientPlans from '../pages/client/ClientPlans'
+import ClientPlans, { cycleDaysRemaining } from '../pages/client/ClientPlans'
 
 // Os fetches auxiliares (subscriptions, appointments, payment options, contact) retornam
 // listas vazias para que nenhum plano seja marcado como já assinado.
@@ -132,26 +132,10 @@ describe('ClientPlans — valor cheio riscado no card de planos disponíveis', (
 })
 
 describe('ClientPlans — dias restantes do ciclo (cycleDaysRemaining)', () => {
-  // A função cycleDaysRemaining é inline no componente (decisão do usuário: NÃO extrair
-  // para utils). Aqui replicamos EXATAMENTE a mesma fórmula (mesmo anchor/CYCLE_MS/
-  // cyclesElapsed de computeCycleWindow) para testar a lógica pura de forma determinística.
-  // started_at é derivado de new Date() menos N dias, evitando flakiness com data fixa.
-  const cycleDaysRemaining = (subscriptionDateIso) => {
-    const DAY_MS = 24 * 60 * 60 * 1000
-    const CYCLE_MS = 30 * DAY_MS
-
-    const anchor = new Date(subscriptionDateIso)
-    anchor.setUTCHours(0, 0, 0, 0)
-
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
-
-    const cyclesElapsed = Math.max(0, Math.floor((today.getTime() - anchor.getTime()) / CYCLE_MS))
-    const endMs = anchor.getTime() + (cyclesElapsed + 1) * CYCLE_MS
-
-    return Math.ceil((endMs - today.getTime()) / DAY_MS)
-  }
-
+  // Exercita a função REAL exportada de ClientPlans.jsx (import no topo do arquivo) —
+  // não uma cópia local. A função é named export em escopo de módulo (decisão do usuário:
+  // NÃO extrair para utils, manter no próprio ClientPlans.jsx). started_at é derivado de
+  // new Date() menos N dias, evitando flakiness com data fixa.
   // started_at = hoje (UTC 00:00) menos `days` dias, como ISO — mesmo formato de created_at/started_at.
   const startedAtDaysAgo = (days) => {
     const DAY_MS = 24 * 60 * 60 * 1000

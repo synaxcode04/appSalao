@@ -10,6 +10,28 @@ import { computePlanSavings } from '../../utils/planSavings'
 // 0 = Domingo ... 6 = Sábado.
 const WEEK_DAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
+// Dias restantes até a renovação do ciclo corrente. Reaproveita EXATAMENTE o mesmo
+// cálculo de anchor/CYCLE_MS/cyclesElapsed de computeCycleWindow — a cota renova a cada
+// 30 dias contados da data de assinatura (started_at, fallback created_at). Ex: assinou
+// há 10 dias → 20 restantes; há 29 → 1; há 30 → 30 (ciclo já renovou); hoje → 30.
+// Exportada em escopo de módulo para ser exercitada diretamente nos testes (sem duplicar
+// a fórmula no arquivo de teste).
+export function cycleDaysRemaining(subscriptionDateIso) {
+  const DAY_MS = 24 * 60 * 60 * 1000
+  const CYCLE_MS = 30 * DAY_MS
+
+  const anchor = new Date(subscriptionDateIso)
+  anchor.setUTCHours(0, 0, 0, 0)
+
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+
+  const cyclesElapsed = Math.max(0, Math.floor((today.getTime() - anchor.getTime()) / CYCLE_MS))
+  const endMs = anchor.getTime() + (cyclesElapsed + 1) * CYCLE_MS
+
+  return Math.ceil((endMs - today.getTime()) / DAY_MS)
+}
+
 function ClientPlans() {
   const { salon } = useOutletContext()
   const { slug } = useParams()
@@ -132,26 +154,6 @@ function ClientPlans() {
       start: new Date(startMs).toISOString().slice(0, 10),
       end: new Date(endMs).toISOString().slice(0, 10)
     }
-  }
-
-  // Dias restantes até a renovação do ciclo corrente. Reaproveita EXATAMENTE o mesmo
-  // cálculo de anchor/CYCLE_MS/cyclesElapsed de computeCycleWindow — a cota renova a cada
-  // 30 dias contados da data de assinatura (started_at, fallback created_at). Ex: assinou
-  // há 10 dias → 20 restantes; há 29 → 1; há 30 → 30 (ciclo já renovou); hoje → 30.
-  const cycleDaysRemaining = (subscriptionDateIso) => {
-    const DAY_MS = 24 * 60 * 60 * 1000
-    const CYCLE_MS = 30 * DAY_MS
-
-    const anchor = new Date(subscriptionDateIso)
-    anchor.setUTCHours(0, 0, 0, 0)
-
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
-
-    const cyclesElapsed = Math.max(0, Math.floor((today.getTime() - anchor.getTime()) / CYCLE_MS))
-    const endMs = anchor.getTime() + (cyclesElapsed + 1) * CYCLE_MS
-
-    return Math.ceil((endMs - today.getTime()) / DAY_MS)
   }
 
   // Conta agendamentos 'scheduled' do cliente neste salão, para um serviço, DENTRO da
