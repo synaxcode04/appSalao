@@ -274,11 +274,11 @@ describe('BookingWizard — re-medição de altura na chegada assíncrona dos sl
       constructor(cb) {
         this.cb = cb
         this.observed = []
+        this.disconnect = vi.fn()
         observerInstances.push(this)
       }
       observe(el) { this.observed.push(el) }
       unobserve() {}
-      disconnect() {}
     }
 
     Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
@@ -339,7 +339,44 @@ describe('BookingWizard — re-medição de altura na chegada assíncrona dos sl
     const fullHeight = activePanel.offsetHeight
 
     expect(heightAfter).toBe(fullHeight)
+    // heightBefore = painel com grade vazia (medição inicial); heightAfter = painel maior
+    // após os slots async entrarem no DOM e o ResizeObserver re-medir. Provar o crescimento
+    // é provar que a correção do bug funciona.
     expect(heightAfter).toBeGreaterThan(heightBefore)
+  })
+
+  it('disconnect do ResizeObserver é chamado no cleanup ao trocar de step', async () => {
+    const { getByText, container, queryAllByRole } = render(
+      <BookingWizard
+        isOpen={true}
+        onClose={() => {}}
+        salonId="salon1"
+        services={[s1]}
+        clientId="client1"
+        professionals={[]}
+        onSuccess={vi.fn()}
+      />
+    )
+
+    fireEvent.click(getByText('Corte'))
+    fireEvent.click(getByText('Próximo'))
+
+    await waitFor(() => {
+      const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
+      expect(slots.length).toBeGreaterThan(0)
+    })
+
+    const activePanel = container.querySelectorAll('.plan-wizard-panel')[1]
+    const observing = observerInstances.find(o => o.observed.includes(activePanel))
+    expect(observing).toBeTruthy()
+    expect(observing.disconnect).not.toHaveBeenCalled()
+
+    // Voltar troca de step -> dispara o cleanup do useEffect que instalou o observer.
+    fireEvent.click(getByText('Voltar'))
+
+    await waitFor(() => {
+      expect(observing.disconnect).toHaveBeenCalled()
+    })
   })
 })
 

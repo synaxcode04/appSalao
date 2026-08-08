@@ -93,7 +93,7 @@ function BookingWizard({
     })
     observer.observe(activePanel)
     return () => observer.disconnect()
-  }, [step, selectedServiceIds, selectedDate, selectedSlot, selectedProfessional, isOpen])
+  }, [step, selectedDate, selectedSlot, selectedProfessional, isOpen])
 
   if (!isOpen) return null
 
