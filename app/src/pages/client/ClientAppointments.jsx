@@ -190,7 +190,7 @@ function ClientAppointments() {
             <h1 style={{ fontSize: '1.8rem', margin: 0 }}>
               Bem vindo(a) {profile?.full_name ? profile.full_name.split(' ')[0] : ''}
             </h1>
-            <p className="subtitle" style={{ marginTop: '0.2rem' }}>Acompanhe seus serviços agendados e histórico recente.</p>
+            <p className="subtitle" style={{ marginTop: '0.2rem' }}>Acompanhe seus serviços agendados.</p>
           </div>
         </div>
 
