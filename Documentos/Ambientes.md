@@ -27,7 +27,9 @@ Os dois são clones do mesmo repo (`github.com/synaxcode04/appSalao`), branch `d
 | Conta CLI | `israelappc-1175` | `synaxcode04` (time/org `syntax-code`) |
 | Projeto | `appsalao` (org `israel-araujo-s-projects`, projectId `prj_NftwDKcTjUKLt9an0GCI758cgs16`) | `appsalao` (org `syntax-code`, projectId `prj_AQKfUo8eJmv8b14Jcu9GDeN2Szo8`) |
 | Domínio | `appsalao-psi.vercel.app` (domínio fixo — ver [[deploy_dominio_fixo]]) — **produção real** | `appsalao-iota.vercel.app` / `appsalao-syntax-code.vercel.app` — **ambiente de teste**, não é produção |
-| Deploy | `vercel --prod` **de dentro de `App_salão/app/`** (Root Directory não configurado nesse projeto — CLI já roda de dentro da pasta certa) | `vercel --prod` **da raiz do clone `App_salão-empresa/`** (não de dentro de `app/`!) — Root Directory está setado como `app` nas Project Settings da Vercel, então rodar de dentro de `app/` duplica o caminho (`app/app`) e falha |
+| Deploy | `vercel --prod` **da raiz do clone `App_salão/`** (não de dentro de `app/`!) — Root Directory está setado como `app` nas Project Settings da Vercel, então rodar de dentro de `app/` duplica o caminho (`app/app`) e exige corrigir o Root Directory de novo a cada deploy | `vercel --prod` **da raiz do clone `App_salão-empresa/`** (não de dentro de `app/`!) — Root Directory está setado como `app` nas Project Settings da Vercel, então rodar de dentro de `app/` duplica o caminho (`app/app`) e falha |
+
+**Atualizado em 2026-08-10 (pessoal):** o Root Directory do projeto pessoal também passou a ser `app` (não é mais "não configurado" como registrado antes) — o padrão de deploy agora é o mesmo dos dois ambientes: sempre rodar `vercel --prod` a partir da raiz do clone, nunca de dentro de `app/`.
 
 **Resolvido em 2026-08-10 (empresa):**
 1. Git desconectado (Settings → Git → Disconnect) — era o que causava "commit author sem acesso" (Hobby não aceita colaboradores em repo privado).
