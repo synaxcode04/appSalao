@@ -231,7 +231,37 @@ input:focus, select:focus, textarea:focus {
   overflow-wrap: anywhere;
 }
 
-/* Wizard de criação/edição de plano (PlansManager) */
+/* Wizard de criação/edição de plano (PlansManager) — modal com header/footer fixos e
+   scroll interno só no corpo (etapa 2 pode ter muitos serviços). Com poucos serviços o
+   card encolhe naturalmente (max-height é um teto, não uma altura fixa); com muitos,
+   só a área de conteúdo rola, mantendo os botões Avançar/Confirmar/Cancelar sempre visíveis. */
+.modal-card.plan-modal-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.plan-modal-header {
+  flex-shrink: 0;
+}
+
+.plan-modal-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.plan-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.plan-modal-footer {
+  flex-shrink: 0;
+}
+
 .plan-wizard-viewport {
   overflow: hidden;
   width: 100%;

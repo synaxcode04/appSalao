@@ -504,10 +504,11 @@ function PlansManager() {
       >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="card modal-card"
+        className="card modal-card plan-modal-card"
       >
-        <h3 className="modal-title">{editId ? 'Editar Plano' : 'Novo Plano'} — Etapa {step} de 3</h3>
-        <form onSubmit={handleSave} className="auth-form" style={{ marginTop: '1rem' }}>
+        <h3 className="modal-title plan-modal-header">{editId ? 'Editar Plano' : 'Novo Plano'} — Etapa {step} de 3</h3>
+        <form onSubmit={handleSave} className="auth-form plan-modal-form" style={{ marginTop: '1rem' }}>
+          <div className="plan-modal-body">
           <div
             className="plan-wizard-viewport"
             style={wizardHeight ? { height: `${wizardHeight}px` } : undefined}
@@ -669,8 +670,9 @@ function PlansManager() {
               </div>
             </div>
           </div>
+          </div>
 
-          <div className="plan-wizard-nav">
+          <div className="plan-wizard-nav plan-modal-footer">
             {step > 1 && (
               <button type="button" onClick={goBack} disabled={saving} className="modal-cancel" style={{ marginTop: 0 }}>
                 Voltar
@@ -693,7 +695,7 @@ function PlansManager() {
           type="button"
           onClick={closeModal}
           disabled={saving}
-          className="modal-cancel"
+          className="modal-cancel plan-modal-footer"
         >
           Cancelar
         </button>
