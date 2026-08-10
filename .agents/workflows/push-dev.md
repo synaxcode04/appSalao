@@ -1,0 +1,10 @@
+# push-dev
+> Envia o trabalho local para origin/dev no GitHub (testes/desenvolvimento), sem acionar deploy. Invoque com `/push-dev`.
+
+1. Confirme que o branch atual é `dev` (ou pergunte antes de trocar de branch).
+2. Rode `git status` e `git log origin/dev..HEAD --oneline` para mostrar o que será enviado.
+3. Se houver mudanças não commitadas, avise o usuário e pare — não commite automaticamente aqui.
+4. Execute `git push origin dev`.
+5. Reporte o resultado (commits enviados, link do compare no GitHub se relevante).
+
+Não faça merge, não mexa em `main`, não dispare deploy — isso é só espelhamento de código para o colaborador.
