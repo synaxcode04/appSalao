@@ -56,6 +56,16 @@ O repositório remoto `origin` (`github.com/synaxcode04/appSalao`) tem duas bran
 - Push para GitHub não aciona deploy nenhum — a Vercel não está conectada a este remote.
 - Autenticação com o GitHub é feita via token pessoal fornecido pelo usuário quando necessário (não fica salvo em nenhum arquivo do projeto nem no remote URL entre sessões).
 
+## Dois ambientes: conta pessoal (produção) x conta empresa (staging de migração)
+
+Decidido em 2026-08-10. O usuário criou uma conta de empresa (Vercel + Supabase) pra testar melhorias antes de migrar a produção atual, que segue rodando na conta pessoal. Detalhe completo — contas, projetos, domínios, checklist de env vars — em **`Documentos/Ambientes.md`**. Sempre consultar esse arquivo antes de mexer em deploy ou env var de qualquer um dos dois ambientes.
+
+- **Pastas locais separadas** (clones git distintos, nunca copy-paste manual): pessoal em `App_salão/`, empresa em `App_salão-empresa/`. Cada uma tem seu próprio `.vercel/project.json` e login Vercel CLI.
+- **Checkpoint obrigatório antes de qualquer `vercel --prod`/`vercel env`**: rodar `vercel whoami` + `cat .vercel/project.json` e confirmar que batem com o ambiente pretendido.
+- Deploy de cada ambiente é pedido **separadamente** pelo usuário — nunca assumir "deploy" sem ele especificar qual dos dois.
+- OneSignal é **compartilhado** entre os dois ambientes (mesmo app, mesmas credenciais) — não é por-ambiente como Vercel/Supabase.
+- Migração de produção pra conta da empresa é decisão futura, ainda não tomada — não implementar sem pedido explícito.
+
 ## Estrutura de pastas
 ```
 App_salão/
