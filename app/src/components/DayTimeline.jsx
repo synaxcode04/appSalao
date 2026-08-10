@@ -1,4 +1,5 @@
 import React from 'react'
+import { getAppointmentServices } from '../utils/appointmentServices'
 
 const HOUR_HEIGHT = 46 // px por hora (piso; altura efetiva sobe com granularidade fina)
 const MIN_SLOT_HEIGHT = 30 // altura mínima confortável por linha de intervalo (px)
@@ -178,7 +179,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
                       <span className="tl-appt-time">{appt.start_time.substring(0, 5)}</span>
                       <span className="tl-appt-client">{appt.clients?.full_name || 'Cliente'}</span>
                     </div>
-                    <span className="tl-appt-service">{appt.services?.name || ''}</span>
+                    <span className="tl-appt-service">{getAppointmentServices(appt).map(s => s.name).join(', ')}</span>
                   </div>
                 ))}
               </div>

@@ -8,6 +8,7 @@ import DayTimeline from '../../components/DayTimeline'
 import AppointmentActionsModal from '../../components/AppointmentActionsModal'
 import BlockSlotModal from '../../components/BlockSlotModal'
 import { sendPushNotification } from '../../utils/notification'
+import { getAppointmentServices } from '../../utils/appointmentServices'
 import toast from 'react-hot-toast'
 
 // Data LOCAL no formato 'YYYY-MM-DD' (evita o shift de fuso do toISOString, que é UTC).
@@ -85,6 +86,7 @@ function DashboardHome() {
           professional_id,
           clients ( full_name, phone ),
           services ( id, name, price, duration_minutes ),
+          appointment_services ( service_id, services ( id, name, price, duration_minutes ) ),
           professionals ( id, name )
         `)
         .eq('salon_id', salon.id)
@@ -137,6 +139,7 @@ function DashboardHome() {
           id, appointment_date, start_time, end_time, status, client_id, service_id, professional_id,
           clients ( full_name, phone ),
           services ( id, name, price, duration_minutes ),
+          appointment_services ( service_id, services ( id, name, price, duration_minutes ) ),
           professionals ( id, name )
         `)
         .eq('salon_id', salon.id)
@@ -188,10 +191,10 @@ function DashboardHome() {
           client_id: appt.client_id,
           salon_id: salon.id,
           title: 'Agendamento Cancelado',
-          message: `O salão cancelou o seu agendamento de ${appt.services?.name ?? 'serviço'}.`
+          message: `O salão cancelou o seu agendamento de ${getAppointmentServices(appt).map(s => s.name).join(', ') || 'serviço'}.`
         })
       })
-      await sendPushNotification('owner_canceled', appt.client_id, 'Agendamento Cancelado', `O salão cancelou o seu agendamento de ${appt.services?.name ?? 'serviço'}.`)
+      await sendPushNotification('owner_canceled', appt.client_id, 'Agendamento Cancelado', `O salão cancelou o seu agendamento de ${getAppointmentServices(appt).map(s => s.name).join(', ') || 'serviço'}.`)
     }
 
     setActionsAppt(null)
@@ -217,10 +220,10 @@ function DashboardHome() {
           client_id: appt.client_id,
           salon_id: salon.id,
           title: 'Serviço Concluído',
-          message: `O salão marcou o seu serviço de ${appt.services?.name ?? 'serviço'} como concluído.`
+          message: `O salão marcou o seu serviço de ${getAppointmentServices(appt).map(s => s.name).join(', ') || 'serviço'} como concluído.`
         })
       })
-      await sendPushNotification('completed_by_owner', appt.client_id, 'Serviço Concluído', `O salão marcou o seu serviço de ${appt.services?.name ?? 'serviço'} como concluído.`)
+      await sendPushNotification('completed_by_owner', appt.client_id, 'Serviço Concluído', `O salão marcou o seu serviço de ${getAppointmentServices(appt).map(s => s.name).join(', ') || 'serviço'} como concluído.`)
     }
 
     setActionsAppt(null)
@@ -264,7 +267,7 @@ function DashboardHome() {
     }
     const clientPhone = appt.clients.phone.replace(/\D/g, '')
     const clientName = appt.clients.full_name.split(' ')[0]
-    const serviceName = appt.services.name
+    const serviceName = getAppointmentServices(appt).map(s => s.name).join(', ') || 'serviço'
     const timeStr = appt.start_time.substring(0, 5)
 
     const dateParts = appt.appointment_date.split('-')
@@ -377,10 +380,12 @@ function DashboardHome() {
           onClose={() => setIsRescheduling(false)}
           salonId={salon.id}
           service={{
-            id: selectedAppointment.services.id || selectedAppointment.service_id,
-            name: selectedAppointment.services.name,
-            duration_minutes: selectedAppointment.services.duration_minutes,
-            price: selectedAppointment.services.price
+            id: selectedAppointment.services?.id || selectedAppointment.service_id,
+            name: getAppointmentServices(selectedAppointment).map(s => s.name).join(', ') || selectedAppointment.services?.name,
+            duration_minutes: selectedAppointment.appointment_services?.reduce(
+              (sum, row) => sum + (row.services?.duration_minutes || 0), 0
+            ) || selectedAppointment.services?.duration_minutes,
+            price: selectedAppointment.services?.price
           }}
           clientId={selectedAppointment.client_id}
           existingAppointmentId={selectedAppointment.id}

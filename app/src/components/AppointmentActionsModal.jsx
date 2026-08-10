@@ -1,5 +1,6 @@
 import React from 'react'
 import { X, MessageCircle, RefreshCw, XCircle, CheckCircle } from 'lucide-react'
+import { getAppointmentServices, getAppointmentTotal, formatBRL } from '../utils/appointmentServices'
 
 // Modal de ações sobre um agendamento selecionado na timeline.
 // Não implementa regra de negócio — apenas dispara callbacks do pai (DashboardHome).
@@ -10,9 +11,8 @@ function AppointmentActionsModal({ appointment, onClose, onReschedule, onWhatsAp
     appointment.status === 'canceled' ? 'Cancelado' :
     appointment.status === 'completed' ? 'Concluído' : 'Agendado'
 
-  const price = appointment.services?.price != null
-    ? `R$ ${Number(appointment.services.price).toFixed(2).replace('.', ',')}`
-    : ''
+  const allServices = getAppointmentServices(appointment)
+  const totalPrice = getAppointmentTotal(appointment)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -29,7 +29,18 @@ function AppointmentActionsModal({ appointment, onClose, onReschedule, onWhatsAp
           {appointment.clients?.phone && (
             <p className="appt-modal-line"><strong>Telefone:</strong> {appointment.clients.phone}</p>
           )}
-          <p className="appt-modal-line"><strong>Serviço:</strong> {appointment.services?.name || '-'} {price && `(${price})`}</p>
+          {allServices.length > 0 ? (
+            allServices.map((s) => (
+              <p key={s.id ?? s.name} className="appt-modal-line">
+                <strong>Serviço:</strong> {s.name} ({formatBRL(s.price)})
+              </p>
+            ))
+          ) : (
+            <p className="appt-modal-line"><strong>Serviço:</strong> -</p>
+          )}
+          {allServices.length > 1 && (
+            <p className="appt-modal-line"><strong>Total:</strong> {formatBRL(totalPrice)}</p>
+          )}
           {appointment.professionals?.name && (
             <p className="appt-modal-line"><strong>Profissional:</strong> {appointment.professionals.name}</p>
           )}
