@@ -188,7 +188,7 @@ function MetricsDashboard() {
             <div className="card" style={{ flex: 2, minWidth: '300px', padding: '1.5rem' }}>
               <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)', fontSize: '1.1rem' }}>Faturamento Diário (R$)</h3>
               <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
+                <ResponsiveContainer minWidth={0}>
                   <BarChart data={revenueChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="date" tick={{fontSize: 12, fill: '#64748b'}} axisLine={false} tickLine={false} />
@@ -208,7 +208,7 @@ function MetricsDashboard() {
             <div className="card" style={{ flex: 1, minWidth: '300px', padding: '1.5rem' }}>
               <h3 style={{ marginBottom: '1.5rem', color: 'var(--text-primary)', fontSize: '1.1rem' }}>Serviços Mais Agendados</h3>
               <div style={{ width: '100%', height: 300 }}>
-                <ResponsiveContainer>
+                <ResponsiveContainer minWidth={0}>
                   <PieChart>
                     <Pie
                       data={topServicesData}
