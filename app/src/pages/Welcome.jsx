@@ -138,11 +138,11 @@ function Welcome() {
             </span>
             <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#1e293b' }}>Plano Anual</h3>
             <div style={{ marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a' }}>R$ 299,00</span>
+              <span style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a' }}>R$ 262,80</span>
               <span style={{ color: '#475569', fontSize: '0.95rem' }}> / 12 meses</span>
             </div>
-            <p style={{ color: 'var(--primary-green)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Pague 10, ganhe 2</p>
-            <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '1.25rem', flex: 1 }}>Equivale a 10 mensalidades com 2 meses grátis (~R$ 24,92/mês).</p>
+            <p style={{ color: 'var(--primary-green)', fontSize: '0.9rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Pague 9, ganhe 3</p>
+            <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '1.25rem', flex: 1 }}>Equivale a 9 mensalidades com 3 meses grátis (~R$ 21,90/mês).</p>
             <button
               onClick={() => navigate('/cadastro?role=owner&plano=anual')}
               style={{ background: 'var(--primary-green)', color: '#fff', border: 'none', width: '100%', padding: '0.9rem 1.5rem', borderRadius: '12px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'block' }}

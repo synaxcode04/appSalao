@@ -7,7 +7,7 @@ import BirthdateInput from '../components/BirthdateInput'
 const PLANOS = [
   { id: 'mensal', nome: 'Mensal', preco: 'R$ 29,90', periodo: '/mês' },
   { id: 'semestral', nome: 'Semestral', preco: 'R$ 149,50', periodo: '/6 meses' },
-  { id: 'anual', nome: 'Anual', preco: 'R$ 299,00', periodo: '/12 meses' }
+  { id: 'anual', nome: 'Anual', preco: 'R$ 262,80', periodo: '/12 meses' }
 ]
 
 const PLANOS_VALIDOS = ['mensal', 'semestral', 'anual']

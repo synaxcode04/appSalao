@@ -10,7 +10,7 @@ const PLANS_MAP = {
   },
   anual: {
     title: 'appSalão - Plano Anual',
-    unit_price: 299.00
+    unit_price: 262.80
   }
 };
 
