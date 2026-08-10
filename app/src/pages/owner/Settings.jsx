@@ -297,6 +297,10 @@ function SettingsPage() {
 
   if (!salon) return <div>Carregando...</div>
 
+  const salonSlug = `${salon.id}-${salon.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+  const linkDireto = `${window.location.origin}/${salonSlug}`
+  const linkDedicado = `${window.location.origin}/api/og?slug=${salonSlug}`
+
   return (
     <div className="page-content">
       <header className="page-header">
@@ -312,24 +316,47 @@ function SettingsPage() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
             Compartilhe este link com seus clientes via WhatsApp, Instagram, etc. Os clientes acessarão o seu sistema diretamente por ele.
           </p>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input 
-              type="text" 
-              readOnly 
-              value={`${window.location.origin}/${salon.id}-${salon.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
-              style={{ flex: 1, padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', color: 'var(--text-primary)' }}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              readOnly
+              value={linkDireto}
+              style={{ flex: '1 1 100%', minWidth: 0, padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', color: 'var(--text-primary)' }}
             />
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               style={{ width: 'auto', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/${salon.id}-${salon.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)
+                navigator.clipboard.writeText(linkDireto)
                 toast.success('Link copiado para a área de transferência!')
               }}
             >
               Copiar
             </button>
+            <button
+              className="btn-primary"
+              style={{ width: 'auto', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}
+              onClick={async () => {
+                if (navigator.share) {
+                  try {
+                    await navigator.share({ title: salon.name, url: linkDedicado })
+                  } catch (error) {
+                    if (error?.name !== 'AbortError') {
+                      toast.error('Não foi possível compartilhar o link.')
+                    }
+                  }
+                } else {
+                  navigator.clipboard.writeText(linkDedicado)
+                  toast.success('Link de compartilhamento copiado para a área de transferência!')
+                }
+              }}
+            >
+              Compartilhar
+            </button>
           </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: '0.75rem', marginBottom: 0 }}>
+            O botão <strong>Compartilhar</strong> usa um link que mostra o nome e a logo do salão na pré-visualização (WhatsApp, Instagram).
+          </p>
         </div>
 
         {/* Card de Notificações */}
