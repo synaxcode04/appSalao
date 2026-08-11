@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--ds-bg:#F4F4F5;--ds-surface:#FFFFFF;--ds-surface-2:#EEEEF0;--ds-surface-3:#E1E1E5;
+--ds-text:#262629;--ds-text-2:#68686F;--ds-text-3:#98989F;
+--ds-primary:#6C63D9;--ds-primary-soft:#EDEAFB;--ds-on-primary:#FFFFFF;
+--ds-success:#276B4E;--ds-success-soft:#E2F5EC;
+--ds-warning:#8A5C14;--ds-warning-soft:#FBF0DC;
+--ds-danger:#A2454D;--ds-danger-soft:#FBE7E9;
+--ds-info:#3C7096;--ds-info-soft:#E4F0F8;
+--ds-neutral:#63637A;--ds-neutral-soft:#EFEDF4;
+}
+[data-theme="dark"]{
+--ds-bg:#0F1216;--ds-surface:#171B21;--ds-surface-2:#1F242C;--ds-surface-3:#2B323C;
+--ds-text:#F3F5F8;--ds-text-2:#A6B0BF;--ds-text-3:#78828F;
+--ds-primary:#8B85FF;--ds-primary-soft:#262842;--ds-on-primary:#12141A;
+--ds-success:#4ADE80;--ds-success-soft:#13301F;
+--ds-warning:#FBBF24;--ds-warning-soft:#33260C;
+--ds-danger:#F87171;--ds-danger-soft:#38191A;
+--ds-info:#38BDF8;--ds-info-soft:#0B2A3B;
+--ds-neutral:#9AA4B2;--ds-neutral-soft:#222932;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Poppins,system-ui,sans-serif;background:var(--ds-bg);color:var(--ds-text);-webkit-font-smoothing:antialiased}
+a{color:var(--ds-primary);text-decoration:none}
+a:hover{color:var(--ds-text)}
+input,button,select,textarea{font-family:inherit}
+@keyframes ds-spin{to{transform:rotate(360deg)}}
+@keyframes ds-shake{0%,100%{transform:rotate(0)}20%{transform:rotate(-14deg)}40%{transform:rotate(11deg)}60%{transform:rotate(-7deg)}80%{transform:rotate(4deg)}}
+@keyframes ds-beat{0%,100%{transform:scale(1)}30%{transform:scale(1.22)}55%{transform:scale(.94)}}
+@keyframes ds-updown{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes ds-pulse{0%{opacity:.35}50%{opacity:1}100%{opacity:.35}}
+@keyframes ds-shimmer{0%{background-position:-320px 0}100%{background-position:320px 0}}
+@keyframes ds-fade-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ds-scale-in{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+@keyframes ds-slide-left{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes ds-draw{from{stroke-dashoffset:32}to{stroke-dashoffset:0}}
+@keyframes ds-bar{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+  <defs>
+    <g id="i-base" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></g>
+  </defs>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="M6 6l12 12"></path></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"></path></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M19.1 4.9L17 7"></path><path d="M7 17l-2.1 2.1"></path></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5"></path><path d="M12 3v12"></path></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path><path d="M12 15V3"></path></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 6L2 7"></path></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M8 2v4"></path><path d="M16 2v4"></path><path d="M3 10h18"></path></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.29 3.86-8.47 14.14A2 2 0 0 0 3.53 21h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.8 10A10 10 0 1 1 17 3.34"></path><path d="m9 11 3 3L22 4"></path></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M4.9 4.9l1.4 1.4"></path><path d="M17.7 17.7l1.4 1.4"></path><path d="M19.1 4.9l-1.4 1.4"></path><path d="M6.3 17.7l-1.4 1.4"></path></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z"></path></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path><path d="M9 22V12h6v10"></path></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v5h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></symbol>
+  <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"></path></symbol>
+</svg>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--ds-bg);color:var(--ds-text);padding:0 0 96px">
+
+  <header data-screen-label="Header" style="max-width:1180px;margin:0 auto;padding:56px 32px 32px;display:flex;flex-direction:column;gap:28px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:12px;max-width:640px">
+        <div style="display:flex;align-items:center;gap:10px;background:var(--ds-primary-soft);color:var(--ds-primary);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;align-self:flex-start">
+          <svg width="14" height="14" style="display:block"><use href="#i-settings"></use></svg>
+          Design System v1.0
+        </div>
+        <h1 style="margin:0;font-size:44px;line-height:1.06;font-weight:600;letter-spacing:-0.03em;text-wrap:pretty">Biblioteca de componentes flat</h1>
+        <p style="margin:0;font-size:17px;line-height:1.6;color:var(--ds-text-2);text-wrap:pretty">Poppins, ícones Lucide, cards sem sombra e sem borda, status sempre em badge, movimento Material Design 3 e loaders em Lottie. Cada componente traz quando usar, quando evitar e como implementar.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;background:var(--ds-surface);padding:8px 8px 8px 16px;border-radius:999px">
+        <span style="font-size:13px;font-weight:500;color:var(--ds-text-2)">{{ themeLabel }}</span>
+        <button onClick="{{ toggleTheme }}" title="Alternar tema" style="width:52px;height:32px;border:none;border-radius:999px;background:var(--ds-surface-3);position:relative;cursor:pointer;padding:0;transition:background .25s cubic-bezier(0.2,0,0,1)">
+          <span style="{{ themeKnobStyle }}">
+            <svg width="14" height="14" style="display:block;color:var(--ds-primary)"><use href="{{ themeIcon }}" xlinkHref="{{ themeIcon }}"></use></svg>
+          </span>
+        </button>
+      </div>
+    </div>
+    <nav style="display:flex;flex-wrap:wrap;gap:8px">
+      <a href="#fundamentos" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Fundamentos</a>
+      <a href="#icones" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Ícones</a>
+      <a href="#botoes" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Botões</a>
+      <a href="#badges" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Badges de status</a>
+      <a href="#formularios" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Formulários</a>
+      <a href="#selecao" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Seleção</a>
+      <a href="#cards" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Cards</a>
+      <a href="#dados" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Dados</a>
+      <a href="#navegacao" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Navegação</a>
+      <a href="#calendario" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Calendário</a>
+      <a href="#plataformas" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Plataformas</a>
+      <a href="#feedback" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Feedback</a>
+      <a href="#loading" style="padding:8px 14px;border-radius:999px;background:var(--ds-surface);font-size:13px;font-weight:500;color:var(--ds-text-2)" style-hover="background:var(--ds-primary-soft);color:var(--ds-primary)">Loading</a>
+    </nav>
+  </header>
+
+  <main style="max-width:1180px;margin:0 auto;padding:0 32px;display:flex;flex-direction:column;gap:64px">
+
+    <section id="fundamentos" data-screen-label="Fundamentos" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">01 — Fundamentos</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Cor, tipografia, forma e movimento</h3>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <h4 style="margin:0;font-size:16px;font-weight:600">Paleta semântica</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px">
+            <sc-for list="{{ palette }}" as="c" hint-placeholder-count="8">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div style="{{ c.swatch }}"></div>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:12px;font-weight:600">{{ c.name }}</span>
+                  <span style="font-size:11px;color:var(--ds-text-3);font-family:ui-monospace,monospace">{{ c.token }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2)">Cores chapadas, sem gradiente. Cada cor semântica tem um par <code style="font-family:ui-monospace,monospace;font-size:12px;background:var(--ds-surface-2);padding:2px 5px;border-radius:5px">--ds-x</code> (texto/ícone) e <code style="font-family:ui-monospace,monospace;font-size:12px;background:var(--ds-surface-2);padding:2px 5px;border-radius:5px">--ds-x-soft</code> (fundo do badge).</p>
+        </div>
+
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+          <h4 style="margin:0;font-size:16px;font-weight:600">Tipografia — Poppins</h4>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:36px;font-weight:600;letter-spacing:-0.03em;line-height:1">Display</span><span style="font-size:11px;color:var(--ds-text-3);font-family:ui-monospace,monospace">36/600/-3%</span></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:24px;font-weight:600;letter-spacing:-0.02em;line-height:1">Título</span><span style="font-size:11px;color:var(--ds-text-3);font-family:ui-monospace,monospace">24/600/-2%</span></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:16px;font-weight:600;line-height:1">Subtítulo</span><span style="font-size:11px;color:var(--ds-text-3);font-family:ui-monospace,monospace">16/600</span></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:14px;font-weight:400;line-height:1;color:var(--ds-text-2)">Corpo de texto</span><span style="font-size:11px;color:var(--ds-text-3);font-family:ui-monospace,monospace">14/400</span></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Label</span><span style="font-size:11px;color:var(--ds-text-3);font-family:ui-monospace,monospace">12/500/+4%</span></div>
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2)">Pesos 300–700. Use 600 para títulos e ações, 400 para leitura. Nunca ultrapasse dois pesos no mesmo bloco.</p>
+        </div>
+
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+          <h4 style="margin:0;font-size:16px;font-weight:600">Forma e espaçamento</h4>
+          <div style="display:flex;gap:12px;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:56px;height:56px;background:var(--ds-surface-2);border-radius:8px"></div><span style="font-size:11px;color:var(--ds-text-3)">8 · chips</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:56px;height:56px;background:var(--ds-surface-2);border-radius:12px"></div><span style="font-size:11px;color:var(--ds-text-3)">12 · inputs</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:56px;height:56px;background:var(--ds-surface-2);border-radius:16px"></div><span style="font-size:11px;color:var(--ds-text-3)">16 · cards</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:center"><div style="width:56px;height:56px;background:var(--ds-surface-2);border-radius:999px"></div><span style="font-size:11px;color:var(--ds-text-3)">full · badges</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:500;color:var(--ds-text-2)">Escala de espaço (4px)</span>
+            <div style="display:flex;align-items:flex-end;gap:6px">
+              <div style="width:4px;height:4px;background:var(--ds-primary);border-radius:2px"></div>
+              <div style="width:8px;height:8px;background:var(--ds-primary);border-radius:2px"></div>
+              <div style="width:12px;height:12px;background:var(--ds-primary);border-radius:2px"></div>
+              <div style="width:16px;height:16px;background:var(--ds-primary);border-radius:2px"></div>
+              <div style="width:24px;height:24px;background:var(--ds-primary);border-radius:2px"></div>
+              <div style="width:32px;height:32px;background:var(--ds-primary);border-radius:2px"></div>
+              <div style="width:48px;height:48px;background:var(--ds-primary);border-radius:2px"></div>
+            </div>
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2)">Hierarquia por superfície, não por sombra: <code style="font-family:ui-monospace,monospace;font-size:12px;background:var(--ds-surface-2);padding:2px 5px;border-radius:5px">bg → surface → surface-2 → surface-3</code>.</p>
+        </div>
+
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+          <h4 style="margin:0;font-size:16px;font-weight:600">Movimento — Material Design 3</h4>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:var(--ds-text-2)">Standard</span><code style="font-family:ui-monospace,monospace;font-size:11px">cubic-bezier(.2,0,0,1) · 200ms</code></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:var(--ds-text-2)">Emphasized decelerate</span><code style="font-family:ui-monospace,monospace;font-size:11px">cubic-bezier(.05,.7,.1,1) · 400ms</code></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:var(--ds-text-2)">Emphasized accelerate</span><code style="font-family:ui-monospace,monospace;font-size:11px">cubic-bezier(.3,0,.8,.15) · 200ms</code></div>
+          </div>
+          <button onClick="{{ replayMotion }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border:none;border-radius:10px;background:var(--ds-surface-2);color:var(--ds-text);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s cubic-bezier(.2,0,0,1)" style-hover="background:var(--ds-surface-3)">
+        <svg width="15" height="15" style="display:block"><use href="#i-refresh"></use></svg>Rever transição
+      </button>
+          <div style="height:44px;background:var(--ds-surface-2);border-radius:12px;position:relative;overflow:hidden">
+            <div key="{{ motionKey }}" style="position:absolute;top:6px;left:6px;width:32px;height:32px;border-radius:8px;background:var(--ds-primary);animation:ds-slide-left .5s cubic-bezier(.05,.7,.1,1) both"></div>
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2)">Entradas usam <em>decelerate</em>; saídas usam <em>accelerate</em> e duram menos. Nada acima de 500ms.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="icones" data-screen-label="Ícones" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">02 — Iconografia</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Lucide, traço 2px, sem preenchimento</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <h4 style="margin:0;font-size:16px;font-weight:600">Conjunto base</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:12px">
+            <sc-for list="{{ icons }}" as="ic" hint-placeholder-count="12">
+              <div title="{{ ic.name }}" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 4px;border-radius:12px;background:var(--ds-surface-2);transition:background .2s cubic-bezier(.2,0,0,1)" style-hover="background:var(--ds-primary-soft)">
+                <svg width="22" height="22" style="display:block;color:var(--ds-text)"><use href="{{ ic.href }}" xlinkHref="{{ ic.href }}"></use></svg>
+                <span style="font-size:10px;color:var(--ds-text-3);text-align:center;line-height:1.2">{{ ic.name }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <h4 style="margin:0;font-size:16px;font-weight:600">Ícones animados <span style="font-weight:400;color:var(--ds-text-3);font-size:13px">— passe o mouse</span></h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="26" height="26" style="display:block;color:var(--ds-warning);transform-origin:50% 15%" style-hover="animation:ds-shake .7s cubic-bezier(.2,0,0,1)"><use href="#i-bell"></use></svg>
+              <span style="font-size:11px;color:var(--ds-text-3)">Notificar</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="26" height="26" style="display:block;color:var(--ds-danger)" style-hover="animation:ds-beat .7s cubic-bezier(.05,.7,.1,1)"><use href="#i-heart"></use></svg>
+              <span style="font-size:11px;color:var(--ds-text-3)">Favoritar</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="26" height="26" style="display:block;color:var(--ds-info)" style-hover="animation:ds-updown .8s cubic-bezier(.2,0,0,1) infinite"><use href="#i-upload"></use></svg>
+              <span style="font-size:11px;color:var(--ds-text-3)">Enviar</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="26" height="26" style="display:block;color:var(--ds-primary)" style-hover="animation:ds-spin 1.4s linear infinite"><use href="#i-refresh"></use></svg>
+              <span style="font-size:11px;color:var(--ds-text-3)">Sincronizar</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ds-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block" style-hover="animation:none">
+                <path d="M20 6 9 17l-5-5" stroke-dasharray="32" style="animation:ds-draw .6s cubic-bezier(.05,.7,.1,1) both"></path>
+              </svg>
+              <span style="font-size:11px;color:var(--ds-text-3)">Concluído</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 8px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="26" height="26" style="display:block;color:var(--ds-text-2)" style-hover="animation:ds-spin 2s linear infinite"><use href="#i-settings"></use></svg>
+              <span style="font-size:11px;color:var(--ds-text-3)">Configurar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Sempre acompanhado de rótulo em ações primárias. Tamanhos 16 (inline), 20 (botões), 24 (cabeçalhos), 40+ (estado vazio).</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Ícone sozinho para ação destrutiva, mistura com outra família de ícones, preenchimento sólido ou traço abaixo de 1.5px.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+          <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">import { Bell } from 'lucide-react'
+&lt;Bell size={20} strokeWidth={2}
+  className="ds-icon-shake" /&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="botoes" data-screen-label="Botões" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">03 — Ações</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Botões</h3>
+      </div>
+      <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Variantes</span>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+            <button style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:none;border-radius:12px;background:var(--ds-primary);color:var(--ds-on-primary);font-size:14px;font-weight:600;cursor:pointer;transition:transform .2s cubic-bezier(.05,.7,.1,1),filter .2s cubic-bezier(.2,0,0,1)" style-hover="filter:brightness(1.08)" style-active="transform:scale(.97)">
+              <svg width="18" height="18" style="display:block"><use href="#i-plus"></use></svg>Primário
+            </button>
+            <button style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:none;border-radius:12px;background:var(--ds-primary-soft);color:var(--ds-primary);font-size:14px;font-weight:600;cursor:pointer;transition:transform .2s cubic-bezier(.05,.7,.1,1),background .2s cubic-bezier(.2,0,0,1)" style-hover="background:var(--ds-surface-3)" style-active="transform:scale(.97)">Tonal</button>
+            <button style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);font-size:14px;font-weight:600;cursor:pointer;transition:transform .2s cubic-bezier(.05,.7,.1,1),background .2s cubic-bezier(.2,0,0,1)" style-hover="background:var(--ds-surface-3)" style-active="transform:scale(.97)">Secundário</button>
+            <button style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:none;border-radius:12px;background:transparent;color:var(--ds-text-2);font-size:14px;font-weight:600;cursor:pointer;transition:background .2s cubic-bezier(.2,0,0,1)" style-hover="background:var(--ds-surface-2);color:var(--ds-text)">Texto</button>
+            <button style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:none;border-radius:12px;background:var(--ds-danger-soft);color:var(--ds-danger);font-size:14px;font-weight:600;cursor:pointer;transition:transform .2s cubic-bezier(.05,.7,.1,1),background .2s cubic-bezier(.2,0,0,1)" style-active="transform:scale(.97)">
+              <svg width="18" height="18" style="display:block"><use href="#i-trash"></use></svg>Destrutivo
+            </button>
+            <button disabled="{{ true }}" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text-3);font-size:14px;font-weight:600;cursor:not-allowed">Desabilitado</button>
+            <button onClick="{{ startLoad }}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:132px;height:44px;padding:0 20px;border:none;border-radius:12px;background:var(--ds-primary);color:var(--ds-on-primary);font-size:14px;font-weight:600;cursor:pointer;transition:filter .2s cubic-bezier(.2,0,0,1)">
+              <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+                <span style="width:16px;height:16px;border-radius:999px;border:2px solid currentColor;border-top-color:transparent;animation:ds-spin .8s linear infinite;display:block"></span>
+              </sc-if>
+              {{ loadLabel }}
+            </button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Tamanhos</span>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+              <button style="height:32px;padding:0 12px;border:none;border-radius:8px;background:var(--ds-surface-2);color:var(--ds-text);font-size:12px;font-weight:600;cursor:pointer">sm 32</button>
+              <button style="height:44px;padding:0 18px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);font-size:14px;font-weight:600;cursor:pointer">md 44</button>
+              <button style="height:52px;padding:0 24px;border:none;border-radius:14px;background:var(--ds-surface-2);color:var(--ds-text);font-size:15px;font-weight:600;cursor:pointer">lg 52</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Ícone e FAB</span>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+              <button title="Buscar" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);cursor:pointer;transition:background .2s cubic-bezier(.2,0,0,1)" style-hover="background:var(--ds-surface-3)"><svg width="20" height="20" style="display:block"><use href="#i-search"></use></svg></button>
+              <button title="Mais" style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:999px;background:var(--ds-surface-2);color:var(--ds-text);cursor:pointer"><svg width="20" height="20" style="display:block"><use href="#i-more"></use></svg></button>
+              <button style="display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 22px;border:none;border-radius:16px;background:var(--ds-primary);color:var(--ds-on-primary);font-size:14px;font-weight:600;cursor:pointer;transition:transform .25s cubic-bezier(.05,.7,.1,1)" style-hover="transform:translateY(-2px)"><svg width="20" height="20" style="display:block"><use href="#i-plus"></use></svg>FAB estendido</button>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface-2);border-radius:12px;padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Um único primário por tela — a ação que conclui a tarefa. Tonal para ações de apoio recorrentes, texto para ações terciárias e cancelamento.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Dois primários lado a lado, rótulos genéricos ("OK", "Enviar"), largura menor que 88px e altura abaixo de 44px em mobile.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+            <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">&lt;Button variant="primary" size="md"
+  icon={Plus} loading={saving}&gt;
+  Criar pedido
+&lt;/Button&gt;</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="badges" data-screen-label="Badges" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">04 — Status</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Badges: todo status é um badge</h3>
+      </div>
+      <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Semânticos</span>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <sc-for list="{{ badges }}" as="b" hint-placeholder-count="5">
+              <span style="{{ b.style }}">
+                <svg width="14" height="14" style="display:block"><use href="{{ b.href }}" xlinkHref="{{ b.href }}"></use></svg>{{ b.label }}
+              </span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Com ponto</span>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--ds-success-soft);color:var(--ds-success);font-size:12px;font-weight:600"><span style="width:7px;height:7px;border-radius:999px;background:currentColor"></span>Online</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--ds-neutral-soft);color:var(--ds-neutral);font-size:12px;font-weight:600"><span style="width:7px;height:7px;border-radius:999px;background:currentColor"></span>Offline</span>
+              <span style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--ds-warning-soft);color:var(--ds-warning);font-size:12px;font-weight:600"><span style="width:7px;height:7px;border-radius:999px;background:currentColor;animation:ds-pulse 1.6s ease-in-out infinite"></span>Sincronizando</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Contadores e chips</span>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+              <span style="min-width:22px;height:22px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:var(--ds-danger);color:#fff;font-size:11px;font-weight:600">12</span>
+              <span style="min-width:22px;height:22px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:var(--ds-primary);color:var(--ds-on-primary);font-size:11px;font-weight:600">99+</span>
+              <button style="display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:none;border-radius:8px;background:var(--ds-surface-2);color:var(--ds-text-2);font-size:12px;font-weight:500;cursor:pointer" style-hover="background:var(--ds-surface-3)">Prioridade alta<svg width="13" height="13" style="display:block"><use href="#i-x"></use></svg></button>
+              <button style="display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:none;border-radius:8px;background:var(--ds-primary-soft);color:var(--ds-primary);font-size:12px;font-weight:600;cursor:pointer"><svg width="13" height="13" style="display:block"><use href="#i-filter"></use></svg>2 filtros</button>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface-2);border-radius:12px;padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Qualquer estado de registro (pedido, fatura, usuário, integração). Fundo <em>soft</em> + texto na cor sólida + ícone opcional. Sempre com texto — cor nunca carrega o significado sozinha.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Badge clicável (isso é chip ou botão), mais de 3 palavras, mais de um badge de status por linha e cores fora da paleta semântica.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+            <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">&lt;Badge status="success" icon&gt;
+  Pago
+&lt;/Badge&gt;
+// success | warning | danger
+// info | neutral</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="formularios" data-screen-label="Formulários" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">05 — Entrada de dados</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Campos de formulário</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-text-2)">Nome completo</label>
+            <input placeholder="Maria Andrade" style="height:46px;padding:0 14px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);font-size:14px;outline:none;transition:box-shadow .2s cubic-bezier(.2,0,0,1),background .2s" style-focus="background:var(--ds-primary-soft);box-shadow:inset 0 -2px 0 0 var(--ds-primary)">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-text-2)">E-mail</label>
+            <div style="display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="18" height="18" style="display:block;color:var(--ds-text-3)"><use href="#i-mail"></use></svg>
+              <input value="{{ email }}" onChange="{{ setEmail }}" placeholder="maria@empresa.com" style="flex:1;border:none;background:transparent;color:var(--ds-text);font-size:14px;outline:none">
+            </div>
+            <span style="font-size:12px;color:var(--ds-text-3)">Usado para login e notificações.</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-danger)">Senha</label>
+            <div style="display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:12px;background:var(--ds-danger-soft);box-shadow:inset 0 -2px 0 0 var(--ds-danger)">
+              <svg width="18" height="18" style="display:block;color:var(--ds-danger)"><use href="#i-lock"></use></svg>
+              <input type="password" value="1234" style="flex:1;border:none;background:transparent;color:var(--ds-text);font-size:14px;outline:none">
+              <svg width="18" height="18" style="display:block;color:var(--ds-danger)"><use href="#i-eye"></use></svg>
+            </div>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ds-danger)"><svg width="13" height="13" style="display:block"><use href="#i-alert"></use></svg>Mínimo de 8 caracteres.</span>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-text-2)">Categoria</label>
+            <div style="display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:12px;background:var(--ds-surface-2)">
+              <select style="flex:1;border:none;background:transparent;color:var(--ds-text);font-size:14px;outline:none;appearance:none;cursor:pointer">
+                <option>Serviços recorrentes</option>
+                <option>Venda avulsa</option>
+                <option>Assinatura</option>
+              </select>
+              <svg width="18" height="18" style="display:block;color:var(--ds-text-3)"><use href="#i-chevron-down"></use></svg>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-text-2)">Vencimento</label>
+            <div style="display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:12px;background:var(--ds-surface-2)">
+              <svg width="18" height="18" style="display:block;color:var(--ds-text-3)"><use href="#i-calendar"></use></svg>
+              <input value="12/08/2026" style="flex:1;border:none;background:transparent;color:var(--ds-text);font-size:14px;outline:none">
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-text-2)">Observações</label>
+            <textarea rows="3" placeholder="Contexto adicional para a equipe" style="padding:12px 14px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);font-size:14px;outline:none;resize:vertical;transition:box-shadow .2s cubic-bezier(.2,0,0,1)" style-focus="box-shadow:inset 0 -2px 0 0 var(--ds-primary)"></textarea>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-success)">Cupom</label>
+            <div style="display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border-radius:12px;background:var(--ds-success-soft);box-shadow:inset 0 -2px 0 0 var(--ds-success)">
+              <input value="MULTI2026" style="flex:1;border:none;background:transparent;color:var(--ds-text);font-size:14px;outline:none">
+              <svg width="18" height="18" style="display:block;color:var(--ds-success)"><use href="#i-check-circle"></use></svg>
+            </div>
+            <span style="font-size:12px;color:var(--ds-success)">Cupom válido — 15% de desconto.</span>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Campo preenchido é superfície, não caixa com borda. Foco marca a base em 2px na cor primária. Erro e sucesso trocam a superfície e mostram mensagem com ícone.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Placeholder como rótulo, validação a cada tecla, mais de uma coluna em mobile e mensagens de erro genéricas.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+          <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">&lt;TextField label="E-mail"
+  icon={Mail} state="error"
+  hint="Mínimo de 8 caracteres" /&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="selecao" data-screen-label="Seleção" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">06 — Controles</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Switch, checkbox, radio e slider</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Switch</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:500">Notificações por e-mail</span><span style="font-size:12px;color:var(--ds-text-3)">Resumo diário às 8h</span></div>
+            <button onClick="{{ toggleSw }}" style="{{ swTrack }}"><span style="{{ swKnob }}"></span></button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:14px;font-weight:500">Modo compacto</span><span style="font-size:12px;color:var(--ds-text-3)">Reduz a densidade das listas</span></div>
+            <button onClick="{{ toggleSw2 }}" style="{{ sw2Track }}"><span style="{{ sw2Knob }}"></span></button>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Checkbox e radio</span>
+          <button onClick="{{ toggleChk }}" style="display:flex;align-items:center;gap:12px;background:transparent;border:none;padding:0;cursor:pointer;text-align:left">
+            <span style="{{ chkBox }}"><svg width="14" height="14" style="{{ chkMark }}"><use href="#i-check"></use></svg></span>
+            <span style="font-size:14px;font-weight:500;color:var(--ds-text)">Aceito os termos de uso</span>
+          </button>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ radios }}" as="r" hint-placeholder-count="3">
+              <button onClick="{{ r.onClick }}" style="display:flex;align-items:center;gap:12px;background:transparent;border:none;padding:0;cursor:pointer;text-align:left">
+                <span style="{{ r.ring }}"><span style="{{ r.dot }}"></span></span>
+                <span style="font-size:14px;font-weight:500;color:var(--ds-text)">{{ r.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Slider</span>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:14px;font-weight:500">Limite de crédito</span><span style="font-size:16px;font-weight:600;color:var(--ds-primary)">{{ sliderLabel }}</span></div>
+            <input type="range" min="0" max="100" value="{{ slider }}" onChange="{{ setSlider }}" style="width:100%;accent-color:var(--ds-primary);height:24px;cursor:pointer">
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:14px;font-weight:500">Segmentado</span>
+            <div style="display:flex;gap:4px;background:var(--ds-surface-2);padding:4px;border-radius:12px">
+              <sc-for list="{{ segments }}" as="s" hint-placeholder-count="3">
+                <button onClick="{{ s.onClick }}" style="{{ s.style }}">{{ s.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Switch para efeito imediato, sem salvar. Checkbox para múltipla escolha em formulário. Radio para 2–5 opções exclusivas. Segmentado para alternar visão de conteúdo.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Switch que só aplica após "Salvar", radio com uma opção só, mais de 5 radios (use select) e slider para valores que exigem precisão.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+          <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">&lt;Switch checked={on}
+  onChange={setOn}
+  label="Notificações" /&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="cards" data-screen-label="Cards" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">07 — Contêineres</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Cards sem sombra e sem borda</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <div style="width:40px;height:40px;border-radius:12px;background:var(--ds-primary-soft);color:var(--ds-primary);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" style="display:block"><use href="#i-file"></use></svg></div>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--ds-success-soft);color:var(--ds-success);font-size:11px;font-weight:600">Ativo</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h4 style="margin:0;font-size:17px;font-weight:600">Contrato #4821</h4>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2)">Renovação automática em 12/08. Faturamento mensal.</p>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:2px">
+            <button style="flex:1;height:38px;border:none;border-radius:10px;background:var(--ds-surface-2);color:var(--ds-text);font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--ds-surface-3)">Ver detalhes</button>
+            <button title="Copiar" style="width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:10px;background:var(--ds-surface-2);color:var(--ds-text-2);cursor:pointer"><svg width="17" height="17" style="display:block"><use href="#i-copy"></use></svg></button>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:16px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Receita do mês</span>
+          <div style="display:flex;align-items:flex-end;gap:10px">
+            <span style="font-size:34px;font-weight:600;letter-spacing:-0.03em;line-height:1">R$ 284k</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:var(--ds-success-soft);color:var(--ds-success);font-size:11px;font-weight:600">+12,4%</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:64px">
+            <sc-for list="{{ bars }}" as="bar" hint-placeholder-count="9">
+              <div style="{{ bar.style }}"></div>
+            </sc-for>
+          </div>
+          <span style="font-size:12px;color:var(--ds-text-3)">Comparado a R$ 252k no mês anterior</span>
+        </div>
+        <div style="background:var(--ds-primary);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;color:var(--ds-on-primary)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="20" height="20" style="display:block"><use href="#i-star"></use></svg>
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">Plano Pro</span>
+          </div>
+          <p style="margin:0;font-size:15px;line-height:1.55;opacity:.9">Relatórios ilimitados, integração fiscal e suporte prioritário.</p>
+          <button style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border:none;border-radius:10px;background:var(--ds-surface);color:var(--ds-text);font-size:13px;font-weight:600;cursor:pointer;transition:transform .2s cubic-bezier(.05,.7,.1,1)" style-hover="transform:translateX(3px)">Fazer upgrade<svg width="16" height="16" style="display:block"><use href="#i-arrow-right"></use></svg></button>
+        </div>
+        <button style="background:var(--ds-surface);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px;border:none;text-align:left;cursor:pointer;font-family:inherit;transition:background .2s cubic-bezier(.2,0,0,1),transform .25s cubic-bezier(.05,.7,.1,1)" style-hover="background:var(--ds-surface-2);transform:translateY(-3px)">
+          <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Card clicável</span><svg width="18" height="18" style="display:block;color:var(--ds-text-3)"><use href="#i-chevron-right"></use></svg></div>
+          <h4 style="margin:0;font-size:17px;font-weight:600;color:var(--ds-text)">Integração NF-e</h4>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2)">Todo o card é a área de toque. Elevação simulada só por movimento, nunca por sombra.</p>
+        </button>
+      </div>
+      <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Agrupar informação de uma mesma entidade. Padding 22–24px, raio 16px, separação por <code style="font-family:ui-monospace,monospace;font-size:12px;background:var(--ds-surface);padding:2px 5px;border-radius:5px">gap</code> de 20px.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Sombra, borda, barra de accent colorida à esquerda, card dentro de card e mais de uma ação primária por card.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+          <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">&lt;Card interactive&gt;
+  &lt;Card.Header badge="Ativo" /&gt;
+  &lt;Card.Body&gt;…&lt;/Card.Body&gt;
+&lt;/Card&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="dados" data-screen-label="Dados" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">08 — Exibição de dados</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Tabela, lista e avatares</h3>
+      </div>
+      <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <h4 style="margin:0;font-size:17px;font-weight:600">Pedidos recentes</h4>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:10px;background:var(--ds-surface-2)">
+              <svg width="16" height="16" style="display:block;color:var(--ds-text-3)"><use href="#i-search"></use></svg>
+              <input value="{{ q }}" onChange="{{ setQ }}" placeholder="Buscar cliente" style="width:150px;border:none;background:transparent;color:var(--ds-text);font-size:13px;outline:none">
+            </div>
+            <button style="display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 12px;border:none;border-radius:10px;background:var(--ds-surface-2);color:var(--ds-text-2);font-size:13px;font-weight:500;cursor:pointer" style-hover="background:var(--ds-surface-3)"><svg width="16" height="16" style="display:block"><use href="#i-filter"></use></svg>Filtrar</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 40px;gap:16px;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">
+            <span>Cliente</span><span>Valor</span><span>Status</span><span></span>
+          </div>
+          <sc-for list="{{ rows }}" as="row" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 40px;gap:16px;align-items:center;padding:14px;border-radius:12px;background:var(--ds-surface-2);transition:background .2s cubic-bezier(.2,0,0,1)" style-hover="background:var(--ds-surface-3)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="{{ row.avatar }}">{{ row.initials }}</span>
+                <div style="display:flex;flex-direction:column">
+                  <span style="font-size:14px;font-weight:500">{{ row.name }}</span>
+                  <span style="font-size:12px;color:var(--ds-text-3)">{{ row.id }}</span>
+                </div>
+              </div>
+              <span style="font-size:14px;font-weight:500">{{ row.value }}</span>
+              <span style="{{ row.badge }}">{{ row.status }}</span>
+              <button title="Ações" style="width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:8px;background:transparent;color:var(--ds-text-3);cursor:pointer" style-hover="background:var(--ds-surface);color:var(--ds-text)"><svg width="16" height="16" style="display:block"><use href="#i-more"></use></svg></button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:4px">
+          <span style="font-size:13px;color:var(--ds-text-3)">Exibindo 4 de 128 pedidos</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <sc-for list="{{ pages }}" as="p" hint-placeholder-count="4">
+              <button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Avatares</span>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="width:32px;height:32px;border-radius:999px;background:var(--ds-primary-soft);color:var(--ds-primary);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">MA</span>
+            <span style="width:40px;height:40px;border-radius:999px;background:var(--ds-info-soft);color:var(--ds-info);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:600">JS</span>
+            <span style="width:48px;height:48px;border-radius:999px;background:var(--ds-warning-soft);color:var(--ds-warning);display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:600">RC</span>
+            <span style="width:48px;height:48px;border-radius:999px;background:var(--ds-surface-2);color:var(--ds-text-3);display:inline-flex;align-items:center;justify-content:center"><svg width="22" height="22" style="display:block"><use href="#i-user"></use></svg></span>
+            <div style="display:flex;margin-left:8px">
+              <span style="width:36px;height:36px;border-radius:999px;background:var(--ds-primary-soft);color:var(--ds-primary);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">AL</span>
+              <span style="width:36px;height:36px;border-radius:999px;background:var(--ds-success-soft);color:var(--ds-success);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-left:-10px">BR</span>
+              <span style="width:36px;height:36px;border-radius:999px;background:var(--ds-surface-3);color:var(--ds-text-2);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-left:-10px">+4</span>
+            </div>
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Iniciais em superfície soft quando não há foto. Grupo empilhado com no máximo 3 visíveis + contador.</p>
+        </div>
+        <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Tabela para comparar registros por atributo; lista para leitura sequencial em mobile. Linhas como superfícies separadas por gap de 2px — sem linhas divisórias.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Mais de 6 colunas, zebra striping, borda em célula e status em texto puro sem badge.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="navegacao" data-screen-label="Navegação" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">09 — Navegação</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Tabs, accordion, breadcrumb e stepper</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;gap:24px">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}<span style="{{ t.bar }}"></span></button>
+            </sc-for>
+          </div>
+          <div key="{{ tab }}" style="background:var(--ds-surface-2);border-radius:12px;padding:18px;animation:ds-fade-up .35s cubic-bezier(.05,.7,.1,1) both">
+            <p style="margin:0;font-size:14px;line-height:1.65;color:var(--ds-text-2)">{{ tabBody }}</p>
+          </div>
+          <span style="font-size:12px;color:var(--ds-text-3)">Indicador desliza com <em>standard easing</em>; conteúdo entra com fade + 10px.</span>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ accordion }}" as="a" hint-placeholder-count="3">
+            <div style="border-radius:12px;background:var(--ds-surface-2);overflow:hidden">
+              <button onClick="{{ a.onClick }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border:none;background:transparent;color:var(--ds-text);font-family:inherit;font-size:14px;font-weight:500;text-align:left;cursor:pointer">
+                {{ a.title }}
+                <svg width="18" height="18" style="{{ a.chevron }}"><use href="#i-chevron-down"></use></svg>
+              </button>
+              <div style="{{ a.panel }}"><p style="margin:0;padding:0 16px 16px;font-size:13px;line-height:1.65;color:var(--ds-text-2)">{{ a.body }}</p></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px">
+            <a href="#navegacao" style="display:inline-flex;align-items:center;gap:6px;color:var(--ds-text-3)"><svg width="15" height="15" style="display:block"><use href="#i-home"></use></svg>Início</a>
+            <svg width="14" height="14" style="display:block;color:var(--ds-text-3)"><use href="#i-chevron-right"></use></svg>
+            <a href="#navegacao" style="color:var(--ds-text-3)">Financeiro</a>
+            <svg width="14" height="14" style="display:block;color:var(--ds-text-3)"><use href="#i-chevron-right"></use></svg>
+            <span style="font-weight:500;color:var(--ds-text)">Pedido #4821</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto">
+              <span style="width:32px;height:32px;border-radius:999px;background:var(--ds-primary);color:var(--ds-on-primary);display:inline-flex;align-items:center;justify-content:center"><svg width="16" height="16" style="display:block"><use href="#i-check"></use></svg></span>
+              <span style="font-size:11px;color:var(--ds-text-2)">Dados</span>
+            </div>
+            <div style="flex:1;height:3px;background:var(--ds-primary);margin:0 -2px 20px;border-radius:2px"></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto">
+              <span style="width:32px;height:32px;border-radius:999px;background:var(--ds-primary);color:var(--ds-on-primary);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">2</span>
+              <span style="font-size:11px;font-weight:600;color:var(--ds-text)">Pagamento</span>
+            </div>
+            <div style="flex:1;height:3px;background:var(--ds-surface-3);margin:0 -2px 20px;border-radius:2px"></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto">
+              <span style="width:32px;height:32px;border-radius:999px;background:var(--ds-surface-2);color:var(--ds-text-3);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">3</span>
+              <span style="font-size:11px;color:var(--ds-text-3)">Revisão</span>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Tabs para 2–5 visões irmãs do mesmo objeto. Accordion para conteúdo longo e opcional (FAQ, configurações avançadas). Stepper para fluxo linear com validação por etapa. Breadcrumb só em hierarquia com 3+ níveis.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Tabs aninhadas, accordion para conteúdo essencial, stepper com mais de 5 etapas e navegação que perde o estado do formulário.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="feedback" data-screen-label="Feedback" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">10 — Feedback</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Alertas, modal, toast, tooltip e estado vazio</h3>
+      </div>
+      <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px">
+        <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Alertas inline</span>
+        <sc-for list="{{ alerts }}" as="al" hint-placeholder-count="4">
+          <div style="{{ al.wrap }}">
+            <svg width="20" height="20" style="display:block;flex:0 0 auto"><use href="{{ al.href }}" xlinkHref="{{ al.href }}"></use></svg>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:14px;font-weight:600">{{ al.title }}</span>
+              <span style="font-size:13px;line-height:1.55;opacity:.9">{{ al.body }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px;align-items:flex-start">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Overlays</span>
+          <div style="display:flex;flex-wrap:wrap;gap:12px">
+            <button onClick="{{ openModal }}" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border:none;border-radius:12px;background:var(--ds-primary);color:var(--ds-on-primary);font-size:14px;font-weight:600;cursor:pointer">Abrir modal</button>
+            <button onClick="{{ fireToast }}" style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);font-size:14px;font-weight:600;cursor:pointer" style-hover="background:var(--ds-surface-3)">Disparar toast</button>
+            <div style="position:relative;display:inline-flex">
+              <button style="display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 18px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);font-size:14px;font-weight:600;cursor:pointer" style-hover="background:var(--ds-surface-3)"><svg width="18" height="18" style="display:block"><use href="#i-info"></use></svg>Tooltip (hover)
+                <span style="position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);white-space:nowrap;padding:7px 11px;border-radius:8px;background:var(--ds-text);color:var(--ds-bg);font-size:12px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.2,0,0,1)" style-hover="opacity:1">Explica em uma frase</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px">
+          <span style="width:64px;height:64px;border-radius:20px;background:var(--ds-surface-2);color:var(--ds-text-3);display:inline-flex;align-items:center;justify-content:center"><svg width="30" height="30" style="display:block"><use href="#i-inbox"></use></svg></span>
+          <h4 style="margin:0;font-size:17px;font-weight:600">Nenhum pedido ainda</h4>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2);max-width:280px">Quando o primeiro pedido entrar, ele aparece aqui com status e histórico.</p>
+          <button style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 18px;border:none;border-radius:12px;background:var(--ds-primary);color:var(--ds-on-primary);font-size:13px;font-weight:600;cursor:pointer;margin-top:4px"><svg width="17" height="17" style="display:block"><use href="#i-plus"></use></svg>Criar pedido</button>
+        </div>
+      </div>
+      <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Alerta inline para condição persistente no contexto. Toast para confirmação passageira (4s, com desfazer). Modal só para decisão bloqueante ou destrutiva. Tooltip para explicar ícone.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Modal para confirmar sucesso, dois toasts simultâneos, tooltip com informação essencial e alerta vermelho para aviso não crítico.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+          <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">toast.success('Pedido salvo', {
+  action: { label: 'Desfazer', onClick }
+})</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="loading" data-screen-label="Loading" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">12 — Carregamento</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Lottie, progresso e skeleton</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Lottie</span>
+          <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <div ref="{{ lottieDots }}" style="width:80px;height:80px"></div>
+              <span style="font-size:11px;color:var(--ds-text-3)">Dots · inline</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+              <div ref="{{ lottieArc }}" style="width:80px;height:80px"></div>
+              <span style="font-size:11px;color:var(--ds-text-3)">Arc · página</span>
+            </div>
+          </div>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Animações vetoriais via <code style="font-family:ui-monospace,monospace;font-size:12px;background:var(--ds-surface-2);padding:2px 5px;border-radius:5px">lottie-web</code>, coloridas pelo token primário do tema ativo.</p>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Progresso</span>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ds-text-2)"><span>Determinado</span><span>68%</span></div>
+            <div style="height:8px;border-radius:999px;background:var(--ds-surface-2);overflow:hidden"><div style="width:68%;height:100%;background:var(--ds-primary);border-radius:999px;transition:width .4s cubic-bezier(.05,.7,.1,1)"></div></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;color:var(--ds-text-2)">Indeterminado</span>
+            <div style="height:8px;border-radius:999px;background:var(--ds-surface-2);overflow:hidden"><div style="width:30%;height:100%;background:var(--ds-primary);border-radius:999px;animation:ds-bar 1.4s cubic-bezier(.2,0,0,1) infinite"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <span style="width:28px;height:28px;border-radius:999px;border:3px solid var(--ds-surface-3);border-top-color:var(--ds-primary);animation:ds-spin .9s linear infinite;display:block"></span>
+            <span style="font-size:13px;color:var(--ds-text-2)">Spinner CSS para espera abaixo de 1s</span>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Skeleton</span>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="width:44px;height:44px;border-radius:999px;background:var(--ds-surface-2);animation:ds-pulse 1.6s ease-in-out infinite;display:block"></span>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <span style="height:12px;width:60%;border-radius:6px;background:var(--ds-surface-2);animation:ds-pulse 1.6s ease-in-out infinite;display:block"></span>
+                <span style="height:12px;width:40%;border-radius:6px;background:var(--ds-surface-2);animation:ds-pulse 1.6s ease-in-out .2s infinite;display:block"></span>
+              </div>
+            </div>
+            <span style="height:12px;width:100%;border-radius:6px;background:var(--ds-surface-2);animation:ds-pulse 1.6s ease-in-out .1s infinite;display:block"></span>
+            <span style="height:12px;width:85%;border-radius:6px;background:var(--ds-surface-2);animation:ds-pulse 1.6s ease-in-out .3s infinite;display:block"></span>
+            <span style="height:12px;width:70%;border-radius:6px;background:var(--ds-surface-2);animation:ds-pulse 1.6s ease-in-out .4s infinite;display:block"></span>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Até 1s: nada ou spinner no botão. 1–3s: skeleton com a forma do conteúdo real. Acima de 3s ou processo com identidade (upload, emissão fiscal): Lottie + mensagem do que está acontecendo.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Spinner de tela cheia, skeleton que não corresponde ao layout final, Lottie pesado (&gt;60KB) e barra determinada com percentual falso.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+          <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">&lt;Lottie data={dots} loop autoplay
+  width={80} /&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="calendario" data-screen-label="Calendário" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">11 — Data e hora</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Calendário</h3>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px">
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <button onClick="{{ calPrev }}" title="Mês anterior" style="width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:9px;background:var(--ds-surface-2);color:var(--ds-text-2);cursor:pointer" style-hover="background:var(--ds-surface-3)"><svg width="16" height="16" style="display:block;transform:rotate(90deg)"><use href="#i-chevron-down"></use></svg></button>
+            <span style="font-size:14px;font-weight:600">{{ calLabel }}</span>
+            <button onClick="{{ calNext }}" title="Próximo mês" style="width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:9px;background:var(--ds-surface-2);color:var(--ds-text-2);cursor:pointer" style-hover="background:var(--ds-surface-3)"><svg width="16" height="16" style="display:block;transform:rotate(-90deg)"><use href="#i-chevron-down"></use></svg></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+            <sc-for list="{{ weekdays }}" as="wd" hint-placeholder-count="7">
+              <span style="text-align:center;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">{{ wd }}</span>
+            </sc-for>
+            <sc-for list="{{ calDays }}" as="d" hint-placeholder-count="35">
+              <button onClick="{{ d.onClick }}" disabled="{{ d.empty }}" style="{{ d.style }}">{{ d.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding-top:6px">
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ds-text-3)"><span style="width:8px;height:8px;border-radius:999px;background:var(--ds-primary)"></span>Selecionado</span>
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ds-text-3)"><span style="width:8px;height:8px;border-radius:999px;background:var(--ds-warning)"></span>Vencimento</span>
+          </div>
+        </div>
+        <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:18px">
+          <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Campo de data e período</span>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-text-2)">Data de vencimento</label>
+            <button onClick="{{ toggleCalPop }}" style="display:flex;align-items:center;gap:10px;height:46px;padding:0 14px;border:none;border-radius:12px;background:var(--ds-surface-2);color:var(--ds-text);font-family:inherit;font-size:14px;cursor:pointer;text-align:left">
+              <svg width="18" height="18" style="display:block;color:var(--ds-text-3)"><use href="#i-calendar"></use></svg>{{ calSelectedLabel }}
+            </button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <label style="font-size:13px;font-weight:500;color:var(--ds-text-2)">Período do relatório</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="flex:1;display:flex;align-items:center;gap:8px;height:46px;padding:0 14px;border-radius:12px;background:var(--ds-surface-2);font-size:13px;color:var(--ds-text)"><svg width="16" height="16" style="display:block;color:var(--ds-text-3)"><use href="#i-calendar"></use></svg>01/08/2026</span>
+              <svg width="15" height="15" style="display:block;color:var(--ds-text-3)"><use href="#i-arrow-right"></use></svg>
+              <span style="flex:1;display:flex;align-items:center;gap:8px;height:46px;padding:0 14px;border-radius:12px;background:var(--ds-surface-2);font-size:13px;color:var(--ds-text)"><svg width="16" height="16" style="display:block;color:var(--ds-text-3)"><use href="#i-calendar"></use></svg>31/08/2026</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ calPresets }}" as="p" hint-placeholder-count="4">
+              <button style="height:32px;padding:0 12px;border:none;border-radius:999px;background:var(--ds-surface-2);color:var(--ds-text-2);font-size:12px;font-weight:500;cursor:pointer" style-hover="background:var(--ds-surface-3)">{{ p }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--ds-surface-2);border-radius:16px;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Calendário completo para escolher/revisar datas com contexto visual (vencimentos, agenda). Campo com popover para uma data única em formulário compacto. Atalhos de período para relatórios recorrentes.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+          <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Digitação livre de data sem máscara, calendário aberto por padrão ocupando a tela e mais de duas cores de destaque nos dias.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+          <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">&lt;DatePicker value={date}
+  onChange={setDate}
+  markers={[{ date: due, tone: 'warning' }]} /&gt;</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="plataformas" data-screen-label="Plataformas" style="display:flex;flex-direction:column;gap:20px">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 style="margin:0;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ds-text-3)">13 — Adaptação por plataforma</h2>
+        <h3 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-0.02em">Web, Windows, Android e iOS</h3>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:var(--ds-text-2);max-width:760px">Os tokens (cor, tipografia, raio, motion) são os mesmos em toda plataforma. O que muda é a métrica de layout: margens, largura de conteúdo, breakpoints e alvo de toque — para a interface nunca quebrar ou parecer estranha no ambiente nativo.</p>
+      </div>
+
+      <div style="background:var(--ds-surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;gap:6px;background:var(--ds-surface-2);padding:5px;border-radius:12px;width:fit-content;flex-wrap:wrap">
+          <sc-for list="{{ platforms }}" as="pf" hint-placeholder-count="4">
+            <button onClick="{{ pf.onClick }}" style="{{ pf.style }}">{{ pf.label }}</button>
+          </sc-for>
+        </div>
+
+        <div key="{{ platform }}" style="display:grid;grid-template-columns:1.1fr 1fr;gap:24px;animation:ds-fade-up .3s cubic-bezier(.05,.7,.1,1) both">
+          <div style="background:var(--ds-surface-2);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px">
+            <span style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ds-text-3)">Moldura de referência</span>
+            <div style="{{ pfFrame }}">
+              <div style="{{ pfSafeTop }}"></div>
+              <div style="{{ pfMargin }}">
+                <div style="height:16px;border-radius:6px;background:var(--ds-surface-3);width:55%"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center">
+                  <div style="height:34px;border-radius:10px;background:var(--ds-surface)"></div>
+                  <div style="height:34px;border-radius:10px;background:var(--ds-surface)"></div>
+                </div>
+              </div>
+              <div style="{{ pfSafeBottom }}"></div>
+            </div>
+            <span style="font-size:12px;color:var(--ds-text-3);text-align:center">{{ pfFrameCaption }}</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ pfSpecs }}" as="sp" hint-placeholder-count="5">
+                <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--ds-surface-2)">
+                  <span style="font-size:13px;color:var(--ds-text-2)">{{ sp.label }}</span>
+                  <span style="font-size:13px;font-weight:600;text-align:right">{{ sp.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">{{ pfNote }}</p>
+          </div>
+        </div>
+
+        <div style="background:var(--ds-surface-2);border-radius:14px;padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-success)">Quando usar cada faixa</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Web: layout fluido com largura de conteúdo máxima e grid de 12 colunas. Windows: janela redimensionável, nunca assuma altura/largura fixa. Android/iOS: uma coluna, navegação por polegar, sempre respeitando os insets seguros do sistema (notch, barra de gestos, status bar).</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-danger)">Evitar</span>
+            <p style="margin:0;font-size:13px;line-height:1.65;color:var(--ds-text-2)">Pixels fixos fora do grid da plataforma, alvo de toque abaixo do mínimo nativo, conteúdo colado à borda sem margem de segurança e ignorar a orientação retrato/paisagem em mobile.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ds-text-3)">Implementação</span>
+            <pre style="margin:0;font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.6;color:var(--ds-text-2);white-space:pre-wrap">{{ pfCode }}</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--ds-surface);border-radius:16px;padding:24px">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:14px;font-weight:600">Design System · 11 famílias, 40+ componentes</span>
+        <span style="font-size:13px;color:var(--ds-text-2)">Poppins · Lucide · Material Design 3 motion · Lottie · temas claro e escuro</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--ds-success-soft);color:var(--ds-success);font-size:12px;font-weight:600"><svg width="13" height="13" style="display:block"><use href="#i-check"></use></svg>Flat</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--ds-info-soft);color:var(--ds-info);font-size:12px;font-weight:600">Sem sombra</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--ds-primary-soft);color:var(--ds-primary);font-size:12px;font-weight:600">Acessível AA</span>
+      </div>
+    </footer>
+  </main>
+
+  <sc-if value="{{ modal }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModal }}" style="position:fixed;inset:0;background:rgba(8,10,14,.55);display:flex;align-items:center;justify-content:center;padding:24px;z-index:50;animation:ds-fade-up .2s cubic-bezier(.2,0,0,1) both">
+      <div onClick="{{ stop }}" style="background:var(--ds-surface);border-radius:20px;padding:28px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:18px;animation:ds-scale-in .35s cubic-bezier(.05,.7,.1,1) both">
+        <div style="display:flex;align-items:flex-start;gap:14px">
+          <span style="width:44px;height:44px;border-radius:14px;background:var(--ds-danger-soft);color:var(--ds-danger);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto"><svg width="22" height="22" style="display:block"><use href="#i-alert"></use></svg></span>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <h4 style="margin:0;font-size:18px;font-weight:600">Excluir contrato #4821?</h4>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:var(--ds-text-2)">As faturas em aberto serão canceladas. Esta ação não pode ser desfeita.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button onClick="{{ closeModal }}" style="height:42px;padding:0 16px;border:none;border-radius:12px;background:transparent;color:var(--ds-text-2);font-size:14px;font-weight:600;cursor:pointer" style-hover="background:var(--ds-surface-2)">Cancelar</button>
+          <button onClick="{{ closeModal }}" style="height:42px;padding:0 18px;border:none;border-radius:12px;background:var(--ds-danger);color:var(--ds-on-primary);font-size:14px;font-weight:600;cursor:pointer">Excluir</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;right:24px;bottom:24px;z-index:60;display:flex;align-items:center;gap:12px;background:var(--ds-surface);border-radius:14px;padding:14px 16px;min-width:300px;animation:ds-slide-left .35s cubic-bezier(.05,.7,.1,1) both">
+      <span style="width:32px;height:32px;border-radius:10px;background:var(--ds-success-soft);color:var(--ds-success);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto"><svg width="17" height="17" style="display:block"><use href="#i-check"></use></svg></span>
+      <div style="flex:1;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600">Pedido salvo</span><span style="font-size:12px;color:var(--ds-text-3)">Sincronizado com o ERP</span></div>
+      <button onClick="{{ hideToast }}" style="height:32px;padding:0 10px;border:none;border-radius:8px;background:transparent;color:var(--ds-primary);font-size:13px;font-weight:600;cursor:pointer">Desfazer</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;section&quot;:&quot;Tema&quot;}}">
+const EASE = 'cubic-bezier(.2,0,0,1)';
+const EMPH = 'cubic-bezier(.05,.7,.1,1)';
+
+class Component extends DCLogic {
+  state = {
+    theme: this.props.theme ?? 'light',
+    tab: 'visao', acc: 0, modal: false, toast: false,
+    sw: true, sw2: false, chk: true, radio: 'pix', slider: 60,
+    seg: 'mes', page: 1, q: '', email: 'maria@empresa.com',
+    loading: false, motionKey: 0,
+    calYear: 2026, calMonth: 7, calSelected: 12, calPop: false,
+    platform: 'web'
+  };
+  lottieDots = React.createRef();
+  lottieArc = React.createRef();
+
+  componentDidMount() {
+    if (window.lottie) return this.initLottie();
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js';
+    s.onload = () => this.initLottie();
+    document.head.appendChild(s);
+  }
+  componentDidUpdate(_, prev) { if (prev.theme !== this.state.theme) this.initLottie(); }
+  componentWillUnmount() { this.destroyLottie(); clearTimeout(this._t); clearTimeout(this._l); }
+
+  destroyLottie() { (this._anims || []).forEach(a => { try { a.destroy(); } catch (e) {} }); this._anims = []; }
+
+  initLottie() {
+    if (!window.lottie) return;
+    this.destroyLottie();
+    const rgb = this.state.theme === 'dark' ? [0.545, 0.521, 1, 1] : [0.424, 0.388, 0.851, 1];
+    const mk = (el, data) => el && this._anims.push(window.lottie.loadAnimation({
+      container: el, renderer: 'svg', loop: true, autoplay: true, animationData: data
+    }));
+    mk(this.lottieDots.current, this.dotsData(rgb));
+    mk(this.lottieArc.current, this.arcData(rgb));
+  }
+
+  kf(t, s) { return { t, s, i: { x: [0.3], y: [1] }, o: { x: [0.7], y: [0] } }; }
+
+  dotsData(rgb) {
+    const layer = (i) => ({
+      ddd: 0, ind: i + 1, ty: 4, nm: 'd' + i, sr: 1, ao: 0, ip: 0, op: 60, st: i * 6,
+      ks: {
+        o: { a: 0, k: 100 }, r: { a: 0, k: 0 },
+        p: { a: 0, k: [22 + i * 18, 40, 0] }, a: { a: 0, k: [0, 0, 0] },
+        s: { a: 1, k: [this.kf(0, [55, 55, 100]), this.kf(15, [115, 115, 100]), this.kf(30, [55, 55, 100])] }
+      },
+      shapes: [{
+        ty: 'gr', it: [
+          { ty: 'el', p: { a: 0, k: [0, 0] }, s: { a: 0, k: [17, 17] } },
+          { ty: 'fl', c: { a: 0, k: rgb }, o: { a: 0, k: 100 } },
+          { ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }
+        ]
+      }]
+    });
+    return { v: '5.7.4', fr: 30, ip: 0, op: 60, w: 80, h: 80, nm: 'dots', ddd: 0, assets: [], layers: [layer(0), layer(1), layer(2)] };
+  }
+
+  arcData(rgb) {
+    return {
+      v: '5.7.4', fr: 30, ip: 0, op: 60, w: 80, h: 80, nm: 'arc', ddd: 0, assets: [],
+      layers: [{
+        ddd: 0, ind: 1, ty: 4, nm: 'a', sr: 1, ao: 0, ip: 0, op: 60, st: 0,
+        ks: {
+          o: { a: 0, k: 100 },
+          r: { a: 1, k: [this.kf(0, [0]), { t: 60, s: [360] }] },
+          p: { a: 0, k: [40, 40, 0] }, a: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] }
+        },
+        shapes: [{
+          ty: 'gr', it: [
+            { ty: 'el', p: { a: 0, k: [0, 0] }, s: { a: 0, k: [54, 54] } },
+            {
+              ty: 'tm', m: 1, o: { a: 0, k: 0 },
+              s: { a: 1, k: [this.kf(0, [0]), this.kf(30, [18]), { t: 60, s: [0] }] },
+              e: { a: 1, k: [this.kf(0, [22]), this.kf(30, [95]), { t: 60, s: [22] }] }
+            },
+            { ty: 'st', c: { a: 0, k: rgb }, o: { a: 0, k: 100 }, w: { a: 0, k: 6 }, lc: 2, lj: 2 },
+            { ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } }
+          ]
+        }]
+      }]
+    };
+  }
+
+  badge(tone) {
+    return `display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--ds-${tone}-soft);color:var(--ds-${tone});font-size:12px;font-weight:600;white-space:nowrap`;
+  }
+
+  renderCalendar(st, set) {
+    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const first = new Date(st.calYear, st.calMonth, 1);
+    const startOffset = first.getDay();
+    const daysInMonth = new Date(st.calYear, st.calMonth + 1, 0).getDate();
+    const today = new Date(2026, 7, 6);
+    const cells = [];
+    for (let i = 0; i < startOffset; i++) cells.push({ empty: true, label: '', style: 'visibility:hidden;height:36px' });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const isSelected = st.calMonth === 7 && st.calYear === 2026 && d === st.calSelected;
+      const isDue = st.calMonth === 7 && st.calYear === 2026 && d === 17;
+      const isToday = st.calYear === today.getFullYear() && st.calMonth === today.getMonth() && d === today.getDate();
+      let bg = 'transparent', color = 'var(--ds-text)', weight = 500;
+      if (isSelected) { bg = 'var(--ds-primary)'; color = 'var(--ds-on-primary)'; weight = 600; }
+      else if (isDue) { bg = 'var(--ds-warning-soft)'; color = 'var(--ds-warning)'; weight = 600; }
+      else if (isToday) { bg = 'var(--ds-surface-2)'; weight = 600; }
+      cells.push({
+        empty: false, label: d,
+        onClick: () => set('calSelected', d),
+        style: `height:36px;border:none;border-radius:10px;background:${bg};color:${color};font-family:inherit;font-size:13px;font-weight:${weight};cursor:pointer;transition:background .2s ${EASE}`
+      });
+    }
+    const changeMonth = delta => {
+      let m = st.calMonth + delta, y = st.calYear;
+      if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+      set('calMonth', m); this.setState({ calYear: y });
+    };
+    return {
+      calLabel: `${months[st.calMonth]} ${st.calYear}`,
+      calPrev: () => changeMonth(-1),
+      calNext: () => changeMonth(1),
+      weekdays: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'],
+      calDays: cells,
+      calSelectedLabel: st.calMonth === 7 ? `${String(st.calSelected).padStart(2, '0')}/08/2026` : `${String(st.calSelected).padStart(2, '0')}/${String(st.calMonth + 1).padStart(2, '0')}/${st.calYear}`,
+      toggleCalPop: () => set('calPop', !st.calPop),
+      calPresets: ['Hoje', 'Últimos 7 dias', 'Este mês', 'Mês anterior']
+    };
+  }
+
+  renderPlatforms(st, set) {
+    const data = {
+      web: {
+        label: 'Web', frameRatio: '16 / 10',
+        specs: [
+          { label: 'Margem lateral (desktop)', value: '32–48px' },
+          { label: 'Margem lateral (mobile web)', value: '16–20px' },
+          { label: 'Largura máx. de conteúdo', value: '1200–1280px' },
+          { label: 'Grid', value: '12 colunas · gutter 24px' },
+          { label: 'Breakpoints', value: '640 / 1024 / 1440px' },
+          { label: 'Alvo de clique/toque', value: '40px mouse · 44px touch' }
+        ],
+        note: 'Centralize o conteúdo com largura máxima e deixe o fundo (var(--ds-bg)) respirar nas laterais em telas grandes. Componentes de formulário nunca ocupam mais de 640px de largura, mesmo em desktop.',
+        code: '<Container maxWidth={1280} gutter={24}>\n  <Grid cols={12}>…</Grid>\n</Container>',
+        frame: 'row', margin: 40, safe: 0
+      },
+      windows: {
+        label: 'Windows', frameRatio: '16 / 10',
+        specs: [
+          { label: 'Largura mín. de janela', value: '320px (compacto)' },
+          { label: 'Margem de conteúdo', value: '24px' },
+          { label: 'Barra de título', value: '32–48px' },
+          { label: 'Alvo de clique (mouse)', value: '32–40px' },
+          { label: 'Alvo de toque (touch/2-em-1)', value: '44px' },
+          { label: 'Raio de componente', value: '8px (reduzido vs. web)' }
+        ],
+        note: 'A janela é redimensionável pelo usuário — layout precisa colapsar para o modo compacto (nav lateral vira menu hambúrguer) abaixo de 640px de largura. Nunca fixe altura; role o conteúdo, não a janela.',
+        code: '<AppWindow minWidth={320}>\n  <NavPane collapseBelow={640} />\n</AppWindow>',
+        frame: 'row', margin: 24, safe: 0
+      },
+      android: {
+        label: 'Android', frameRatio: '9 / 18',
+        specs: [
+          { label: 'Margem lateral', value: '16dp (24dp em tablet)' },
+          { label: 'Alvo de toque mínimo', value: '48dp' },
+          { label: 'Barra de navegação inferior', value: '80dp + inset do sistema' },
+          { label: 'Status bar / gesture inset', value: 'respeitar padding do sistema' },
+          { label: 'Grid', value: '4dp base · coluna única' },
+          { label: 'Breakpoint tablet', value: '600dp' }
+        ],
+        note: 'Use edge-to-edge com WindowInsets para não sobrepor status bar e barra de gestos. Ações primárias ficam na parte inferior, ao alcance do polegar. Em tablet (≥600dp), a navegação lateral substitui a barra inferior.',
+        code: '<Scaffold\n  contentPadding={insets}\n  bottomBar minHeight={80} />',
+        frame: 'col', margin: 16, safe: 18
+      },
+      ios: {
+        label: 'iOS', frameRatio: '9 / 18',
+        specs: [
+          { label: 'Margem lateral', value: '16–20pt' },
+          { label: 'Alvo de toque mínimo', value: '44pt' },
+          { label: 'Safe area superior (notch)', value: 'respeitar inset dinâmico' },
+          { label: 'Safe area inferior (home indicator)', value: '34pt' },
+          { label: 'Barra de navegação', value: '44pt + safe area' },
+          { label: 'Breakpoint iPad', value: '≥768pt · 2 colunas' }
+        ],
+        note: 'Todo conteúdo respeita safeAreaInsets — nada de ação importante colado ao topo ou embaixo. Em iPad, o layout ganha uma segunda coluna (mestre-detalhe) em vez de apenas esticar a coluna única.',
+        code: '<SafeAreaView edges={["top","bottom"]}>\n  <NavigationBar height={44} />\n</SafeAreaView>',
+        frame: 'col', margin: 18, safe: 22
+      }
+    };
+    const d = data[st.platform];
+    const isRow = d.frame === 'row';
+    return {
+      platform: st.platform,
+      platforms: Object.entries(data).map(([k, v]) => ({
+        label: v.label,
+        onClick: () => set('platform', k),
+        style: `height:36px;padding:0 16px;border:none;border-radius:9px;background:${st.platform === k ? 'var(--ds-surface)' : 'transparent'};color:${st.platform === k ? 'var(--ds-text)' : 'var(--ds-text-2)'};font-family:inherit;font-size:13px;font-weight:${st.platform === k ? 600 : 500};cursor:pointer;transition:background .2s ${EASE}`
+      })),
+      pfFrame: `width:100%;aspect-ratio:${d.frameRatio};background:var(--ds-surface-3);border-radius:${isRow ? 14 : 26}px;display:flex;flex-direction:column;overflow:hidden;max-width:${isRow ? 420 : 220}px;margin:0 auto`,
+      pfSafeTop: `height:${d.safe}px;background:var(--ds-text-3);opacity:${d.safe ? 0.25 : 0}`,
+      pfSafeBottom: `height:${d.safe ? d.safe * 0.7 : 0}px;background:var(--ds-text-3);opacity:${d.safe ? 0.25 : 0}`,
+      pfMargin: `flex:1;padding:${d.margin}px;display:flex;flex-direction:column;gap:10px`,
+      pfFrameCaption: `Margem de ${d.margin}px${d.safe ? ` · área segura de ${d.safe}px` : ''}`,
+      pfSpecs: d.specs,
+      pfNote: d.note,
+      pfCode: d.code
+    };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const dark = st.theme === 'dark';
+    const set = (k, v) => this.setState({ [k]: v });
+
+    const tabBodies = {
+      visao: 'Resumo do pedido, cliente e prazo de entrega. É a aba padrão porque responde a pergunta mais frequente da equipe de atendimento.',
+      itens: '14 itens, 3 com estoque parcial. A tabela de itens reaproveita o mesmo padrão de linha em superfície da seção Dados.',
+      historico: 'Cada evento traz autor, horário e badge de status — o histórico é a fonte de verdade para auditoria fiscal.'
+    };
+
+    const accItems = [
+      { title: 'Como aplicar o tema escuro?', body: 'Defina data-theme="dark" no elemento raiz. Todos os componentes leem apenas tokens --ds-*, portanto nada precisa ser reescrito.' },
+      { title: 'Quando criar um componente novo?', body: 'Só quando o padrão se repete em 3+ telas e tem estado próprio. Antes disso, componha com os blocos existentes.' },
+      { title: 'Acessibilidade mínima', body: 'Contraste AA (4.5:1) para texto, alvo de toque 44px, foco visível em 2px na cor primária e status sempre com texto além da cor.' }
+    ];
+
+    const rowsData = [
+      { name: 'Maria Andrade', id: '#4821', value: 'R$ 12.480', status: 'Pago', tone: 'success', initials: 'MA' },
+      { name: 'Joana Silveira', id: '#4820', value: 'R$ 3.150', status: 'Pendente', tone: 'warning', initials: 'JS' },
+      { name: 'Rafael Costa', id: '#4819', value: 'R$ 890', status: 'Cancelado', tone: 'danger', initials: 'RC' },
+      { name: 'Ana Lopes', id: '#4818', value: 'R$ 22.010', status: 'Em análise', tone: 'info', initials: 'AL' }
+    ];
+    const rows = rowsData
+      .filter(r => r.name.toLowerCase().includes(st.q.toLowerCase()))
+      .map(r => ({
+        ...r,
+        badge: this.badge(r.tone) + ';justify-self:start;width:fit-content',
+        avatar: `width:40px;height:40px;border-radius:999px;background:var(--ds-${r.tone}-soft);color:var(--ds-${r.tone});display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:0 0 auto`
+      }));
+
+    const barVals = [42, 55, 38, 64, 50, 72, 58, 84, 96];
+
+    return {
+      theme: st.theme,
+      themeLabel: dark ? 'Tema escuro' : 'Tema claro',
+      themeIcon: dark ? '#i-moon' : '#i-sun',
+      themeKnobStyle: `position:absolute;top:3px;left:${dark ? 23 : 3}px;width:26px;height:26px;border-radius:999px;background:var(--ds-surface);display:flex;align-items:center;justify-content:center;transition:left .3s ${EMPH}`,
+      toggleTheme: () => set('theme', dark ? 'light' : 'dark'),
+
+      motionKey: st.motionKey,
+      replayMotion: () => set('motionKey', st.motionKey + 1),
+
+      palette: [
+        { name: 'Primary', token: '--ds-primary' }, { name: 'Success', token: '--ds-success' },
+        { name: 'Warning', token: '--ds-warning' }, { name: 'Danger', token: '--ds-danger' },
+        { name: 'Info', token: '--ds-info' }, { name: 'Neutral', token: '--ds-neutral' },
+        { name: 'Surface', token: '--ds-surface-2' }, { name: 'Text', token: '--ds-text' }
+      ].map(c => ({ ...c, swatch: `height:56px;border-radius:12px;background:var(${c.token})` })),
+
+      icons: ['check|i-check', 'x|i-x', 'plus|i-plus', 'search|i-search', 'bell|i-bell', 'heart|i-heart', 'star|i-star', 'trash-2|i-trash', 'settings|i-settings', 'chevron-down|i-chevron-down', 'arrow-right|i-arrow-right', 'upload|i-upload', 'download|i-download', 'user|i-user', 'mail|i-mail', 'lock|i-lock', 'eye|i-eye', 'calendar|i-calendar', 'alert-triangle|i-alert', 'info|i-info', 'check-circle|i-check-circle', 'filter|i-filter', 'copy|i-copy', 'refresh-cw|i-refresh', 'file-text|i-file', 'inbox|i-inbox']
+        .map(s => ({ name: s.split('|')[0], href: '#' + s.split('|')[1] })),
+
+      badges: [
+        { label: 'Pago', tone: 'success', href: '#i-check-circle' },
+        { label: 'Pendente', tone: 'warning', href: '#i-alert' },
+        { label: 'Cancelado', tone: 'danger', href: '#i-x' },
+        { label: 'Em análise', tone: 'info', href: '#i-info' },
+        { label: 'Rascunho', tone: 'neutral', href: '#i-file' }
+      ].map(b => ({ ...b, style: this.badge(b.tone) })),
+
+      loading: st.loading,
+      loadLabel: st.loading ? 'Salvando' : 'Salvar',
+      startLoad: () => { set('loading', true); this._l = setTimeout(() => set('loading', false), 2200); },
+
+      email: st.email,
+      setEmail: e => set('email', e.target.value),
+      q: st.q,
+      setQ: e => set('q', e.target.value),
+
+      swTrack: `width:52px;height:32px;border:none;border-radius:999px;background:${st.sw ? 'var(--ds-primary)' : 'var(--ds-surface-3)'};position:relative;cursor:pointer;padding:0;flex:0 0 auto;transition:background .25s ${EASE}`,
+      swKnob: `position:absolute;top:4px;left:${st.sw ? 24 : 4}px;width:24px;height:24px;border-radius:999px;background:var(--ds-surface);display:block;transition:left .3s ${EMPH}`,
+      toggleSw: () => set('sw', !st.sw),
+      sw2Track: `width:52px;height:32px;border:none;border-radius:999px;background:${st.sw2 ? 'var(--ds-primary)' : 'var(--ds-surface-3)'};position:relative;cursor:pointer;padding:0;flex:0 0 auto;transition:background .25s ${EASE}`,
+      sw2Knob: `position:absolute;top:4px;left:${st.sw2 ? 24 : 4}px;width:24px;height:24px;border-radius:999px;background:var(--ds-surface);display:block;transition:left .3s ${EMPH}`,
+      toggleSw2: () => set('sw2', !st.sw2),
+
+      chkBox: `width:22px;height:22px;border-radius:7px;background:${st.chk ? 'var(--ds-primary)' : 'var(--ds-surface-2)'};color:var(--ds-on-primary);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;transition:background .2s ${EASE}`,
+      chkMark: `display:block;opacity:${st.chk ? 1 : 0};transform:scale(${st.chk ? 1 : 0.6});transition:all .2s ${EMPH}`,
+      toggleChk: () => set('chk', !st.chk),
+
+      radios: [{ v: 'pix', label: 'Pix' }, { v: 'boleto', label: 'Boleto bancário' }, { v: 'cartao', label: 'Cartão de crédito' }].map(r => ({
+        label: r.label,
+        onClick: () => set('radio', r.v),
+        ring: `width:22px;height:22px;border-radius:999px;background:var(--ds-surface-2);box-shadow:inset 0 0 0 2px ${st.radio === r.v ? 'var(--ds-primary)' : 'transparent'};display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;transition:box-shadow .2s ${EASE}`,
+        dot: `width:10px;height:10px;border-radius:999px;background:var(--ds-primary);display:block;transform:scale(${st.radio === r.v ? 1 : 0});transition:transform .25s ${EMPH}`
+      })),
+
+      slider: st.slider,
+      sliderLabel: 'R$ ' + (st.slider * 500).toLocaleString('pt-BR'),
+      setSlider: e => set('slider', Number(e.target.value)),
+
+      segments: [{ v: 'dia', label: 'Dia' }, { v: 'semana', label: 'Semana' }, { v: 'mes', label: 'Mês' }].map(s => ({
+        label: s.label,
+        onClick: () => set('seg', s.v),
+        style: `flex:1;height:34px;border:none;border-radius:9px;background:${st.seg === s.v ? 'var(--ds-surface)' : 'transparent'};color:${st.seg === s.v ? 'var(--ds-text)' : 'var(--ds-text-2)'};font-family:inherit;font-size:13px;font-weight:${st.seg === s.v ? 600 : 500};cursor:pointer;transition:background .2s ${EASE}`
+      })),
+
+      bars: barVals.map((v, i) => ({
+        style: `flex:1;height:${v}%;border-radius:4px 4px 2px 2px;background:${i === barVals.length - 1 ? 'var(--ds-primary)' : 'var(--ds-surface-3)'}`
+      })),
+
+      rows,
+      pages: [{ label: '‹', v: Math.max(1, st.page - 1) }, { label: '1', v: 1 }, { label: '2', v: 2 }, { label: '3', v: 3 }, { label: '›', v: Math.min(3, st.page + 1) }].map((p, i) => ({
+        label: p.label,
+        onClick: () => set('page', p.v),
+        style: `width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:9px;background:${String(st.page) === p.label ? 'var(--ds-primary)' : 'var(--ds-surface-2)'};color:${String(st.page) === p.label ? 'var(--ds-on-primary)' : 'var(--ds-text-2)'};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s ${EASE}`
+      })),
+
+      tab: st.tab,
+      tabBody: tabBodies[st.tab],
+      tabs: [{ v: 'visao', label: 'Visão geral' }, { v: 'itens', label: 'Itens' }, { v: 'historico', label: 'Histórico' }].map(t => ({
+        label: t.label,
+        onClick: () => set('tab', t.v),
+        style: `position:relative;padding:0 0 12px;border:none;background:transparent;color:${st.tab === t.v ? 'var(--ds-text)' : 'var(--ds-text-3)'};font-family:inherit;font-size:14px;font-weight:${st.tab === t.v ? 600 : 500};cursor:pointer;transition:color .2s ${EASE}`,
+        bar: `position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--ds-primary);transform:scaleX(${st.tab === t.v ? 1 : 0});transition:transform .3s ${EASE}`
+      })),
+
+      accordion: accItems.map((a, i) => ({
+        title: a.title, body: a.body,
+        onClick: () => set('acc', st.acc === i ? -1 : i),
+        chevron: `display:block;color:var(--ds-text-3);transform:rotate(${st.acc === i ? 180 : 0}deg);transition:transform .3s ${EMPH};flex:0 0 auto`,
+        panel: `overflow:hidden;max-height:${st.acc === i ? 180 : 0}px;opacity:${st.acc === i ? 1 : 0};transition:max-height .35s ${EMPH},opacity .25s ${EASE}`
+      })),
+
+      alerts: [
+        { tone: 'info', href: '#i-info', title: 'Nova versão disponível', body: 'A emissão de NFS-e passou a validar o código de serviço automaticamente.' },
+        { tone: 'success', href: '#i-check-circle', title: 'Integração conectada', body: 'Pedidos passam a sincronizar a cada 5 minutos.' },
+        { tone: 'warning', href: '#i-alert', title: 'Certificado expira em 12 dias', body: 'Renove antes de 17/08 para não interromper a emissão fiscal.' },
+        { tone: 'danger', href: '#i-alert', title: 'Falha ao transmitir 3 notas', body: 'SEFAZ indisponível. As notas ficaram em contingência e serão reenviadas.' }
+      ].map(a => ({
+        ...a,
+        wrap: `display:flex;gap:14px;align-items:flex-start;padding:16px;border-radius:12px;background:var(--ds-${a.tone}-soft);color:var(--ds-${a.tone})`
+      })),
+
+      modal: st.modal,
+      openModal: () => set('modal', true),
+      closeModal: () => set('modal', false),
+      stop: e => e.stopPropagation(),
+      toast: st.toast,
+      fireToast: () => { set('toast', true); clearTimeout(this._t); this._t = setTimeout(() => set('toast', false), 4000); },
+      hideToast: () => set('toast', false),
+
+      lottieDots: this.lottieDots,
+      lottieArc: this.lottieArc,
+
+      ...this.renderCalendar(st, set),
+      ...this.renderPlatforms(st, set)
+    };
+  }
+}
+</script>
+</body>
+</html>

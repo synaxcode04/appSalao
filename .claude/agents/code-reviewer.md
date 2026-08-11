@@ -22,6 +22,7 @@ Leia os documentos de referência na seguinte ordem:
 1. `Documentos/SPEC.md` — critérios de aceitação e 7 eventos de notificação
 2. `Documentos/PLAN.md` — tasks pendentes e critérios de conclusão de cada fase
 3. `CLAUDE.md` — convenções e lista de "nunca fazer"
+4. Se o escopo revisado tocar `app/src/pages/client/**` ou CSS/visual do módulo cliente, leia também `design_system/Design System.dc.html` — é a referência de tokens/componentes para a dimensão "Design System" abaixo
 
 Em seguida, leia os arquivos de cada módulo que estiver no escopo da revisão.
 
@@ -50,6 +51,12 @@ Melhoria opcional — não viola SPEC nem convenções críticas:
 - Código legível mas com oportunidade de simplificação
 - Teste cobrindo caminho feliz mas sem caso de borda relevante
 - Nomenclatura que poderia ser mais descritiva
+
+### Design System (só quando o escopo toca o módulo cliente)
+Classificação própria, mesma escala BLOQUEANTE/IMPORTANTE/SUGESTÃO, avaliada contra `design_system/Design System.dc.html`:
+- **BLOQUEANTE**: cor hardcoded fora da paleta de tokens (`--ds-*`) no módulo cliente; uso de framework de UI externo (Tailwind/shadcn/MUI) introduzido para resolver o design system
+- **IMPORTANTE**: espaçamento/radius fora da escala documentada; ícone fora da biblioteca Lucide; peso/tamanho de fonte fora da tipografia Poppins documentada; elevação simulada por `box-shadow`/borda em vez de camadas de superfície
+- **SUGESTÃO**: pequenas inconsistências de timing/curva de motion; nomenclatura de token que poderia seguir mais de perto o padrão `--ds-<papel>`/`--ds-<papel>-soft`
 
 ## Formato de relatório
 

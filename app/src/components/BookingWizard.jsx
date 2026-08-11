@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { supabase } from '../supabase'
 import toast from 'react-hot-toast'
 import { sendPushNotification } from '../utils/notification'
@@ -7,6 +7,8 @@ import ClientIdentityForm from './ClientIdentityForm'
 import ServiceStep from './booking-wizard/ServiceStep'
 import DateTimeStep from './booking-wizard/DateTimeStep'
 import SummaryStep from './booking-wizard/SummaryStep'
+import WizardHeader from './booking-wizard/WizardHeader'
+import WizardStepper from './booking-wizard/WizardStepper'
 
 const EMPTY_ARRAY = []
 
@@ -15,13 +17,16 @@ function timeToMinutes(timeStr) {
   return h * 60 + m
 }
 
-// Modal wizard (3 ou 4 etapas, conforme o fluxo) para o novo fluxo de agendamento do cliente:
-// 1) Serviços  2) Data/horário  3) Identificação (condicional)  4) Resumo/confirmação.
-// Reaproveita o mecanismo visual do wizard do PlansManager (track/panel + altura medida via ref).
+// Modal wizard (3 ou 4 etapas) para o fluxo de agendamento do cliente.
+// Etapas internas: 1) Serviços  2) Data/horário  3) Identificação (condicional)  4) Resumo.
+// Mecanismo de slide usa ds-wizard-* (client-ds.css), isolado do plan-wizard-* do dono.
 function BookingWizard({
   isOpen,
   onClose,
   salonId,
+  salonName = '',
+  salonAddress = '',
+  salonLogoUrl = '',
   services = EMPTY_ARRAY,
   clientId,
   clientName = 'Cliente',
@@ -209,39 +214,46 @@ function BookingWizard({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="card modal-card booking-wizard-card" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 className="modal-title" style={{ margin: 0 }}>Agendar Horário</h3>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-            <X size={22} />
-          </button>
-        </div>
 
+        {/* Header: avatar + nome + endereço + botão circular de voltar/fechar */}
+        <WizardHeader
+          salonName={salonName}
+          salonAddress={salonAddress}
+          salonLogoUrl={salonLogoUrl}
+          onBack={step > 1 ? goBack : onClose}
+          onClose={onClose}
+        />
+
+        {/* Stepper: 3 etapas visuais mapeadas do step interno 1–4 */}
+        <WizardStepper step={step} />
+
+        {/* Viewport com slide horizontal entre painéis */}
         <div
-          className="plan-wizard-viewport"
+          className="ds-wizard-viewport"
           style={wizardHeight ? { height: `${wizardHeight}px` } : undefined}
         >
           <div
-            className="plan-wizard-track"
+            className="ds-wizard-track"
             style={{ transform: `translateX(calc(-${step - 1} * 100%))` }}
           >
-            <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[0] = el }}>
+            <div className="ds-wizard-panel" ref={(el) => { wizardPanelRefs.current[0] = el }}>
               <ServiceStep
                 services={services}
                 selectedServiceIds={selectedServiceIds}
                 onToggleService={toggleService}
-                totalDurationMinutes={totalDurationMinutes}
-                totalPrice={totalPrice}
+                professionals={professionals}
+                selectedProfessional={selectedProfessional}
+                onProfessionalChange={setSelectedProfessional}
               />
             </div>
 
-            <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[1] = el }}>
+            <div className="ds-wizard-panel" ref={(el) => { wizardPanelRefs.current[1] = el }}>
               <DateTimeStep
                 salonId={salonId}
                 selectedDate={selectedDate}
                 onDateChange={setSelectedDate}
                 professionals={professionals}
                 selectedProfessional={selectedProfessional}
-                onProfessionalChange={setSelectedProfessional}
                 totalDurationMinutes={totalDurationMinutes}
                 slotIntervalMinutes={slotIntervalMinutes}
                 selectedSlot={selectedSlot}
@@ -249,7 +261,7 @@ function BookingWizard({
               />
             </div>
 
-            <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[2] = el }}>
+            <div className="ds-wizard-panel" ref={(el) => { wizardPanelRefs.current[2] = el }}>
               {step === 3 && !resolvedClientId && (
                 <ClientIdentityForm
                   salonId={salonId}
@@ -260,7 +272,7 @@ function BookingWizard({
               )}
             </div>
 
-            <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[3] = el }}>
+            <div className="ds-wizard-panel" ref={(el) => { wizardPanelRefs.current[3] = el }}>
               {step === 4 && (
                 <SummaryStep
                   selectedServices={selectedServices}
@@ -276,16 +288,47 @@ function BookingWizard({
           </div>
         </div>
 
+        {/* Barra de resumo persistente — visível etapas 1–3, conteúdo do estado existente */}
+        {step < 4 && selectedServiceIds.length > 0 && (
+          <div className="ds-wizard-summary-bar">
+            <div className="ds-wizard-summary-bar-left">
+              <span>{selectedServices.length} serviço{selectedServices.length !== 1 ? 's' : ''}</span>
+              <span>{totalDurationMinutes} min</span>
+              {step >= 2 && selectedDate && (
+                <span>{selectedDate.split('-').reverse().join('/')}</span>
+              )}
+              {step >= 2 && selectedSlot && (
+                <span>às {selectedSlot}</span>
+              )}
+            </div>
+            <span className="ds-wizard-summary-bar-price">
+              R$ {totalPrice.toFixed(2).replace('.', ',')}
+            </span>
+          </div>
+        )}
+
+        {/* Rodapé de navegação — oculto no step 3 (ClientIdentityForm cuida dos próprios botões) */}
         {step !== 3 && (
-          <div className="plan-wizard-nav">
+          <div className="ds-wizard-nav">
             {step > 1 && (
-              <button type="button" onClick={goBack} className="modal-cancel" style={{ marginTop: 0 }}>
-                Voltar
+              <button
+                type="button"
+                onClick={goBack}
+                className="ds-btn ds-btn-secondary ds-btn-pill"
+                style={step < 4 ? { flex: 1 } : undefined}
+              >
+                <ArrowLeft size={16} /> Voltar
               </button>
             )}
             {step < 3 && (
-              <button type="button" onClick={goNext} disabled={!canGoNext} className="btn-primary">
-                Próximo
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canGoNext}
+                className="ds-btn ds-btn-primary ds-btn-pill"
+                style={{ flex: 1 }}
+              >
+                {step === 1 ? 'Escolher horário' : 'Continuar'}
               </button>
             )}
           </div>

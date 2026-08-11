@@ -262,23 +262,23 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
 
         {/* Seleção de serviços com checkboxes à esquerda */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
+          <label className="ds-label" style={{ display: 'block', marginBottom: '8px' }}>
             {availableServices.length === 1 ? 'Serviço:' : 'Selecione os serviços:'}
           </label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {availableServices.map(s => {
               const isChecked = selectedServiceIds.includes(s.id)
               return (
                 <label
                   key={s.id}
+                  className="ds-card ds-card-interactive"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.75rem',
-                    padding: '0.8rem 1rem',
-                    borderRadius: '8px',
-                    border: isChecked ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
-                    backgroundColor: isChecked ? 'var(--light-green)' : 'var(--surface-color)',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    backgroundColor: isChecked ? 'var(--ds-primary-soft)' : 'var(--ds-surface-2)',
+                    border: isChecked ? '2px solid var(--ds-primary)' : '2px solid transparent',
                     cursor: 'pointer'
                   }}
                 >
@@ -290,17 +290,17 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
                         prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]
                       )
                     }}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0, accentColor: 'var(--ds-primary)' }}
                   />
                   <div style={{ flex: 1 }}>
-                    <span style={{ fontWeight: '500', color: isChecked ? 'var(--dark-green)' : 'var(--text-primary)' }}>
+                    <span style={{ fontWeight: '600', color: isChecked ? 'var(--ds-primary)' : 'var(--ds-text)', fontSize: '14px' }}>
                       {s.name}
                     </span>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginLeft: '0.5rem' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--ds-text-2)', marginLeft: '8px' }}>
                       {s.duration_minutes} min
                     </span>
                   </div>
-                  <span style={{ fontWeight: 'bold', color: isChecked ? 'var(--dark-green)' : 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontWeight: '700', color: isChecked ? 'var(--ds-primary)' : 'var(--ds-text)', fontSize: '14px', whiteSpace: 'nowrap' }}>
                     R$ {Number(s.price).toFixed(2).replace('.', ',')}
                   </span>
                 </label>
@@ -309,7 +309,7 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
           </div>
 
           {selectedServiceIds.length > 1 && (
-            <div style={{ marginTop: '0.8rem', padding: '0.75rem 1rem', backgroundColor: 'var(--light-green)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', color: 'var(--dark-green)', fontWeight: '500', fontSize: '0.95rem' }}>
+            <div className="ds-card ds-card-surface-2" style={{ marginTop: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', color: 'var(--ds-primary)', fontWeight: '600', fontSize: '14px' }}>
               <span>Total: {totalDurationMinutes} min</span>
               <span>R$ {totalPrice.toFixed(2).replace('.', ',')}</span>
             </div>
@@ -318,11 +318,11 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
 
         {professionals && professionals.length > 0 && (
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Escolha o Profissional:</label>
+            <label className="ds-label" style={{ display: 'block', marginBottom: '6px' }}>Escolha o Profissional:</label>
             <select
               value={selectedProfessional}
               onChange={(e) => setSelectedProfessional(e.target.value)}
-              style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '1rem', color: 'var(--text-primary)', backgroundColor: 'var(--surface-color)' }}
+              className="ds-select"
             >
               <option value="" disabled>Selecione um profissional</option>
               {professionals.map(prof => (
@@ -332,50 +332,41 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
           </div>
         )}
 
-        <div style={{ marginBottom: '2rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Escolha a Data:</label>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label className="ds-label" style={{ display: 'block', marginBottom: '6px' }}>Escolha a Data:</label>
           <input
             type="date"
+            className="ds-input"
             value={selectedDate}
             min={new Date().toLocaleDateString('en-CA')}
             onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ width: '100%', padding: '0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '1rem', color: 'var(--text-primary)' }}
           />
         </div>
 
         {outOfPlanDayAlert && (
-          <div style={{ marginBottom: '1.5rem', padding: '0.9rem 1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', fontSize: '0.9rem', border: '1px solid #ffe69c' }}>
+          <div className="ds-card" style={{ marginBottom: '1.5rem', padding: '12px 16px', backgroundColor: 'var(--ds-warning-soft)', color: 'var(--ds-warning)', fontSize: '13px' }}>
             {outOfPlanDayAlert}
           </div>
         )}
 
-        <div style={{ marginBottom: '2rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.8rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Horários Disponíveis:</label>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label className="ds-label" style={{ display: 'block', marginBottom: '8px' }}>Horários Disponíveis:</label>
 
           {selectedServiceIds.length === 0 ? (
-            <p style={{ color: 'var(--text-secondary)' }}>Selecione ao menos um serviço.</p>
+            <p style={{ color: 'var(--ds-text-3)', fontSize: '13px' }}>Selecione ao menos um serviço.</p>
           ) : !selectedDate ? (
-            <p style={{ color: 'var(--text-secondary)' }}>Selecione uma data primeiro.</p>
+            <p style={{ color: 'var(--ds-text-3)', fontSize: '13px' }}>Selecione uma data primeiro.</p>
           ) : availableSlots.length === 0 ? (
-            <div style={{ padding: '1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '8px', fontSize: '0.9rem' }}>
+            <div className="ds-card" style={{ padding: '12px 16px', backgroundColor: 'var(--ds-warning-soft)', color: 'var(--ds-warning)', fontSize: '13px' }}>
               Nenhum horário disponível para esta data.
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '0.8rem' }}>
+            <div className="ds-slot-grid">
               {availableSlots.map(slot => (
                 <button
                   key={slot}
                   onClick={() => setSelectedSlot(slot)}
-                  style={{
-                    padding: '0.8rem',
-                    borderRadius: '8px',
-                    border: selectedSlot === slot ? '2px solid var(--primary-green)' : '1px solid var(--border-color)',
-                    backgroundColor: selectedSlot === slot ? 'var(--light-green)' : 'var(--surface-color)',
-                    color: selectedSlot === slot ? 'var(--dark-green)' : 'var(--text-primary)',
-                    fontWeight: selectedSlot === slot ? 'bold' : 'normal',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
+                  className={`ds-slot-button ${selectedSlot === slot ? 'active' : ''}`}
                 >
                   {slot}
                 </button>
@@ -386,12 +377,12 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
       </div>
 
       <div style={inline
-        ? { paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }
-        : { padding: '1rem 1.5rem', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }
+        ? { paddingTop: '1rem', borderTop: '1px solid var(--ds-surface-2)' }
+        : { padding: '1rem 1.5rem', borderTop: '1px solid var(--ds-surface-2)', backgroundColor: 'var(--ds-surface)', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }
       }>
         <button
-          className="btn-primary"
-          style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}
+          className="ds-btn ds-btn-primary ds-btn-full ds-btn-pill"
+          style={{ padding: '14px 24px', fontSize: '15px' }}
           disabled={!selectedSlot || loading || selectedServiceIds.length === 0}
           onClick={handleConfirm}
         >
@@ -403,8 +394,8 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
 
   if (inline) {
     return (
-      <div className="card" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.3rem', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+      <div className="ds-card" style={{ padding: '20px', marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.2rem', fontWeight: '600', marginBottom: '1.5rem', color: 'var(--ds-text)' }}>
           {existingAppointmentId ? 'Reagendar Horário' : 'Agendar Horário'}
         </h2>
         {bodyContent}
@@ -413,14 +404,16 @@ function BookingEngine({ isOpen, onClose, salonId, service, services = EMPTY_ARR
   }
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
-      <div style={{ width: '100%', maxWidth: '600px', backgroundColor: 'var(--surface-color)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', maxHeight: '90%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
+      <div className="ds-animate-slide-up" style={{ width: '100%', maxWidth: '600px', backgroundColor: 'var(--ds-surface)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', maxHeight: '90%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Header Fixo */}
-        <div style={{ padding: '1.5rem 1.5rem 1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{existingAppointmentId ? 'Reagendar Horário' : 'Agendar Horário'}</h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-            <X size={24} />
+        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--ds-surface-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--ds-text)', margin: 0 }}>
+            {existingAppointmentId ? 'Reagendar Horário' : 'Agendar Horário'}
+          </h2>
+          <button onClick={onClose} className="ds-btn ds-btn-ghost ds-btn-pill" style={{ padding: '6px' }}>
+            <X size={22} />
           </button>
         </div>
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom'
 import { supabase } from '../../supabase'
-import { ArrowLeft, MapPin, Home } from 'lucide-react'
+import { MapPin, Home, Calendar, Sparkles } from 'lucide-react'
 import BookingWizard from '../../components/BookingWizard'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 
@@ -59,77 +59,89 @@ function SalonDetails() {
     navigate(`/s/${slug}/agenda`)
   }
 
-  if (loading) return <div style={{ padding: '2rem' }}>Carregando salão...</div>
+  if (loading) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <span className="ds-badge ds-badge-primary">Carregando salão...</span>
+      </div>
+    )
+  }
+
+  const clientFirstName = (profile?.full_name || clientSession?.full_name)?.split(' ')[0]
 
   return (
-    <div className="page-content" style={{ paddingBottom: '100px' }}>
+    <div className="page-content ds-animate-fade-up" style={{ paddingBottom: '100px' }}>
       
-      {/* Botões do Topo */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <button 
-          onClick={() => navigate(-1)} 
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: '500' }}
-        >
-          <ArrowLeft size={18} /> Voltar
-        </button>
-
-        {profile && profile.role === 'client' && (
+      {/* Navigation Controls */}
+      {profile && profile.role === 'client' && (
+        <div className="salon-nav-controls">
           <button
             onClick={() => navigate(`/s/${slug}/agenda`)}
-            className="btn-outline"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: 'auto', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+            className="ds-btn ds-btn-outline ds-btn-pill"
           >
-            <Home size={16} /> Início
+            <Home size={15} /> Início
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Cabeçalho do Salão */}
-      <div className="card" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem', padding: '1.5rem' }}>
-        <div style={{ width: '80px', height: '80px', borderRadius: '50%', overflow: 'hidden', backgroundColor: 'var(--light-green)', flexShrink: 0 }}>
+      {/* Navbar de Identidade do Salão */}
+      <div className="client-salon-navbar">
+        <div className="salon-avatar">
           {salon.logo_url ? (
-            <img src={salon.logo_url} alt={salon.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={salon.logo_url} alt={salon.name} />
           ) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dark-green)', fontWeight: 'bold', fontSize: '2rem' }}>
-              {salon.name.charAt(0).toUpperCase()}
-            </div>
+            <span>{salon.name.charAt(0).toUpperCase()}</span>
           )}
         </div>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '0.3rem' }}>{salon.name}</h1>
-          <p style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' }}>
-            <MapPin size={16} /> {salon.address || 'Endereço não informado'}
+        <div className="salon-info">
+          <h1 className="salon-name">{salon.name}</h1>
+          <p className="salon-address">
+            <MapPin size={13} />
+            <span>{salon.address || 'Endereço não informado'}</span>
           </p>
         </div>
       </div>
 
       {/* Saudação Personalizada */}
-      {(profile || clientSession) && (
-        <div style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: 'var(--light-green)', borderRadius: '12px', borderLeft: '4px solid var(--primary-green)' }}>
-          <h3 style={{ color: 'var(--dark-green)', margin: 0, fontSize: '1.1rem' }}>
-            Olá, {(profile?.full_name || clientSession?.full_name)?.split(' ')[0]}!
-          </h3>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '0.3rem', fontSize: '0.95rem' }}>
-            Seja bem-vindo(a) ao {salon.name}.
+      {clientFirstName && (
+        <div className="ds-card ds-card-surface-2" style={{ marginBottom: '20px', padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <Sparkles size={16} style={{ color: 'var(--ds-primary)' }} />
+            <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--ds-text)' }}>
+              Olá, {clientFirstName}!
+            </span>
+          </div>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '13px', margin: 0 }}>
+            Seja bem-vindo(a) ao {salon.name}. Escolha o melhor dia e horário para o seu atendimento.
           </p>
         </div>
       )}
 
-      {/* CTA que abre o wizard de agendamento (4 etapas) */}
+      {/* Ação Principal de Agendamento */}
       {services.length === 0 ? (
-        <>
-          <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Serviços Disponíveis</h2>
-          <p style={{ color: 'var(--text-secondary)' }}>Este salão ainda não cadastrou nenhum serviço.</p>
-        </>
+        <div className="ds-card" style={{ textAlign: 'center', padding: '32px 20px' }}>
+          <h2 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: 'var(--ds-text)' }}>Serviços Disponíveis</h2>
+          <p style={{ color: 'var(--ds-text-3)', fontSize: '13px', margin: 0 }}>Este salão ainda não cadastrou nenhum serviço.</p>
+        </div>
       ) : (
-        <button
-          type="button"
-          className="btn-primary"
-          style={{ width: '100%', padding: '1.2rem', fontSize: '1.1rem' }}
-          onClick={() => setWizardOpen(true)}
-        >
-          Agendar Horário
-        </button>
+        <div className="ds-card" style={{ padding: '24px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--ds-text)', margin: '0 0 6px 0' }}>
+              Pronto para agendar seu horário?
+            </h2>
+            <p style={{ fontSize: '13px', color: 'var(--ds-text-2)', margin: 0 }}>
+              {services.length} {services.length === 1 ? 'serviço disponível' : 'serviços disponíveis'} para você escolher.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="ds-btn ds-btn-primary ds-btn-full ds-btn-pill"
+            style={{ padding: '14px 24px', fontSize: '15px' }}
+            onClick={() => setWizardOpen(true)}
+          >
+            <Calendar size={18} /> Agendar Horário Agora
+          </button>
+        </div>
       )}
 
       <BookingWizard
@@ -137,6 +149,9 @@ function SalonDetails() {
         onClose={() => setWizardOpen(false)}
         services={services}
         salonId={salon.id}
+        salonName={salon.name}
+        salonAddress={salon.address || ''}
+        salonLogoUrl={salon.logo_url || ''}
         clientId={clientSession?.client_id ?? null}
         clientName={clientSession?.full_name || profile?.full_name || 'Cliente'}
         professionals={professionals}

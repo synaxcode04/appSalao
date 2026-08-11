@@ -98,12 +98,13 @@ describe('BookingWizard — etapa 1 (serviços)', () => {
     fireEvent.click(getByText('Escova'))
 
     await waitFor(() => {
-      expect(getByText('Total: 150 min')).toBeTruthy()
+      // Barra de resumo exibe duração e preço em spans separados (novo formato ds-wizard-summary-bar)
+      expect(getByText('150 min')).toBeTruthy()
       expect(getByText('R$ 130,00')).toBeTruthy()
     })
   })
 
-  it('botão Próximo fica desabilitado com 0 serviços selecionados', () => {
+  it('botão de avanço fica desabilitado com 0 serviços selecionados', () => {
     const { getByText } = render(
       <BookingWizard
         isOpen={true}
@@ -116,7 +117,7 @@ describe('BookingWizard — etapa 1 (serviços)', () => {
       />
     )
 
-    expect(getByText('Próximo')).toBeDisabled()
+    expect(getByText('Escolher horário')).toBeDisabled()
   })
 })
 
@@ -144,18 +145,18 @@ describe('BookingWizard — salto da identificação quando cliente já identifi
     )
 
     fireEvent.click(getByText('Corte'))
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Escolher horário'))
 
     await waitFor(() => {
       const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
       expect(slots.length).toBeGreaterThan(0)
     })
     fireEvent.click(queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))[0])
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Continuar'))
 
     await waitFor(() => {
       expect(queryByText('Identifique-se para agendar')).toBeNull()
-      expect(getByText('Confirmar Agendamento')).toBeTruthy()
+      expect(getByText('Confirmar agendamento')).toBeTruthy()
     })
   })
 
@@ -174,14 +175,14 @@ describe('BookingWizard — salto da identificação quando cliente já identifi
     )
 
     fireEvent.click(getByText('Corte'))
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Escolher horário'))
 
     await waitFor(() => {
       const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
       expect(slots.length).toBeGreaterThan(0)
     })
     fireEvent.click(queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))[0])
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Continuar'))
 
     await waitFor(() => {
       expect(getByText('Identifique-se para agendar')).toBeTruthy()
@@ -189,7 +190,7 @@ describe('BookingWizard — salto da identificação quando cliente já identifi
   })
 })
 
-describe('BookingWizard — título do modal', () => {
+describe('BookingWizard — stepper sem indicador numérico de etapa', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     supabase.from.mockImplementation((table) => {
@@ -199,8 +200,8 @@ describe('BookingWizard — título do modal', () => {
     mockFetchForSlots([])
   })
 
-  it('o header exibe apenas "Agendar Horário" sem indicador de etapa', () => {
-    const { getByText, queryByText } = render(
+  it('o stepper exibe os rótulos de etapa sem usar o texto "Etapa"', () => {
+    const { queryAllByText, queryByText } = render(
       <BookingWizard
         isOpen={true}
         onClose={() => {}}
@@ -212,12 +213,13 @@ describe('BookingWizard — título do modal', () => {
       />
     )
 
-    expect(getByText('Agendar Horário')).toBeTruthy()
+    // "Serviços" aparece tanto no stepper quanto no label da etapa 1 — pelo menos 1 ocorrência
+    expect(queryAllByText('Serviços').length).toBeGreaterThanOrEqual(1)
     expect(queryByText(/Etapa/)).toBeNull()
   })
 
-  it('o título permanece "Agendar Horário" ao navegar entre etapas (avançar e voltar)', async () => {
-    const { getByText, queryByText, queryAllByRole } = render(
+  it('os rótulos do stepper persistem ao navegar entre etapas (avançar e voltar)', async () => {
+    const { getByText, queryByText, queryAllByText, queryAllByRole } = render(
       <BookingWizard
         isOpen={true}
         onClose={() => {}}
@@ -230,27 +232,28 @@ describe('BookingWizard — título do modal', () => {
     )
 
     fireEvent.click(getByText('Corte'))
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Escolher horário'))
 
     await waitFor(() => {
       const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
       expect(slots.length).toBeGreaterThan(0)
     })
-    expect(getByText('Agendar Horário')).toBeTruthy()
+    // "Horário" é o rótulo da etapa ativa no stepper — aparece apenas lá na etapa 2
+    expect(getByText('Horário')).toBeTruthy()
     expect(queryByText(/Etapa/)).toBeNull()
 
     fireEvent.click(getByText('Voltar'))
 
     await waitFor(() => {
-      expect(getByText('Próximo')).toBeTruthy()
+      expect(getByText('Escolher horário')).toBeTruthy()
     })
-    expect(getByText('Agendar Horário')).toBeTruthy()
+    expect(queryAllByText('Serviços').length).toBeGreaterThanOrEqual(1)
     expect(queryByText(/Etapa/)).toBeNull()
   })
 })
 
 describe('BookingWizard — re-medição de altura na chegada assíncrona dos slots', () => {
-  // Regressão do bug de 2026-08-07: a viewport (.plan-wizard-viewport) tem overflow:hidden
+  // Regressão do bug de 2026-08-07: a viewport (.ds-wizard-viewport) tem overflow:hidden
   // e altura fixa em px medida via offsetHeight num useEffect cujas deps NÃO incluem os
   // slots (que chegam async dentro do filho DateTimeStep). Sem ResizeObserver, a viewport
   // travava numa altura pequena e as linhas extras de horário só apareciam após um clique.
@@ -312,7 +315,7 @@ describe('BookingWizard — re-medição de altura na chegada assíncrona dos sl
     )
 
     fireEvent.click(getByText('Corte'))
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Escolher horário'))
 
     // Aguarda os slots chegarem assincronamente (fetch/supabase resolvidos).
     await waitFor(() => {
@@ -320,8 +323,8 @@ describe('BookingWizard — re-medição de altura na chegada assíncrona dos sl
       expect(slots.length).toBeGreaterThan(1)
     })
 
-    const viewport = container.querySelector('.plan-wizard-viewport')
-    const activePanel = container.querySelectorAll('.plan-wizard-panel')[1]
+    const viewport = container.querySelector('.ds-wizard-viewport')
+    const activePanel = container.querySelectorAll('.ds-wizard-panel')[1]
 
     // O ResizeObserver foi instanciado e está observando o painel ativo (etapa 2).
     const observing = observerInstances.find(o => o.observed.includes(activePanel))
@@ -359,14 +362,14 @@ describe('BookingWizard — re-medição de altura na chegada assíncrona dos sl
     )
 
     fireEvent.click(getByText('Corte'))
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Escolher horário'))
 
     await waitFor(() => {
       const slots = queryAllByRole('button').filter(b => /^\d{2}:\d{2}$/.test(b.textContent))
       expect(slots.length).toBeGreaterThan(0)
     })
 
-    const activePanel = container.querySelectorAll('.plan-wizard-panel')[1]
+    const activePanel = container.querySelectorAll('.ds-wizard-panel')[1]
     const observing = observerInstances.find(o => o.observed.includes(activePanel))
     expect(observing).toBeTruthy()
     expect(observing.disconnect).not.toHaveBeenCalled()
@@ -390,8 +393,8 @@ describe('BookingWizard — data padrão ao abrir', () => {
     mockFetchForSlots([])
   })
 
-  it('a data exibida na etapa 2 é a data de hoje', async () => {
-    const { getByText, container } = render(
+  it('o calendário na etapa 2 exibe o mês da data de hoje', async () => {
+    const { getByText } = render(
       <BookingWizard
         isOpen={true}
         onClose={() => {}}
@@ -404,12 +407,11 @@ describe('BookingWizard — data padrão ao abrir', () => {
     )
 
     fireEvent.click(getByText('Corte'))
-    fireEvent.click(getByText('Próximo'))
+    fireEvent.click(getByText('Escolher horário'))
 
+    // 2099-12-31 → WizardCalendar exibe "Dezembro 2099"
     await waitFor(() => {
-      const dateInput = container.querySelector('input[type="date"]')
-      expect(dateInput).not.toBeNull()
-      expect(dateInput.value).toBe('2099-12-31')
+      expect(getByText('Dezembro 2099')).toBeTruthy()
     })
   })
 })
