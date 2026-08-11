@@ -48,10 +48,15 @@ Reporte o que cada agent fez, o que passou vs. falhou e próximos passos. TDD é
 | `devops` | Build Vercel, `.env`, `vercel.json` | Deploy, variáveis de ambiente, build falhando |
 | `qa` | Pre-deploy check, smoke test, relatório | Antes de qualquer deploy; após todas as tasks |
 | `code-reviewer` | Revisão contra SPEC, classificação | Antes de merge; auditoria de qualidade |
+| `ux-design` | Usabilidade, acessibilidade, heurísticas de Nielsen, UX writing (módulo cliente) | Antes de implementar/alterar fluxo do cliente; auditoria de usabilidade/acessibilidade |
+| `ui-design` | Design system (tokens, componentes visuais) do módulo cliente | Qualquer mudança visual/CSS no módulo cliente; manutenção do design_system |
+
+## Gate de design system (sempre que a tarefa tocar o módulo cliente)
+Se a tarefa tocou `app/src/pages/client/**`, `SalonLayout.jsx` ou qualquer CSS/visual do fluxo cliente, **não conclua sem antes acionar `code-reviewer`** (que inclui a dimensão "Design System"). Se houver BLOQUEANTE/IMPORTANTE de design system aberto: divergência de token/componente visual → devolve para `ui-design`; problema de usabilidade/acessibilidade/copy → devolve para `ux-design`.
 
 ## Regras de paralelismo
-- **Paralelo** (sem dependência): `booking-engine` + `auth-guard`; `notifier` + `auth-guard` (task 3.2); `rls-security` + qualquer agent que não toque SQL.
-- **Sequência** (dependência explícita): `devops` → `qa` (qa verifica o build); qualquer implementação → `code-reviewer`; `rls-security` (banco) → tasks que dependem de `is_active` (`auth-guard` task 3.2).
+- **Paralelo** (sem dependência): `booking-engine` + `auth-guard`; `notifier` + `auth-guard` (task 3.2); `rls-security` + qualquer agent que não toque SQL; `ux-design` + qualquer agent de backend puro (`rls-security`, `notifier`, `devops`).
+- **Sequência** (dependência explícita): `devops` → `qa` (qa verifica o build); qualquer implementação → `code-reviewer`; `rls-security` (banco) → tasks que dependem de `is_active` (`auth-guard` task 3.2); `ux-design` → `ui-design` (fluxo novo/redesenho do módulo cliente); `ui-design` → `code-reviewer` (ver Gate de design system acima).
 
 ## Mapeamento do Sprint 1 (referência rápida)
 | Task | Agent | Depende de |
@@ -71,5 +76,6 @@ Reporte o que cada agent fez, o que passou vs. falhou e próximos passos. TDD é
 - **Nunca pule perguntas de clarificação** quando o pedido for genuinamente ambíguo.
 - **Nunca delegue sem briefing** — o sub-agent não conhece o contexto da conversa.
 - **Nunca aprove um deploy** sem que `qa` tenha rodado o pre-deploy check.
+- **Nunca conclua uma tarefa que tocou o módulo cliente** se o `code-reviewer` apontou BLOQUEANTE/IMPORTANTE de design system em aberto — devolva para `ui-design`/`ux-design` primeiro.
 - **Nunca implemente decisões em aberto** sem aprovação explícita do usuário (ver `GEMINI.md`/`SPEC.md`).
 - **Se um agent retornar erro**, relate o problema, identifique a causa e proponha a correção antes de continuar.

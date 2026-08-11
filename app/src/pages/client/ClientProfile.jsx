@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { LogOut, User, Upload } from 'lucide-react'
+import { LogOut, User, Upload, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useClientSession } from '../../contexts/ClientSessionContext'
 import BirthdateInput from '../../components/BirthdateInput'
@@ -183,38 +183,38 @@ function ClientProfile() {
   if (!clientSession) return null
 
   return (
-    <div className="page-content" style={{ paddingBottom: '100px' }}>
-      <header className="page-header" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'var(--light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--dark-green)', overflow: 'hidden', flexShrink: 0 }}>
+    <div className="page-content ds-animate-fade-up" style={{ paddingBottom: '100px' }}>
+      <header className="page-header" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ width: '54px', height: '54px', borderRadius: '50%', backgroundColor: 'var(--ds-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ds-primary)', overflow: 'hidden', flexShrink: 0 }}>
           {avatarPreview
             ? <img src={avatarPreview} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <User size={30} />}
+            : <User size={26} />}
         </div>
         <div>
-          <h1 style={{ fontSize: '1.6rem' }}>Meu Perfil</h1>
-          <p className="subtitle">Edite seus dados de identificação.</p>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--ds-text)', margin: '0 0 2px 0', letterSpacing: '-0.02em' }}>Meu Perfil</h1>
+          <p style={{ fontSize: '13px', color: 'var(--ds-text-2)', margin: 0 }}>Edite seus dados de identificação.</p>
         </div>
       </header>
 
       <form onSubmit={handleSave}>
         {/* Card de foto */}
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.5rem', marginBottom: '1.5rem' }}>
+        <div className="ds-card" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px', marginBottom: '16px' }}>
           <div style={{
-            width: '90px', height: '90px', borderRadius: '50%',
-            backgroundColor: 'var(--bg-color)', border: '2px dashed var(--border-color)',
+            width: '80px', height: '80px', borderRadius: '50%',
+            backgroundColor: 'var(--ds-surface-2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0
           }}>
             {avatarPreview
               ? <img src={avatarPreview} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <User size={30} color="var(--text-secondary)" />}
+              : <User size={28} style={{ color: 'var(--ds-text-3)' }} />}
           </div>
           <div style={{ flex: 1 }}>
-            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.3rem' }}>Foto de Perfil</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
+            <h3 style={{ color: 'var(--ds-text)', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0' }}>Foto de Perfil</h3>
+            <p style={{ color: 'var(--ds-text-2)', fontSize: '12px', margin: '0 0 10px 0' }}>
               Recomendamos uma imagem quadrada (PNG ou JPG).
             </p>
-            <label className="btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem 1rem', width: 'auto', fontSize: '0.9rem' }}>
-              <Upload size={18} />
+            <label className="ds-btn ds-btn-outline ds-btn-pill" style={{ cursor: 'pointer', padding: '6px 14px', fontSize: '12px' }}>
+              <Upload size={14} />
               Escolher Imagem
               <input
                 ref={fileInputRef}
@@ -228,33 +228,33 @@ function ClientProfile() {
         </div>
 
         {/* Card de dados */}
-        <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Nome Completo</label>
+        <div className="ds-card" style={{ padding: '20px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="ds-field" style={{ margin: 0 }}>
+              <label className="ds-label">Nome Completo</label>
               <input
                 type="text"
+                className="ds-input"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
-                style={{ marginTop: '0.4rem' }}
               />
             </div>
 
-            <div>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>WhatsApp</label>
+            <div className="ds-field" style={{ margin: 0 }}>
+              <label className="ds-label">WhatsApp</label>
               <input
                 type="tel"
+                className="ds-input"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
-                style={{ marginTop: '0.4rem' }}
               />
             </div>
 
-            <div>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Data de Nascimento</label>
-              <div style={{ marginTop: '0.4rem' }}>
+            <div className="ds-field" style={{ margin: 0 }}>
+              <label className="ds-label">Data de Nascimento</label>
+              <div style={{ marginTop: '2px' }}>
                 <BirthdateInput value={birthDate} onChange={setBirthDate} />
               </div>
             </div>
@@ -263,37 +263,42 @@ function ClientProfile() {
 
         <button
           type="submit"
-          className="btn-primary"
+          className="ds-btn ds-btn-primary ds-btn-full ds-btn-pill"
           disabled={saving || !hasChanges}
-          style={{ width: '100%', marginBottom: '1.5rem' }}
+          style={{ marginBottom: '16px', padding: '12px 24px', fontSize: '15px' }}
         >
-          {saving ? 'Salvando...' : 'Salvar'}
+          {saving ? 'Salvando...' : 'Salvar Alterações'}
         </button>
       </form>
 
-      <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', border: '1px solid var(--primary-green)', backgroundColor: 'var(--light-green)' }}>
+      {/* Card Notificações Push */}
+      <div className="ds-card ds-card-surface-2" style={{ padding: '20px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h3 style={{ color: 'var(--dark-green)' }}>Notificações Push</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Ative para ser avisado sobre seus agendamentos.
+          <h3 style={{ color: 'var(--ds-text)', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Bell size={16} style={{ color: 'var(--ds-primary)' }} /> Notificações Push
+          </h3>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '12px', margin: 0 }}>
+            Receba lembretes automáticos sobre seus agendamentos.
           </p>
         </div>
         <button
           type="button"
           onClick={handlePushPermission}
-          style={{ padding: '0.6rem 1.2rem', background: '#e8f5e9', border: '1px solid var(--primary-green)', color: 'var(--dark-green)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+          className="ds-btn ds-btn-soft ds-btn-pill"
+          style={{ padding: '8px 14px', fontSize: '12px' }}
         >
           Ativar Avisos
         </button>
       </div>
 
-      <div style={{ marginTop: '2rem' }}>
+      <div style={{ marginTop: '1.5rem' }}>
         <button
           type="button"
           onClick={handleLogout}
-          style={{ width: '100%', padding: '1rem', backgroundColor: '#ffebee', color: '#d32f2f', border: '1px solid #ffcdd2', borderRadius: '8px', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+          className="ds-btn ds-btn-danger ds-btn-full ds-btn-pill"
+          style={{ padding: '12px', fontSize: '14px' }}
         >
-          <LogOut size={20} /> Sair da minha conta
+          <LogOut size={16} /> Sair da minha conta
         </button>
       </div>
     </div>

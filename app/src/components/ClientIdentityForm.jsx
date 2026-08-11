@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { formatPhone, lookupClient, linkClientToSalon } from '../utils/clientIdentity'
 import BirthdateInput from './BirthdateInput'
 
@@ -62,80 +63,103 @@ function ClientIdentityForm({ salonId, loginByPhone, onIdentified, onCancel }) {
     }
   }
 
-  const inputStyle = {
-    width: '100%',
-    padding: '0.8rem',
-    borderRadius: '8px',
-    border: '1px solid var(--border-color)',
-    fontSize: '1rem',
-    color: 'var(--text-primary)',
-    backgroundColor: 'var(--surface-color)'
-  }
-
   return (
-    <div style={{ padding: '1.5rem' }}>
-      <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--light-green)', borderRadius: '12px' }}>
-        <h3 style={{ color: 'var(--dark-green)', marginBottom: '0.2rem' }}>Identifique-se para agendar</h3>
-        <p style={{ color: 'var(--dark-green)', opacity: 0.8, fontSize: '0.9rem' }}>
+    <div style={{ padding: '4px 0' }}>
+      <div className="ds-card ds-card-surface-2" style={{ marginBottom: '16px', padding: '1rem 1.25rem' }}>
+        <h3 style={{ color: 'var(--ds-primary)', fontWeight: '600', fontSize: '16px', margin: '0 0 4px 0' }}>
+          Identifique-se para agendar
+        </h3>
+        <p style={{ color: 'var(--ds-text-2)', fontSize: '13px', margin: 0, lineHeight: '1.4' }}>
           {step === 'phone'
             ? 'Informe seu WhatsApp. Se já for cliente, reconhecemos você na hora.'
             : 'Primeira vez por aqui! Complete seu cadastro para finalizar.'}
         </p>
       </div>
 
-      {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+      {error && (
+        <div
+          className="ds-card"
+          style={{ padding: '10px 14px', marginBottom: '14px', backgroundColor: 'var(--ds-danger-soft)', color: 'var(--ds-danger)', fontSize: '13px' }}
+        >
+          {error}
+        </div>
+      )}
 
       {step === 'phone' ? (
         <form onSubmit={handlePhoneSubmit}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
-            Telefone (WhatsApp)
-          </label>
-          <input
-            type="tel"
-            placeholder="(00) 00000-0000"
-            value={phone}
-            onChange={handlePhoneChange}
-            maxLength="15"
-            autoFocus
-            style={{ ...inputStyle, marginBottom: '1.5rem' }}
-          />
-          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }} disabled={loading}>
-            {loading ? 'Verificando...' : 'Continuar'}
-          </button>
+          <div className="ds-field" style={{ marginBottom: '16px' }}>
+            <label className="ds-label">Telefone (WhatsApp)</label>
+            <input
+              type="tel"
+              className="ds-input"
+              placeholder="(00) 00000-0000"
+              value={phone}
+              onChange={handlePhoneChange}
+              maxLength="15"
+              autoFocus
+            />
+          </div>
+          <div className="ds-wizard-nav" style={{ marginTop: 0 }}>
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="ds-btn ds-btn-secondary ds-btn-pill"
+                style={{ flex: 1 }}
+              >
+                <ArrowLeft size={16} /> Voltar
+              </button>
+            )}
+            <button
+              type="submit"
+              className="ds-btn ds-btn-primary ds-btn-pill"
+              style={{ flex: 2 }}
+              disabled={loading}
+            >
+              {loading ? 'Verificando...' : 'Continuar'}
+            </button>
+          </div>
         </form>
       ) : (
         <form onSubmit={handleDetailsSubmit}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
-            Nome completo
-          </label>
-          <input
-            type="text"
-            placeholder="Seu nome completo"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            autoFocus
-            style={{ ...inputStyle, marginBottom: '1.2rem' }}
-          />
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-secondary)' }}>
-            Data de nascimento
-          </label>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <BirthdateInput value={birthDate} onChange={setBirthDate} />
+          <div className="ds-field" style={{ marginBottom: '12px' }}>
+            <label className="ds-label">Nome completo</label>
+            <input
+              type="text"
+              className="ds-input"
+              placeholder="Seu nome completo"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              autoFocus
+            />
           </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1.05rem' }} disabled={loading}>
-            {loading ? 'Concluindo...' : 'Concluir e agendar'}
-          </button>
+          <div className="ds-field" style={{ marginBottom: '16px' }}>
+            <label className="ds-label">Data de nascimento</label>
+            <div>
+              <BirthdateInput value={birthDate} onChange={setBirthDate} />
+            </div>
+          </div>
+          <div className="ds-wizard-nav" style={{ marginTop: 0 }}>
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="ds-btn ds-btn-secondary ds-btn-pill"
+                style={{ flex: 1 }}
+              >
+                <ArrowLeft size={16} /> Voltar
+              </button>
+            )}
+            <button
+              type="submit"
+              className="ds-btn ds-btn-primary ds-btn-pill"
+              style={{ flex: 2 }}
+              disabled={loading}
+            >
+              {loading ? 'Concluindo...' : 'Concluir e agendar'}
+            </button>
+          </div>
         </form>
-      )}
-
-      {onCancel && (
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{ width: '100%', marginTop: '1rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.9rem' }}
-        >
-          Voltar
-        </button>
       )}
     </div>
   )

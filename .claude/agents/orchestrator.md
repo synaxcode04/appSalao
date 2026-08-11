@@ -88,6 +88,13 @@ Invoque cada sub-agent com um briefing claro:
 Agents em paralelo → invoque múltiplos `Agent` na mesma mensagem.
 Agents sequenciais → aguarde o resultado do anterior antes de invocar o próximo.
 
+### 5.1 Gate de design system (sempre que a tarefa tocar o módulo cliente)
+Se a tarefa tiver tocado `app/src/pages/client/**`, `SalonLayout.jsx` ou qualquer CSS/visual de componente do fluxo cliente, **não avance para o relatório final sem antes rodar `code-reviewer`** (que inclui a dimensão "Design System" — ver seu catálogo). Se o relatório do `code-reviewer` apontar qualquer BLOQUEANTE ou IMPORTANTE de design system em aberto, devolva o achado para o agent responsável antes de reportar a tarefa como concluída:
+- Divergência de token/componente visual (cor fora da paleta, radius/espaçamento errado, ícone fora do Lucide, framework de UI externo) → devolve para `ui-design`.
+- Problema de usabilidade/acessibilidade/copy (heurística de Nielsen, WCAG, microcopy confuso) → devolve para `ux-design`.
+
+Isso é o mesmo mecanismo de "se um agent falhar, relate e proponha correção" das Restrições absolutas — aqui é só explicitado como etapa obrigatória, não opcional, para essa classe de mudança.
+
 ### 6. Relatório final
 Ao término de todas as invocações, reporte:
 - O que foi feito por cada agent
@@ -107,12 +114,14 @@ Ao término de todas as invocações, reporte:
 | `devops` | Build Vercel, .env, vercel.json | Deploy, variáveis de ambiente, build falhando |
 | `qa` | Pre-deploy check, smoke test, relatório | Antes de qualquer deploy; após todas as tasks |
 | `code-reviewer` | Revisão contra SPEC, classificação de problemas | Antes de merge; quando quiser auditoria de qualidade |
+| `ux-design` | Usabilidade, acessibilidade, heurísticas de Nielsen, UX writing (módulo cliente) | Antes de implementar/alterar fluxo do cliente; auditoria de usabilidade/acessibilidade |
+| `ui-design` | Implementação do design system (tokens, componentes visuais) do módulo cliente | Qualquer mudança visual/CSS no módulo cliente; manutenção do design_system |
 
 ---
 
 ## Catálogo de squads (`squads/`)
 
-Além dos sub-agents do projeto, existe uma pasta `squads/` com squads multi-agent reutilizáveis (formato `squad.yaml` com pipeline de steps e checkpoints). Considere-as quando o pedido exigir profundidade que os sub-agents atuais não cobrem — não substituem o catálogo acima, complementam.
+Além dos sub-agents do projeto, existe uma pasta `squads/` com squads multi-agent reutilizáveis (formato `squad.yaml` com pipeline de steps e checkpoints). Considere-as quando o pedido exigir profundidade que os sub-agents atuais não cobrem — não substituem o catálogo acima, complementam. `ux-design`/`ui-design` cobrem o trabalho contínuo de sprint (auditorias pontuais de usabilidade, implementação/manutenção de tokens do design system); os squads de design (`design-squad`, `frontend-design-squad`) continuam reservados para engajamentos profundos — redesign completo, arquitetura de design system do zero, ou quando o pedido exigir múltiplas perspectivas simultâneas que os dois sub-agents sozinhos não cobrem.
 
 | Squad | Categoria | Quando invocar neste projeto |
 |-------|-----------|-------------------------------|
@@ -130,11 +139,14 @@ Além dos sub-agents do projeto, existe uma pasta `squads/` com squads multi-age
 - `booking-engine` + `auth-guard` (domínios independentes)
 - `notifier` + `auth-guard` task 3.2 (domínios independentes)
 - `rls-security` + qualquer agent que não toque SQL
+- `ux-design` + qualquer agent de backend puro (`rls-security`, `notifier`, `devops`) — domínios independentes
 
 **Devem rodar em sequência** (dependência explícita):
 - `devops` → depois → `qa` (qa verifica o resultado do build)
 - Qualquer implementação → depois → `code-reviewer` (revisa o que foi feito)
 - Tasks de banco (`rls-security`) → antes → tasks que dependem de `is_active` (`auth-guard` task 3.2)
+- `ux-design` → depois → `ui-design`, quando a tarefa envolve fluxo novo ou redesenho de tela do módulo cliente (UX define heurística/copy antes do UI implementar o visual)
+- `ui-design` → depois → `code-reviewer` (mesmo padrão de "qualquer implementação → code-reviewer", ver também o Gate de design system acima)
 
 ---
 
@@ -158,5 +170,6 @@ Além dos sub-agents do projeto, existe uma pasta `squads/` com squads multi-age
 - **Nunca pule perguntas de clarificação** quando o pedido for genuinamente ambíguo — agir com premissa errada desperdiça mais tempo do que 3 perguntas.
 - **Nunca delegue sem briefing** — o sub-agent não conhece o contexto da conversa; dê a ele tudo que precisa.
 - **Nunca aprove um deploy** sem que `qa` tenha rodado o pre-deploy check.
+- **Nunca reporte uma tarefa que tocou o módulo cliente como concluída** se o `code-reviewer` apontou BLOQUEANTE/IMPORTANTE de design system em aberto — devolva para `ui-design`/`ux-design` primeiro (ver "5.1 Gate de design system").
 - **Nunca implemente decisões em aberto** sem aprovação explícita do usuário (ver `CLAUDE.md` e `SPEC.md`).
 - **Se um agent retornar com erro**, relate o problema, identifique a causa e proponha a correção antes de continuar.

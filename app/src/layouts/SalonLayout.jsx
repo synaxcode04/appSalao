@@ -24,27 +24,27 @@ function SalonLayoutInner({ salon, profile, slug }) {
       {showNav && (
         <nav className="client-bottom-nav">
           <NavLink to={`/s/${slug}/agenda`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
-            <CalendarDays size={24} />
+            <CalendarDays size={24} strokeWidth={2.2} />
             <span>Agenda</span>
           </NavLink>
 
           <NavLink to={`/s/${slug}`} end className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
-            <Store size={24} />
+            <Store size={24} strokeWidth={2.2} />
             <span>Salão</span>
           </NavLink>
 
           <NavLink to={`/s/${slug}/planos`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
-            <Package size={24} />
+            <Package size={24} strokeWidth={2.2} />
             <span>Planos</span>
           </NavLink>
 
           <NavLink to={`/s/${slug}/historico`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
-            <History size={24} />
+            <History size={24} strokeWidth={2.2} />
             <span>Histórico</span>
           </NavLink>
 
           <NavLink to={`/s/${slug}/perfil`} className={({ isActive }) => isActive ? 'c-nav-item active' : 'c-nav-item'}>
-            <User size={24} />
+            <User size={24} strokeWidth={2.2} />
             <span>Perfil</span>
           </NavLink>
         </nav>
@@ -148,13 +148,23 @@ function SalonLayout() {
     }
   }, [salon, slug])
 
-  if (loading) return <div style={{ padding: '2rem' }}>Carregando...</div>
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--ds-bg)', color: 'var(--ds-text)' }}>
+        <span className="ds-badge ds-badge-primary" style={{ padding: '8px 16px', fontSize: '14px' }}>
+          Carregando salão...
+        </span>
+      </div>
+    )
+  }
 
   if (notFound) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Salão não encontrado</h1>
-        <p style={{ color: '#475569' }}>O endereço acessado não corresponde a nenhum salão cadastrado.</p>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center', background: 'var(--ds-bg)', color: 'var(--ds-text)' }}>
+        <div className="ds-card" style={{ maxWidth: '400px', width: '100%', padding: '32px' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '8px', color: 'var(--ds-text)' }}>Salão não encontrado</h1>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '14px', lineHeight: '1.5', margin: 0 }}>O endereço acessado não corresponde a nenhum salão cadastrado.</p>
+        </div>
       </div>
     )
   }

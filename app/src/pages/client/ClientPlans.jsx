@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useOutletContext, useParams } from 'react-router-dom'
 import { supabase } from '../../supabase'
 import { useClientSession } from '../../contexts/ClientSessionContext'
-import { CheckCircle, XCircle, CalendarDays, Package, Clock, CreditCard, MessageCircle } from 'lucide-react'
+import { CheckCircle, XCircle, CalendarDays, Package, Clock, CreditCard, MessageCircle, Sparkles } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { computePlanSavings } from '../../utils/planSavings'
 
@@ -133,9 +133,6 @@ function ClientPlans() {
   const pendingSubs = subscriptions.filter(sub => !isApproved(sub))
 
   // Janela do ciclo rolante de 30 dias — ESPELHA computeCycleWindow do backend
-  // (app/api/appointments.js). A cota de cada serviço vale por um ciclo de 30 dias
-  // contado da DATA DE ASSINATURA (started_at, fallback created_at), sem mês-calendário
-  // e sem acúmulo. Retorna as bordas como 'YYYY-MM-DD' para comparar com appointment_date.
   const computeCycleWindow = (subscriptionDateIso) => {
     const anchor = new Date(subscriptionDateIso)
     anchor.setUTCHours(0, 0, 0, 0)
@@ -153,13 +150,11 @@ function ClientPlans() {
     }
   }
 
-  // Conta agendamentos 'scheduled' do cliente neste salão, para um serviço, DENTRO da
-  // janela [cycleStart, cycleEnd) do ciclo corrente da assinatura. Considera tanto o
-  // service_id direto quanto os serviços em appointment_services (múltiplos serviços).
+  // Conta agendamentos 'scheduled' do cliente neste salão, para um serviço, DENTRO da janela do ciclo
   const usedInCycle = (serviceId, cycleStart, cycleEnd) => {
     return appointments.filter(appt => {
       if (appt.status !== 'scheduled') return false
-      const d = appt.appointment_date // 'YYYY-MM-DD' — comparação de string ordenável
+      const d = appt.appointment_date
       if (d < cycleStart || d >= cycleEnd) return false
 
       const directMatch = appt.service_id === serviceId
@@ -169,7 +164,6 @@ function ClientPlans() {
     }).length
   }
 
-  // Opção (a): pagar pelo app via Mercado Pago (Checkout Pro).
   const handlePayApp = async (plan) => {
     if (!clientId) {
       toast.error('Identifique-se para assinar um plano.')
@@ -185,7 +179,6 @@ function ClientPlans() {
     if (!res.ok) {
       setBusy(false)
       if (res.status === 409) {
-        // Salão não conectado ao MP (ou já assinado/aprovado) — esconde a opção do app.
         setMpConnected(false)
         const err = await res.json().catch(() => ({}))
         toast.error(err.error || 'Pagamento pelo app indisponível. Use o pagamento direto com o salão.')
@@ -203,8 +196,6 @@ function ClientPlans() {
       return
     }
 
-    // Guarda o slug do salão para a página de retorno (/s/pagamento) reconstruir o
-    // link "voltar aos planos" — as back_urls do MP não carregam o slug.
     try {
       window.localStorage.setItem('mp_return_slug', slug)
     } catch {
@@ -214,8 +205,6 @@ function ClientPlans() {
     window.location.href = data.initPoint
   }
 
-  // Opção (b): pagar direto com o dono. Cria a assinatura como pendente (payment_method
-  // 'external') e abre o WhatsApp do salão para combinar o pagamento.
   const handlePayExternal = async (plan) => {
     if (!clientId) {
       toast.error('Identifique-se para assinar um plano.')
@@ -244,7 +233,6 @@ function ClientPlans() {
     setPayingPlan(null)
     toast.success('Plano registrado! Combine o pagamento com o salão para ativá-lo.')
 
-    // Abre o WhatsApp do salão com a mensagem padrão (mesmo padrão de ClientAppointments).
     if (salonPhone) {
       const cleanPhone = salonPhone.replace(/\D/g, '')
       const msg = `Olá! Acabei de adquirir o plano ${plan.name} pelo app e gostaria de realizar o pagamento. Como faço?`
@@ -284,29 +272,32 @@ function ClientPlans() {
       .join(', ')
   }
 
-  // Ids dos planos que o cliente já assina (ativos OU pendentes) — evita re-oferta.
   const subscribedPlanIds = new Set(subscriptions.map(s => s.plan_id))
 
   if (loading) {
     return (
-      <div className="page-content" style={{ paddingBottom: '100px' }}>
-        <p>Carregando planos...</p>
+      <div className="page-content" style={{ paddingBottom: '100px', textAlign: 'center', paddingTop: '2rem' }}>
+        <span className="ds-badge ds-badge-primary">Carregando planos...</span>
       </div>
     )
   }
 
   return (
-    <div className="page-content" style={{ paddingBottom: '100px' }}>
+    <div className="page-content ds-animate-fade-up" style={{ paddingBottom: '100px' }}>
       <header className="page-header" style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.8rem', margin: 0 }}>Planos de Assinatura</h1>
-        <p className="subtitle" style={{ marginTop: '0.2rem' }}>Assine um pacote mensal e economize nos seus serviços favoritos.</p>
+        <h1 style={{ fontSize: '1.4rem', fontWeight: '600', color: 'var(--ds-text)', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>
+          Planos de Assinatura
+        </h1>
+        <p style={{ fontSize: '13px', color: 'var(--ds-text-2)', margin: 0 }}>
+          Assine um pacote mensal e economize nos seus serviços favoritos.
+        </p>
       </header>
 
-      {/* Assinaturas ativas (pagas/aprovadas) do cliente com contador de uso */}
+      {/* Assinaturas ativas */}
       {activeSubs.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CheckCircle size={20} color="var(--primary-green)" /> Seu plano ativo
+          <h2 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: 'var(--ds-text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <CheckCircle size={18} style={{ color: 'var(--ds-primary)' }} /> Seu plano ativo
           </h2>
           {activeSubs.map(sub => {
             const plan = sub.subscription_plans
@@ -315,48 +306,47 @@ function ClientPlans() {
             const { start: cycleStart, end: cycleEnd } = computeCycleWindow(sub.started_at || sub.created_at)
             const daysRemaining = cycleDaysRemaining(sub.started_at || sub.created_at)
             return (
-              <div key={sub.id} className="card" style={{ padding: '1.2rem', marginBottom: '1rem', borderLeft: '4px solid var(--primary-green)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.8rem' }}>
+              <div key={sub.id} className="ds-card" style={{ padding: '20px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
                   <div>
-                    <h3 style={{ color: 'var(--dark-green)', fontSize: '1.2rem' }}>{plan.name}</h3>
-                    <p style={{ fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                    <h3 style={{ color: 'var(--ds-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 4px 0' }}>{plan.name}</h3>
+                    <p style={{ fontWeight: '700', color: 'var(--ds-primary)', fontSize: '15px', margin: 0 }}>
                       R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
                     </p>
                   </div>
-                  <span style={{ backgroundColor: 'var(--light-green)', color: 'var(--dark-green)', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                    Ativo
-                  </span>
+                  <span className="ds-badge ds-badge-success">Ativo</span>
                 </div>
 
                 {plan.description && (
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>{plan.description}</p>
+                  <p style={{ fontSize: '13px', color: 'var(--ds-text-2)', marginBottom: '12px' }}>{plan.description}</p>
                 )}
 
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
-                  <CalendarDays size={16} /> Válido: {formatDays(plan.subscription_plan_days)}
-                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '14px', fontSize: '12px', color: 'var(--ds-text-2)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <CalendarDays size={14} style={{ color: 'var(--ds-primary)' }} /> Válido: {formatDays(plan.subscription_plan_days)}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={14} style={{ color: 'var(--ds-primary)' }} /> Renova em {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}
+                  </span>
+                </div>
 
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.8rem' }}>
-                  <Clock size={16} /> Renova em {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}
-                </p>
-
-                {/* Contador de uso por ciclo (30 dias rolantes) por serviço */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {/* Contador de uso por ciclo */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {planServices.map(ps => {
                     const used = usedInCycle(ps.service_id, cycleStart, cycleEnd)
                     const quota = ps.monthly_quota
                     const remaining = Math.max(0, quota - used)
                     const pct = quota > 0 ? Math.min(100, (used / quota) * 100) : 0
                     return (
-                      <div key={ps.service_id} style={{ padding: '0.7rem 0.9rem', backgroundColor: 'var(--bg-color)', borderRadius: 'var(--radius-md)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                          <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{ps.services?.name || 'Serviço'}</span>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                            {used} / {quota} no ciclo atual{remaining > 0 ? ` (${remaining} restantes)` : ' (esgotado)'}
+                      <div key={ps.service_id} className="ds-card ds-card-surface-2" style={{ padding: '10px 14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '13px' }}>
+                          <span style={{ fontWeight: '500', color: 'var(--ds-text)' }}>{ps.services?.name || 'Serviço'}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--ds-text-2)' }}>
+                            {used} / {quota} no ciclo{remaining > 0 ? ` (${remaining} restantes)` : ' (esgotado)'}
                           </span>
                         </div>
-                        <div style={{ height: '8px', backgroundColor: 'var(--border-color)', borderRadius: '4px', overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: '100%', backgroundColor: remaining > 0 ? 'var(--primary-green)' : '#d32f2f' }} />
+                        <div style={{ height: '6px', backgroundColor: 'var(--ds-surface-3)', borderRadius: '999px', overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', backgroundColor: remaining > 0 ? 'var(--ds-primary)' : 'var(--ds-danger)', transition: 'width var(--ds-transition-normal)' }} />
                         </div>
                       </div>
                     )
@@ -366,9 +356,10 @@ function ClientPlans() {
                 <button
                   onClick={() => handleCancel(sub.id)}
                   disabled={busy}
-                  style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1rem', background: 'transparent', border: '1px solid #d32f2f', color: '#d32f2f', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '500' }}
+                  className="ds-btn ds-btn-danger ds-btn-pill"
+                  style={{ marginTop: '16px', padding: '8px 16px', fontSize: '13px' }}
                 >
-                  <XCircle size={16} /> Cancelar plano
+                  <XCircle size={14} /> Cancelar plano
                 </button>
               </div>
             )
@@ -376,29 +367,27 @@ function ClientPlans() {
         </div>
       )}
 
-      {/* Assinaturas pendentes (aguardando pagamento) — não consomem cota ainda */}
+      {/* Assinaturas pendentes */}
       {pendingSubs.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Clock size={20} color="#b26a00" /> Aguardando pagamento
+          <h2 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: 'var(--ds-text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Clock size={18} style={{ color: 'var(--ds-warning)' }} /> Aguardando pagamento
           </h2>
           {pendingSubs.map(sub => {
             const plan = sub.subscription_plans
             if (!plan) return null
             return (
-              <div key={sub.id} className="card" style={{ padding: '1.2rem', marginBottom: '1rem', borderLeft: '4px solid #f0ad4e' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '0.6rem' }}>
+              <div key={sub.id} className="ds-card" style={{ padding: '20px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '10px' }}>
                   <div>
-                    <h3 style={{ color: 'var(--dark-green)', fontSize: '1.2rem' }}>{plan.name}</h3>
-                    <p style={{ fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                    <h3 style={{ color: 'var(--ds-text)', fontSize: '1.1rem', fontWeight: '600', margin: '0 0 4px 0' }}>{plan.name}</h3>
+                    <p style={{ fontWeight: '700', color: 'var(--ds-text)', fontSize: '14px', margin: 0 }}>
                       R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
                     </p>
                   </div>
-                  <span style={{ backgroundColor: '#fff3cd', color: '#8a6d00', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                    Aguardando pagamento
-                  </span>
+                  <span className="ds-badge ds-badge-warning">Pendente</span>
                 </div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>
+                <p style={{ fontSize: '13px', color: 'var(--ds-text-2)', marginBottom: '14px' }}>
                   {sub.payment_method === 'external'
                     ? 'Combine o pagamento com o salão. Assim que o salão confirmar, o plano será ativado.'
                     : 'Estamos confirmando o seu pagamento. O plano será ativado automaticamente após a aprovação.'}
@@ -406,9 +395,10 @@ function ClientPlans() {
                 <button
                   onClick={() => handleCancel(sub.id)}
                   disabled={busy}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.6rem 1rem', background: 'transparent', border: '1px solid #d32f2f', color: '#d32f2f', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '500' }}
+                  className="ds-btn ds-btn-danger ds-btn-pill"
+                  style={{ padding: '8px 16px', fontSize: '13px' }}
                 >
-                  <XCircle size={16} /> Cancelar
+                  <XCircle size={14} /> Cancelar
                 </button>
               </div>
             )
@@ -416,21 +406,21 @@ function ClientPlans() {
         </div>
       )}
 
-      {/* Planos ofertados (não assinados) */}
-      <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Package size={20} /> Planos disponíveis
+      {/* Planos disponíveis */}
+      <h2 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px', color: 'var(--ds-text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <Package size={18} style={{ color: 'var(--ds-primary)' }} /> Planos disponíveis
       </h2>
 
       {plans.filter(p => !subscribedPlanIds.has(p.id)).length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '2.5rem 1rem' }}>
-          <p style={{ color: 'var(--text-secondary)' }}>
+        <div className="ds-card" style={{ textAlign: 'center', padding: '36px 20px' }}>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '14px', margin: 0 }}>
             {plans.length === 0
               ? 'Este salão ainda não oferece planos de assinatura.'
               : 'Você já assina todos os planos disponíveis deste salão.'}
           </p>
         </div>
       ) : (
-        <div className="client-plans-available-list">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {plans.filter(p => !subscribedPlanIds.has(p.id)).map(plan => {
             const { savings, fullValue, planPrice } = computePlanSavings({
               price: plan.price,
@@ -440,50 +430,56 @@ function ClientPlans() {
               }))
             })
             return (
-            <div key={plan.id} className="card client-plan-card">
-              <div className="client-plan-card-header">
-                <h3 className="client-plan-card-name">{plan.name}</h3>
-                <span className="client-plan-card-price">
-                  R$ {Number(plan.price).toFixed(2).replace('.', ',')}<span className="client-plan-card-price-suffix">/mês</span>
-                </span>
-              </div>
+              <div key={plan.id} className="ds-card client-plan-card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '8px' }}>
+                  <h3 className="client-plan-card-name" style={{ fontSize: '1.15rem', fontWeight: '600', color: 'var(--ds-text)', margin: 0 }}>
+                    {plan.name}
+                  </h3>
+                  <span className="client-plan-card-price" style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--ds-primary)', whiteSpace: 'nowrap' }}>
+                    R$ {Number(plan.price).toFixed(2).replace('.', ',')}<span style={{ fontSize: '12px', color: 'var(--ds-text-2)' }}>/mês</span>
+                  </span>
+                </div>
 
-              {savings > 0 && (
-                <p className="client-plan-card-savings">
-                  Economize R$ {savings.toFixed(2).replace('.', ',')} por mês
-                </p>
-              )}
+                {savings > 0 && (
+                  <span className="ds-badge ds-badge-success" style={{ marginBottom: '8px' }}>
+                    Economize R$ {savings.toFixed(2).replace('.', ',')} por mês
+                  </span>
+                )}
 
-              {fullValue > planPrice && (
-                <p className="client-plan-card-full-value-line" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  Valor total avulso: R$ {Number(fullValue).toFixed(2).replace('.', ',')}
-                </p>
-              )}
-
-              {plan.description && (
-                <p className="client-plan-card-description">{plan.description}</p>
-              )}
-
-              <div className="client-plan-card-services">
-                {(plan.subscription_plan_services || []).map(ps => (
-                  <p key={ps.service_id} className="client-plan-card-service-item">
-                    <CheckCircle size={14} color="var(--primary-green)" /> {ps.services?.name || 'Serviço'} — {ps.monthly_quota}x por ciclo de 30 dias
+                {fullValue > planPrice && (
+                  <p className="client-plan-card-full-value-line" style={{ fontSize: '12px', color: 'var(--ds-text-3)', margin: '4px 0 8px 0' }}>
+                    Valor total avulso: R$ {Number(fullValue).toFixed(2).replace('.', ',')}
                   </p>
-                ))}
+                )}
+
+                {plan.description && (
+                  <p style={{ fontSize: '13px', color: 'var(--ds-text-2)', lineHeight: '1.5', marginBottom: '12px' }}>
+                    {plan.description}
+                  </p>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                  {(plan.subscription_plan_services || []).map(ps => (
+                    <div key={ps.service_id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--ds-text)' }}>
+                      <CheckCircle size={14} style={{ color: 'var(--ds-primary)', flexShrink: 0 }} />
+                      <span>{ps.services?.name || 'Serviço'} — <strong>{ps.monthly_quota}x</strong> por ciclo de 30 dias</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p style={{ fontSize: '12px', color: 'var(--ds-text-2)', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '16px' }}>
+                  <CalendarDays size={14} style={{ color: 'var(--ds-primary)' }} /> Válido: {formatDays(plan.subscription_plan_days)}
+                </p>
+
+                <button
+                  onClick={() => setPayingPlan(plan)}
+                  disabled={busy}
+                  className="ds-btn ds-btn-primary ds-btn-full ds-btn-pill client-plan-card-subscribe"
+                  style={{ padding: '10px 20px', fontSize: '14px' }}
+                >
+                  <Sparkles size={16} /> Assinar Plano
+                </button>
               </div>
-
-              <p className="client-plan-card-days">
-                <CalendarDays size={16} /> Válido: {formatDays(plan.subscription_plan_days)}
-              </p>
-
-              <button
-                onClick={() => setPayingPlan(plan)}
-                disabled={busy}
-                className="btn-primary client-plan-card-subscribe"
-              >
-                Assinar
-              </button>
-            </div>
             )
           })}
         </div>
@@ -493,41 +489,41 @@ function ClientPlans() {
       {payingPlan && (
         <div
           onClick={() => !busy && setPayingPlan(null)}
-          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 1000 }}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 1000 }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="card"
-            style={{ padding: '1.5rem', maxWidth: '420px', width: '100%', backgroundColor: 'var(--surface-color)' }}
+            className="ds-card ds-animate-scale-in"
+            style={{ padding: '24px', maxWidth: '400px', width: '100%' }}
           >
-            <h3 style={{ color: 'var(--dark-green)', marginBottom: '0.3rem' }}>Assinar {payingPlan.name}</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.2rem' }}>
-              R$ {Number(payingPlan.price).toFixed(2).replace('.', ',')} / mês. Escolha como deseja pagar:
+            <h3 style={{ color: 'var(--ds-text)', fontSize: '1.2rem', fontWeight: '600', marginBottom: '4px' }}>
+              Assinar {payingPlan.name}
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--ds-text-2)', marginBottom: '20px' }}>
+              R$ {Number(payingPlan.price).toFixed(2).replace('.', ',')} / mês. Escolha a forma de pagamento:
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {mpConnected && (
                 <button
                   onClick={() => handlePayApp(payingPlan)}
                   disabled={busy}
-                  className="btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.9rem 1rem' }}
+                  className="ds-btn ds-btn-primary ds-btn-full ds-btn-pill"
                 >
-                  <CreditCard size={18} /> {busy ? 'Processando...' : 'Pagar pelo app'}
+                  <CreditCard size={16} /> {busy ? 'Processando...' : 'Pagar pelo app'}
                 </button>
               )}
 
               <button
                 onClick={() => handlePayExternal(payingPlan)}
                 disabled={busy}
-                className="btn-outline"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.9rem 1rem', width: '100%' }}
+                className="ds-btn ds-btn-outline ds-btn-full ds-btn-pill"
               >
-                <MessageCircle size={18} /> {busy ? 'Processando...' : 'Pagar direto com o salão'}
+                <MessageCircle size={16} /> {busy ? 'Processando...' : 'Pagar direto com o salão'}
               </button>
             </div>
 
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '1rem' }}>
+            <p style={{ fontSize: '12px', color: 'var(--ds-text-3)', marginTop: '16px', lineHeight: '1.4' }}>
               {mpConnected
                 ? 'No pagamento pelo app, o plano é ativado automaticamente após a aprovação. No pagamento direto, o salão confirma o pagamento e ativa o plano.'
                 : 'Este salão recebe o pagamento diretamente. Combine com o salão pelo WhatsApp para ativar o plano.'}
@@ -536,7 +532,8 @@ function ClientPlans() {
             <button
               onClick={() => setPayingPlan(null)}
               disabled={busy}
-              style={{ marginTop: '1rem', width: '100%', padding: '0.6rem', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: '500' }}
+              className="ds-btn ds-btn-ghost ds-btn-full"
+              style={{ marginTop: '12px', fontSize: '13px' }}
             >
               Cancelar
             </button>
