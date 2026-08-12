@@ -59,9 +59,7 @@ function Welcome() {
       <main style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 1.5rem 3.5rem', textAlign: 'center', backgroundColor: 'var(--ds-surface)' }}>
         <div style={{ maxWidth: '780px', width: '100%' }}>
           
-          <div className="ds-badge ds-badge-primary" style={{ padding: '6px 14px', fontSize: '13px', marginBottom: '1.5rem' }}>
-            ✨ O sistema de agendamento feito para o seu salão
-          </div>
+
 
           <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)', fontWeight: '600', lineHeight: '1.15', marginBottom: '1.25rem', letterSpacing: '-0.03em', color: 'var(--ds-text)' }}>
             Transforme seu salão em um <span style={{ color: 'var(--ds-primary)' }}>aplicativo próprio</span>.
