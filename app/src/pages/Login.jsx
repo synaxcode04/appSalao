@@ -62,38 +62,50 @@ function Login() {
   }
 
   return (
-    <div className="container">
-      <div className="app-container">
-        <main className="auth-screen">
-          <h2>Entrar como {role === 'owner' ? 'Proprietário' : 'Cliente'}</h2>
-          {error && <p style={{color: 'red'}}>{error}</p>}
-          <form onSubmit={handleLogin} className="auth-form">
-            <input 
-              type="email" 
-              placeholder="Seu E-mail" 
+    <div className="ds-auth-page">
+      <main className="ds-card ds-auth-card">
+        <h2 className="ds-auth-title">Entrar como {role === 'owner' ? 'Proprietário' : 'Cliente'}</h2>
+        {error && <p className="ds-alert-danger" role="alert">{error}</p>}
+        <form onSubmit={handleLogin} className="ds-auth-form">
+          <div className="ds-field">
+            <label className="ds-label" htmlFor="login-email">E-mail</label>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              className="ds-input"
+              placeholder="voce@email.com"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required 
+              required
             />
-            <input 
-              type="password" 
-              placeholder="Sua Senha" 
+          </div>
+          <div className="ds-field">
+            <label className="ds-label" htmlFor="login-password">Senha</label>
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              className="ds-input"
+              placeholder="Sua senha"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required 
+              required
             />
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
-          <p className="auth-link">
-            Não tem uma conta? <Link to={`/cadastro?role=${role}${searchParams.get('redirect') ? `&redirect=${searchParams.get('redirect')}` : ''}`}>Cadastre-se aqui</Link>
-          </p>
-          <p className="auth-link">
-            <Link to="/">Voltar ao início</Link>
-          </p>
-        </main>
-      </div>
+          </div>
+          <button type="submit" disabled={loading} className="ds-btn ds-btn-primary ds-btn-full">
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
+        <p className="ds-auth-link">
+          Não tem uma conta? <Link to={`/cadastro?role=${role}${searchParams.get('redirect') ? `&redirect=${searchParams.get('redirect')}` : ''}`}>Cadastre-se aqui</Link>
+        </p>
+        <p className="ds-auth-link">
+          <Link to="/">Voltar ao início</Link>
+        </p>
+      </main>
     </div>
   )
 }

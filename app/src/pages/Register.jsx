@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { Check } from 'lucide-react'
 import { supabase } from '../supabase'
 import { createOrGetClient, linkClientToSalon, formatPhone } from '../utils/clientIdentity'
 import BirthdateInput from '../components/BirthdateInput'
@@ -215,107 +216,147 @@ function Register() {
   }
 
   return (
-    <div className="container">
-      <div className="app-container">
-        <main className="auth-screen">
-          <h2>Cadastro de {role === 'owner' ? 'Proprietário' : 'Cliente'}</h2>
-          {error && <p style={{color: 'red'}}>{error}</p>}
-          <form onSubmit={handleRegister} className="auth-form">
-            <input 
-              type="text" 
-              placeholder="Nome Completo" 
+    <div className="ds-auth-page">
+      <main className="ds-card ds-auth-card">
+        <h2 className="ds-auth-title">Cadastro de {role === 'owner' ? 'Proprietário' : 'Cliente'}</h2>
+        {error && <p className="ds-alert-danger" role="alert">{error}</p>}
+        <form onSubmit={handleRegister} className="ds-auth-form">
+          <div className="ds-field">
+            <label className="ds-label" htmlFor="register-fullname">Nome completo</label>
+            <input
+              id="register-fullname"
+              name="name"
+              type="text"
+              className="ds-input"
+              placeholder="Seu nome completo"
+              autoComplete="name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              required 
+              required
             />
-            <input 
-              type="tel" 
-              placeholder="Telefone (WhatsApp)" 
+          </div>
+          <div className="ds-field">
+            <label className="ds-label" htmlFor="register-phone">Telefone (WhatsApp)</label>
+            <input
+              id="register-phone"
+              name="tel"
+              type="tel"
+              className="ds-input"
+              placeholder="(00) 00000-0000"
+              autoComplete="tel"
               value={phone}
               onChange={handlePhoneChange}
               maxLength="15"
               required
             />
+          </div>
 
-            {role === 'client' && (
-              <BirthdateInput value={birthDate} onChange={setBirthDate} />
-            )}
+          {role === 'client' && (
+            <BirthdateInput value={birthDate} onChange={setBirthDate} />
+          )}
 
-            {role === 'owner' && (
-              <>
-                <input 
-                  type="text" 
-                  placeholder="Nome do Salão" 
+          {role === 'owner' && (
+            <>
+              <div className="ds-field">
+                <label className="ds-label" htmlFor="register-salon">Nome do salão</label>
+                <input
+                  id="register-salon"
+                  name="organization"
+                  type="text"
+                  className="ds-input"
+                  placeholder="Nome do seu salão"
                   value={salonName}
                   onChange={(e) => setSalonName(e.target.value)}
-                  required 
+                  required
                 />
+              </div>
+              <div className="ds-field">
+                <label className="ds-label" htmlFor="register-document">CPF ou CNPJ</label>
                 <input
+                  id="register-document"
+                  name="document"
                   type="text"
+                  className="ds-input"
                   placeholder="CPF ou CNPJ"
                   value={document}
                   onChange={handleDocumentChange}
                   required
                 />
-                <div className="plano-selector" role="radiogroup" aria-label="Escolha o plano">
-                  <span className="plano-selector-label">Escolha seu plano</span>
-                  <div className="plano-options">
-                    {PLANOS.map((p) => {
-                      const selecionado = plano === p.id
-                      return (
-                        <button
-                          type="button"
-                          key={p.id}
-                          role="radio"
-                          aria-checked={selecionado}
-                          onClick={() => setPlano(p.id)}
-                          className="plano-option"
-                          style={{
-                            borderColor: selecionado ? 'var(--primary-green)' : '#cbd5e1',
-                            background: selecionado ? 'var(--light-green, #ecfdf5)' : '#fff'
-                          }}
-                        >
-                          <strong>{p.nome}</strong>
-                          <span>{p.preco}<small>{p.periodo}</small></span>
-                        </button>
-                      )
-                    })}
-                  </div>
+              </div>
+              <div className="ds-field" role="radiogroup" aria-label="Escolha o plano">
+                <span className="ds-label">Escolha seu plano</span>
+                <div className="ds-plan-grid">
+                  {PLANOS.map((p) => {
+                    const selecionado = plano === p.id
+                    return (
+                      <button
+                        type="button"
+                        key={p.id}
+                        role="radio"
+                        aria-checked={selecionado}
+                        onClick={() => setPlano(p.id)}
+                        className={`ds-service-card${selecionado ? ' ds-service-card--selected' : ''}`}
+                      >
+                        {selecionado && (
+                          <span className="ds-service-card-check" aria-hidden="true">
+                            <Check size={13} strokeWidth={2} />
+                          </span>
+                        )}
+                        <span className="ds-service-card-name">{p.nome}</span>
+                        <span className="ds-service-card-price">{p.preco}<small>{p.periodo}</small></span>
+                      </button>
+                    )
+                  })}
                 </div>
-              </>
-            )}
-            {role === 'owner' && (
-              <>
+              </div>
+            </>
+          )}
+          {role === 'owner' && (
+            <>
+              <div className="ds-field">
+                <label className="ds-label" htmlFor="register-email">E-mail</label>
                 <input
+                  id="register-email"
+                  name="email"
                   type="email"
-                  placeholder="E-mail"
+                  className="ds-input"
+                  placeholder="voce@email.com"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
+              </div>
+              <div className="ds-field">
+                <label className="ds-label" htmlFor="register-password">Senha</label>
                 <input
+                  id="register-password"
+                  name="password"
                   type="password"
-                  placeholder="Senha"
+                  className="ds-input"
+                  placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-              </>
-            )}
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Criando conta...' : 'Criar Conta'}
-            </button>
-          </form>
-          {role !== 'client' && (
-            <p className="auth-link">
-              Já tem uma conta? <Link to={`/login?role=${role}${searchParams.get('redirect') ? `&redirect=${searchParams.get('redirect')}` : ''}`}>Entre aqui</Link>
-            </p>
+                <span className="ds-field-hint">Mínimo 6 caracteres.</span>
+              </div>
+            </>
           )}
-          <p className="auth-link">
-            <Link to="/">Voltar ao início</Link>
+          <button type="submit" disabled={loading} className="ds-btn ds-btn-primary ds-btn-full">
+            {loading ? 'Criando conta...' : 'Criar Conta'}
+          </button>
+        </form>
+        {role !== 'client' && (
+          <p className="ds-auth-link">
+            Já tem uma conta? <Link to={`/login?role=${role}${searchParams.get('redirect') ? `&redirect=${searchParams.get('redirect')}` : ''}`}>Entre aqui</Link>
           </p>
-        </main>
-      </div>
+        )}
+        <p className="ds-auth-link">
+          <Link to="/">Voltar ao início</Link>
+        </p>
+      </main>
     </div>
   )
 }

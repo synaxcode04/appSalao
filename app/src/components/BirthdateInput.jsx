@@ -75,42 +75,45 @@ function BirthdateInput({ value, onChange }) {
   }
 
   return (
-    <div className="birthdate-input">
-      <select
-        value={day}
-        onChange={(e) => handleChange('day', e.target.value)}
-        className="birthdate-select"
-        aria-label="Dia"
-      >
-        <option value="">Dia</option>
-        {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-          <option key={d} value={String(d)}>{d}</option>
-        ))}
-      </select>
+    <div className="ds-field">
+      <span className="ds-label">Data de nascimento</span>
+      <div className="ds-birthdate-row">
+        <select
+          value={day}
+          onChange={(e) => handleChange('day', e.target.value)}
+          className="ds-select"
+          aria-label="Dia"
+        >
+          <option value="">Dia</option>
+          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+            <option key={d} value={String(d)}>{d}</option>
+          ))}
+        </select>
 
-      <select
-        value={month}
-        onChange={(e) => handleChange('month', e.target.value)}
-        className="birthdate-select"
-        aria-label="Mês"
-      >
-        <option value="">Mês</option>
-        {MONTHS.map((name, i) => (
-          <option key={i + 1} value={String(i + 1)}>{name}</option>
-        ))}
-      </select>
+        <select
+          value={month}
+          onChange={(e) => handleChange('month', e.target.value)}
+          className="ds-select"
+          aria-label="Mês"
+        >
+          <option value="">Mês</option>
+          {MONTHS.map((name, i) => (
+            <option key={i + 1} value={String(i + 1)}>{name}</option>
+          ))}
+        </select>
 
-      <input
-        type="number"
-        inputMode="numeric"
-        placeholder="Ano"
-        min="1900"
-        max={MAX_YEAR}
-        value={year}
-        onChange={(e) => handleChange('year', e.target.value)}
-        className="birthdate-year"
-        aria-label="Ano"
-      />
+        <input
+          type="number"
+          inputMode="numeric"
+          placeholder="Ano"
+          min="1900"
+          max={MAX_YEAR}
+          value={year}
+          onChange={(e) => handleChange('year', e.target.value)}
+          className="ds-input ds-birthdate-year"
+          aria-label="Ano"
+        />
+      </div>
     </div>
   )
 }
