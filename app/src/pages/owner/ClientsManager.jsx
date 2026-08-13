@@ -320,7 +320,7 @@ function ClientsManager() {
 
       <button
         type="button"
-        className="btn-primary clients-toolbar"
+        className="ds-btn ds-btn-primary clients-toolbar"
         onClick={() => setModalOpen(true)}
       >
         <UserPlus size={18} />
@@ -337,11 +337,12 @@ function ClientsManager() {
         </div>
       )}
 
-      <div className="card">
+      <div className="ds-card">
         <h3>Clientes do Salão</h3>
 
         <input
           type="search"
+          aria-label="Buscar cliente por nome ou telefone"
           placeholder="Buscar por nome ou telefone"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -402,7 +403,7 @@ function ClientsManager() {
                       disabled={isToggling}
                       title={isInactive ? 'Reativar' : 'Inativar'}
                       onClick={() => handleToggleActive(row)}
-                      style={{ color: isInactive ? 'var(--text-secondary)' : 'var(--primary-green)' }}
+                      style={{ color: isInactive ? 'var(--ds-text-2)' : 'var(--ds-primary)' }}
                     >
                       {isInactive ? <ToggleLeft size={22} /> : <ToggleRight size={22} />}
                     </button>
@@ -421,9 +422,12 @@ function ClientsManager() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="card modal-card"
+            className="ds-card modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-client-modal-title"
           >
-            <h3 className="modal-title">Novo Cliente</h3>
+            <h3 className="modal-title" id="new-client-modal-title">Novo Cliente</h3>
 
             <form onSubmit={handleSubmit} className="auth-form">
               <div className="form-field">
@@ -432,6 +436,7 @@ function ClientsManager() {
                 </label>
                 <input
                   id="client-phone"
+                  className="ds-input"
                   type="tel"
                   placeholder="Ex: (11) 99999-9999"
                   value={phone}
@@ -445,6 +450,7 @@ function ClientsManager() {
                 </label>
                 <input
                   id="client-name"
+                  className="ds-input"
                   type="text"
                   placeholder="Nome completo do cliente"
                   value={fullName}
@@ -453,10 +459,9 @@ function ClientsManager() {
                 />
               </div>
               <div className="form-field">
-                <span className="form-field-label">Data de nascimento</span>
                 <BirthdateInput value={birthDate} onChange={setBirthDate} />
               </div>
-              <button type="submit" disabled={submitting} className="btn-primary">
+              <button type="submit" disabled={submitting} className="ds-btn ds-btn-primary ds-btn-full">
                 <UserPlus size={18} className="btn-icon-inline" />
                 {submitting ? 'Cadastrando...' : 'Cadastrar Cliente'}
               </button>
@@ -487,9 +492,12 @@ function ClientsManager() {
         <div onClick={closeEdit} className="modal-overlay">
           <div
             onClick={(e) => e.stopPropagation()}
-            className="card modal-card"
+            className="ds-card modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-client-modal-title"
           >
-            <h3 className="modal-title">Editar Cliente</h3>
+            <h3 className="modal-title" id="edit-client-modal-title">Editar Cliente</h3>
 
             <form onSubmit={handleEditSubmit} className="auth-form">
               <div className="form-field">
@@ -498,6 +506,7 @@ function ClientsManager() {
                 </label>
                 <input
                   id="edit-client-phone"
+                  className="ds-input"
                   type="tel"
                   placeholder="Ex: (11) 99999-9999"
                   value={editPhone}
@@ -511,6 +520,7 @@ function ClientsManager() {
                 </label>
                 <input
                   id="edit-client-name"
+                  className="ds-input"
                   type="text"
                   placeholder="Nome completo do cliente"
                   value={editName}
@@ -519,10 +529,9 @@ function ClientsManager() {
                 />
               </div>
               <div className="form-field">
-                <span className="form-field-label">Data de nascimento</span>
                 <BirthdateInput value={editBirthDate} onChange={setEditBirthDate} />
               </div>
-              <button type="submit" disabled={editSubmitting} className="btn-primary">
+              <button type="submit" disabled={editSubmitting} className="ds-btn ds-btn-primary ds-btn-full">
                 {editSubmitting ? 'Salvando...' : 'Salvar Alterações'}
               </button>
             </form>

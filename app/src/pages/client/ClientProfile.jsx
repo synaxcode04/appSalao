@@ -252,12 +252,7 @@ function ClientProfile() {
               />
             </div>
 
-            <div className="ds-field" style={{ margin: 0 }}>
-              <label className="ds-label">Data de Nascimento</label>
-              <div style={{ marginTop: '2px' }}>
-                <BirthdateInput value={birthDate} onChange={setBirthDate} />
-              </div>
-            </div>
+            <BirthdateInput value={birthDate} onChange={setBirthDate} />
           </div>
         </div>
 

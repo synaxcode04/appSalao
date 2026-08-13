@@ -122,8 +122,8 @@ input:focus, select:focus, textarea:focus {
 /* Card de plano de assinatura na listagem do dono (PlansManager) */
 .plan-card {
   padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--ds-surface-2);
+  border-radius: var(--ds-radius-sm);
 }
 
 /* Cabeçalho: título ocupa a largura, ações ao lado no topo — o corpo do card
@@ -137,7 +137,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .plan-card-title {
-  color: var(--dark-green);
+  color: var(--ds-primary);
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -147,8 +147,8 @@ input:focus, select:focus, textarea:focus {
   margin-left: 0.5rem;
   font-size: 0.75rem;
   font-weight: bold;
-  color: #d32f2f;
-  background-color: #ffebee;
+  color: var(--ds-danger);
+  background-color: var(--ds-danger-soft);
   padding: 0.15rem 0.5rem;
   border-radius: 4px;
   white-space: nowrap;
@@ -169,22 +169,22 @@ input:focus, select:focus, textarea:focus {
 
 .plan-card-action-edit {
   padding: 0.5rem;
-  color: var(--primary-green);
-  background-color: var(--light-green);
-  border-radius: var(--radius-md);
+  color: var(--ds-primary);
+  background-color: var(--ds-primary-soft);
+  border-radius: var(--ds-radius-sm);
 }
 
 .plan-card-action-delete {
   padding: 0.5rem;
-  color: #d32f2f;
-  background-color: #ffebee;
-  border-radius: var(--radius-md);
+  color: var(--ds-danger);
+  background-color: var(--ds-danger-soft);
+  border-radius: var(--ds-radius-sm);
 }
 
 /* Descrição do plano de assinatura no card do dono (PlansManager) */
 .plan-description {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
   margin-top: 0.2rem;
 }
 
@@ -198,7 +198,7 @@ input:focus, select:focus, textarea:focus {
 .plan-description-toggle {
   background: transparent;
   border: none;
-  color: var(--primary-green);
+  color: var(--ds-primary);
   cursor: pointer;
   padding: 0.15rem 0;
   font-size: 0.82rem;
@@ -210,12 +210,12 @@ input:focus, select:focus, textarea:focus {
 
 .plan-services-label {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
 }
 
 .plan-services-empty {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
 }
 
 .plan-services-list {
@@ -226,7 +226,7 @@ input:focus, select:focus, textarea:focus {
 
 .plan-services-item {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
   word-break: break-word;
   overflow-wrap: anywhere;
 }
@@ -295,28 +295,28 @@ input:focus, select:focus, textarea:focus {
 
 .plan-preview {
   padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background-color: var(--light-green);
+  border: 1px solid var(--ds-surface-2);
+  border-radius: var(--ds-radius-sm);
+  background-color: var(--ds-primary-soft);
 }
 
 .plan-preview-hint {
   font-size: 0.82rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
   margin-bottom: 0.5rem;
 }
 
 .plan-preview-savings {
   margin-top: 0.6rem;
   font-weight: bold;
-  color: var(--dark-green);
+  color: var(--ds-primary);
 }
 
 .plan-wizard-textarea {
   width: 100%;
   padding: 0.8rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-surface-2);
   min-height: 70px;
   font-family: inherit;
   font-size: 1rem;
@@ -326,11 +326,11 @@ input:focus, select:focus, textarea:focus {
   display: block;
   margin-bottom: 0.6rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
 }
 
 .plan-wizard-hint {
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
   font-size: 0.9rem;
 }
 
@@ -345,14 +345,14 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 0.75rem;
   padding: 0.7rem 0.9rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-surface-2);
   background-color: transparent;
 }
 
 .plan-wizard-service-row--checked {
-  border: 2px solid var(--primary-green);
-  background-color: var(--light-green);
+  border: 2px solid var(--ds-primary);
+  background-color: var(--ds-primary-soft);
 }
 
 .plan-wizard-checkbox {
@@ -365,11 +365,11 @@ input:focus, select:focus, textarea:focus {
 .plan-wizard-service-name {
   flex: 1;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--ds-text);
 }
 
 .plan-wizard-service-row--checked .plan-wizard-service-name {
-  color: var(--dark-green);
+  color: var(--ds-primary);
 }
 
 .plan-wizard-quota {
@@ -377,14 +377,14 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
 }
 
 .plan-wizard-quota-input {
   width: 70px;
   padding: 0.4rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-surface-2);
 }
 
 .plan-wizard-days {
@@ -395,18 +395,18 @@ input:focus, select:focus, textarea:focus {
 
 .plan-wizard-day {
   padding: 0.5rem 0.9rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
+  border-radius: var(--ds-radius-sm);
+  border: 1px solid var(--ds-surface-2);
   background-color: transparent;
-  color: var(--text-primary);
+  color: var(--ds-text);
   font-weight: normal;
   cursor: pointer;
 }
 
 .plan-wizard-day--selected {
-  border: 2px solid var(--primary-green);
-  background-color: var(--light-green);
-  color: var(--dark-green);
+  border: 2px solid var(--ds-primary);
+  background-color: var(--ds-primary-soft);
+  color: var(--ds-primary);
   font-weight: bold;
 }
 
@@ -429,25 +429,25 @@ input:focus, select:focus, textarea:focus {
 }
 
 .client-plan-card-name {
-  color: var(--dark-green);
+  color: var(--ds-primary);
   font-size: 1.2rem;
 }
 
 .client-plan-card-price {
   font-weight: bold;
   font-size: 1.1rem;
-  color: var(--text-primary);
+  color: var(--ds-text);
   white-space: nowrap;
 }
 
 .client-plan-card-price-suffix {
   font-size: 0.8rem;
   font-weight: normal;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
 }
 
 .client-plan-card-savings {
-  color: var(--primary-green);
+  color: var(--ds-primary);
   font-weight: bold;
   font-size: 0.85rem;
   margin-top: -0.3rem;
@@ -456,7 +456,7 @@ input:focus, select:focus, textarea:focus {
 
 .client-plan-card-description {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
   margin-bottom: 0.8rem;
 }
 
@@ -466,7 +466,7 @@ input:focus, select:focus, textarea:focus {
 
 .client-plan-card-service-item {
   font-size: 0.9rem;
-  color: var(--text-primary);
+  color: var(--ds-text);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -474,7 +474,7 @@ input:focus, select:focus, textarea:focus {
 
 .client-plan-card-days {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--ds-text-2);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -486,31 +486,3 @@ input:focus, select:focus, textarea:focus {
   padding: 0.7rem 1.4rem;
 }
 
-.birthdate-input {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  width: 100%;
-}
-
-.birthdate-select {
-  padding: 0.8rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  font-size: 1rem;
-  color: var(--text-primary);
-  background-color: var(--surface-color);
-  flex: 1;
-  min-width: 0;
-}
-
-.birthdate-year {
-  padding: 0.8rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  font-size: 1rem;
-  color: var(--text-primary);
-  background-color: var(--surface-color);
-  flex: 1.4;
-  min-width: 0;
-}

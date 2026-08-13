@@ -311,20 +311,21 @@ function SettingsPage() {
       <div className="dashboard-cards" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         
         {/* Card do Link Exclusivo (Multi-tenant) */}
-        <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--light-green)', border: '1px solid var(--primary-green)' }}>
-          <h3 style={{ color: 'var(--dark-green)' }}>Seu Link de Agendamento</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+        <div className="ds-card" style={{ padding: '1.5rem', backgroundColor: 'var(--ds-primary-soft)', border: '1px solid var(--ds-primary)' }}>
+          <h3 style={{ color: 'var(--ds-primary)' }}>Seu Link de Agendamento</h3>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '0.85rem', marginBottom: '1rem' }}>
             Compartilhe este link com seus clientes via WhatsApp, Instagram, etc. Os clientes acessarão o seu sistema diretamente por ele.
           </p>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <input
               type="text"
               readOnly
+              aria-label="Link de agendamento do salão"
               value={linkDireto}
-              style={{ flex: '1 1 100%', minWidth: 0, padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--surface-color)', color: 'var(--text-primary)' }}
+              style={{ flex: '1 1 100%', minWidth: 0, padding: '0.6rem', borderRadius: 'var(--ds-radius-md)', border: '1px solid var(--ds-surface-2)', backgroundColor: 'var(--ds-surface)', color: 'var(--ds-text)' }}
             />
             <button
-              className="btn-primary"
+              className="ds-btn ds-btn-primary"
               style={{ width: 'auto', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}
               onClick={() => {
                 navigator.clipboard.writeText(linkDireto)
@@ -334,7 +335,7 @@ function SettingsPage() {
               Copiar
             </button>
             <button
-              className="btn-primary"
+              className="ds-btn ds-btn-primary"
               style={{ width: 'auto', padding: '0.6rem 1.2rem', fontSize: '0.9rem' }}
               onClick={async () => {
                 if (navigator.share) {
@@ -354,20 +355,20 @@ function SettingsPage() {
               Compartilhar
             </button>
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginTop: '0.75rem', marginBottom: 0 }}>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '0.78rem', marginTop: '0.75rem', marginBottom: 0 }}>
             O botão <strong>Compartilhar</strong> usa um link que mostra o nome e a logo do salão na pré-visualização (WhatsApp, Instagram).
           </p>
         </div>
 
         {/* Card de Notificações */}
-        <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="ds-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.3rem' }}>Notificações Push</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+            <h3 style={{ color: 'var(--ds-text)', marginBottom: '0.3rem' }}>Notificações Push</h3>
+            <p style={{ color: 'var(--ds-text-2)', fontSize: '0.85rem' }}>
               Ative para receber avisos de novos agendamentos e cancelamentos.
             </p>
           </div>
-          <button 
+          <button
             onClick={async () => {
               try {
                 const OneSignal = window.OneSignal;
@@ -401,91 +402,93 @@ function SettingsPage() {
                 toast.error("Erro ao ativar notificações: " + (error?.message || String(error)));
               }
             }}
-            style={{ padding: '0.6rem 1.2rem', background: '#e8f5e9', border: '1px solid var(--primary-green)', color: 'var(--dark-green)', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}
+            className="ds-btn ds-btn-soft"
+            style={{ fontSize: '0.9rem' }}
           >
             Ativar Notificações
           </button>
         </div>
 
         {/* Card de Pagamentos — Mercado Pago */}
-        <div className="card" style={{ padding: '1.5rem' }}>
+        <div className="ds-card" style={{ padding: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
-            <CreditCard size={22} color="var(--primary-green)" />
-            <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Receber pagamentos pelo app (Mercado Pago)</h3>
+            <CreditCard size={22} color="var(--ds-primary)" />
+            <h3 style={{ color: 'var(--ds-text)', margin: 0 }}>Receber pagamentos pelo app (Mercado Pago)</h3>
           </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '0.85rem', marginBottom: '1rem' }}>
             Cole o Access Token da sua conta do Mercado Pago para que os clientes possam pagar os planos de assinatura diretamente pelo app. Os pagamentos caem na sua conta.
           </p>
 
           {/* Status atual da conexão */}
           {mpLoadingStatus ? (
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>Verificando conexão...</p>
+            <p style={{ color: 'var(--ds-text-2)', fontSize: '0.9rem', marginBottom: '1rem' }}>Verificando conexão...</p>
           ) : mpConnected ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: 'var(--light-green)', color: 'var(--dark-green)', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            <span className="ds-badge ds-badge-success" style={{ marginBottom: '1rem' }}>
               <CheckCircle size={16} /> Conectado
             </span>
           ) : (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#fff3cd', color: '#8a6d00', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '1rem' }}>
+            <span className="ds-badge ds-badge-warning" style={{ marginBottom: '1rem' }}>
               Não conectado
             </span>
           )}
 
           {/* Aviso quando já há um token salvo (não é possível lê-lo de volta) */}
           {!mpLoadingStatus && mpConnected && (
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '0.8rem' }}>
+            <p style={{ color: 'var(--ds-text-2)', fontSize: '0.82rem', marginBottom: '0.8rem' }}>
               Um token já está salvo. Cole um novo para substituir.
             </p>
           )}
 
           <div style={{ marginBottom: '0.8rem' }}>
-            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            <label htmlFor="mp-access-token" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>
               Cole aqui o Access Token do Mercado Pago do seu salão
             </label>
             <input
+              id="mp-access-token"
               type="password"
               value={mpToken}
               onChange={(e) => setMpToken(e.target.value)}
               placeholder="APP_USR-..."
               autoComplete="off"
-              style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginTop: '0.5rem', fontFamily: 'inherit', backgroundColor: 'var(--surface-color)', color: 'var(--text-primary)' }}
+              style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--ds-radius-md)', border: '1px solid var(--ds-surface-2)', marginTop: '0.5rem', fontFamily: 'inherit', backgroundColor: 'var(--ds-surface)', color: 'var(--ds-text)' }}
             />
           </div>
 
           <button
             onClick={handleSaveToken}
             disabled={mpSaving || !mpToken.trim()}
-            className="btn-primary"
+            className="ds-btn ds-btn-primary"
             style={{ width: 'auto', padding: '0.7rem 1.4rem' }}
           >
             {mpSaving ? 'Salvando...' : 'Salvar'}
           </button>
 
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '1rem' }}>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '0.8rem', marginTop: '1rem' }}>
             Como encontrar seu Access Token? No painel do Mercado Pago, acesse Suas integrações / Configurações &gt; Credenciais de produção &gt; Access Token e copie o valor.
           </p>
         </div>
 
         {/* Card do Logo */}
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.5rem' }}>
+        <div className="ds-card" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.5rem' }}>
           <div style={{ 
             width: '90px', height: '90px', borderRadius: '50%', 
-            backgroundColor: 'var(--bg-color)', border: '2px dashed var(--border-color)',
+            backgroundColor: 'var(--ds-surface-2)', border: '2px dashed var(--ds-surface-3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0
           }}>
             {salon.logo_url ? (
               <img src={salon.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <ImageIcon size={30} color="var(--text-secondary)" />
+              <ImageIcon size={30} color="var(--ds-text-2)" />
             )}
           </div>
-          
+
           <div style={{ flex: 1 }}>
-            <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.3rem' }}>Logotipo do Salão</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
+            <h3 style={{ color: 'var(--ds-text)', marginBottom: '0.3rem' }}>Logotipo do Salão</h3>
+            <p style={{ color: 'var(--ds-text-2)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
               Recomendamos uma imagem quadrada (PNG ou JPG) de até 2MB.
             </p>
             
-            <label className="btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem 1rem', width: 'auto', fontSize: '0.9rem' }}>
+            <label className="ds-btn ds-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem 1rem', width: 'auto', fontSize: '0.9rem' }}>
               <Upload size={18} />
               {uploading ? 'Enviando...' : 'Escolher Imagem'}
               <input 
@@ -500,48 +503,52 @@ function SettingsPage() {
         </div>
 
         {/* Card de Informações */}
-        <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 style={{ color: 'var(--text-primary)' }}>Informações Básicas</h3>
+        <div className="ds-card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ color: 'var(--ds-text)' }}>Informações Básicas</h3>
           <form onSubmit={handleUpdateInfo} className="auth-form" style={{ marginTop: '1rem' }}>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Nome do Salão</label>
-              <input 
-                type="text" 
+              <label htmlFor="salon-name" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Nome do Salão</label>
+              <input
+                id="salon-name"
+                type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required 
+                required
               />
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Telefone (WhatsApp)</label>
-              <input 
-                type="tel" 
+              <label htmlFor="salon-phone" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Telefone (WhatsApp)</label>
+              <input
+                id="salon-phone"
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                required 
+                required
               />
             </div>
-            
+
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>E-mail (Login)</label>
-              <input 
-                type="email" 
+              <label htmlFor="salon-email" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>E-mail (Login)</label>
+              <input
+                id="salon-email"
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required 
+                required
               />
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)', marginTop: '0.5rem' }}>
                 Este é o e-mail usado para acessar sua conta.
               </p>
             </div>
-            
+
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Endereço (Para clientes te acharem no Mapa)</label>
+              <span style={{ display: 'block', fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Endereço (Para clientes te acharem no Mapa)</span>
 
               <div style={{ marginTop: '0.5rem' }}>
-                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Logradouro</label>
+                <label htmlFor="salon-logradouro" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Logradouro</label>
                 <input
+                  id="salon-logradouro"
                   type="text"
                   value={logradouro}
                   onChange={(e) => setLogradouro(e.target.value)}
@@ -550,8 +557,9 @@ function SettingsPage() {
               </div>
 
               <div style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Número</label>
+                <label htmlFor="salon-numero" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Número</label>
                 <input
+                  id="salon-numero"
                   type="text"
                   value={numero}
                   onChange={(e) => setNumero(e.target.value)}
@@ -560,8 +568,9 @@ function SettingsPage() {
               </div>
 
               <div style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Bairro</label>
+                <label htmlFor="salon-bairro" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Bairro</label>
                 <input
+                  id="salon-bairro"
                   type="text"
                   value={bairro}
                   onChange={(e) => setBairro(e.target.value)}
@@ -570,8 +579,9 @@ function SettingsPage() {
               </div>
 
               <div style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>CEP</label>
+                <label htmlFor="salon-cep" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>CEP</label>
                 <input
+                  id="salon-cep"
                   type="text"
                   value={cep}
                   onChange={(e) => setCep(e.target.value)}
@@ -580,8 +590,9 @@ function SettingsPage() {
               </div>
 
               <div style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cidade</label>
+                <label htmlFor="salon-cidade" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Cidade</label>
                 <input
+                  id="salon-cidade"
                   type="text"
                   value={cidade}
                   onChange={(e) => setCidade(e.target.value)}
@@ -590,8 +601,9 @@ function SettingsPage() {
               </div>
 
               <div style={{ marginTop: '0.75rem' }}>
-                <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Estado</label>
+                <label htmlFor="salon-estado" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Estado</label>
                 <input
+                  id="salon-estado"
                   type="text"
                   value={estado}
                   onChange={(e) => setEstado(e.target.value)}
@@ -599,43 +611,45 @@ function SettingsPage() {
                 />
               </div>
 
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)', marginTop: '0.5rem' }}>
                 O sistema buscará automaticamente as coordenadas GPS deste endereço quando você salvar.
               </p>
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Link de Avaliação do Google Meu Negócio</label>
-              <input 
-                type="url" 
+              <label htmlFor="salon-google-review" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Link de Avaliação do Google Meu Negócio</label>
+              <input
+                id="salon-google-review"
+                type="url"
                 value={googleReviewLink}
                 onChange={(e) => setGoogleReviewLink(e.target.value)}
                 placeholder="Ex: https://g.page/r/Cdfg34.../review"
               />
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)', marginTop: '0.5rem' }}>
                 Se preenchido, pediremos para clientes que derem 4 ou 5 estrelas avaliarem também no Google.
               </p>
             </div>
 
-            <button type="submit" disabled={loadingInfo} className="btn-primary" style={{ marginTop: '1rem' }}>
+            <button type="submit" disabled={loadingInfo} className="ds-btn ds-btn-primary ds-btn-full" style={{ marginTop: '1rem' }}>
               {loadingInfo ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </form>
         </div>
 
         {/* Card de Intervalo de Horários da Agenda */}
-        <div className="card" style={{ padding: '1.5rem' }}>
-          <h3 style={{ color: 'var(--text-primary)' }}>Intervalo de Horários da Agenda</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
+        <div className="ds-card" style={{ padding: '1.5rem' }}>
+          <h3 style={{ color: 'var(--ds-text)' }}>Intervalo de Horários da Agenda</h3>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
             Define de quantos em quantos minutos os horários aparecem para o cliente. Deixe em Automático para usar a duração de cada serviço.
           </p>
           <form onSubmit={handleUpdateSlotInterval} className="auth-form" style={{ marginTop: '1rem' }}>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Intervalo</label>
+              <label htmlFor="slot-interval" style={{ fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>Intervalo</label>
               <select
+                id="slot-interval"
                 value={slotInterval}
                 onChange={(e) => setSlotInterval(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginTop: '0.5rem', fontFamily: 'inherit', backgroundColor: 'var(--surface-color)', color: 'var(--text-primary)' }}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--ds-radius-md)', border: '1px solid var(--ds-surface-2)', marginTop: '0.5rem', fontFamily: 'inherit', backgroundColor: 'var(--ds-surface)', color: 'var(--ds-text)' }}
               >
                 <option value="">Automático (duração do serviço)</option>
                 <option value="15">15 minutos</option>
@@ -649,7 +663,7 @@ function SettingsPage() {
               </select>
             </div>
 
-            <button type="submit" disabled={loadingInterval} className="btn-primary" style={{ marginTop: '1rem' }}>
+            <button type="submit" disabled={loadingInterval} className="ds-btn ds-btn-primary ds-btn-full" style={{ marginTop: '1rem' }}>
               {loadingInterval ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </form>

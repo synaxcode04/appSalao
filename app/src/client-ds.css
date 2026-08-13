@@ -56,7 +56,8 @@
 .ds-container,
 .client-layout,
 .landing-page,
-.ds-auth-page {
+.ds-auth-page,
+.dashboard-layout {
   font-family: 'Poppins', system-ui, -apple-system, sans-serif;
   color: var(--ds-text);
   background-color: var(--ds-bg);

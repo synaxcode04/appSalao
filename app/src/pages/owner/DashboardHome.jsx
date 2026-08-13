@@ -330,11 +330,12 @@ function DashboardHome() {
       {loading ? (
         <p style={{ padding: '1rem' }}>Buscando agenda...</p>
       ) : fetchError ? (
-        <div className="card fetch-error" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-          <p style={{ color: '#d32f2f', fontWeight: 'bold' }}>{fetchError}</p>
+        <div className="ds-card fetch-error" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+          <p style={{ color: 'var(--ds-danger)', fontWeight: 'bold' }}>{fetchError}</p>
           <button
             onClick={reloadDay}
-            style={{ marginTop: '1rem', padding: '0.6rem 1.2rem', background: 'transparent', border: '1px solid #d32f2f', color: '#d32f2f', borderRadius: '8px', cursor: 'pointer' }}
+            className="ds-btn ds-btn-danger"
+            style={{ marginTop: '1rem' }}
           >
             Tentar novamente
           </button>

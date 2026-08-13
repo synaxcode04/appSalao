@@ -466,18 +466,20 @@ function PlansManager() {
       </header>
 
       {/* Abas: gestão de planos x assinantes */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--ds-surface-2)' }}>
         <button
           type="button"
           onClick={() => setActiveTab('planos')}
-          style={{ padding: '0.7rem 1.1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'planos' ? '3px solid var(--primary-green)' : '3px solid transparent', color: activeTab === 'planos' ? 'var(--dark-green)' : 'var(--text-secondary)', fontWeight: activeTab === 'planos' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem' }}
+          aria-pressed={activeTab === 'planos'}
+          style={{ padding: '0.7rem 1.1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'planos' ? '3px solid var(--ds-primary)' : '3px solid transparent', color: activeTab === 'planos' ? 'var(--ds-primary)' : 'var(--ds-text-2)', fontWeight: activeTab === 'planos' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem' }}
         >
           Planos
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('assinantes')}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.7rem 1.1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'assinantes' ? '3px solid var(--primary-green)' : '3px solid transparent', color: activeTab === 'assinantes' ? 'var(--dark-green)' : 'var(--text-secondary)', fontWeight: activeTab === 'assinantes' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem' }}
+          aria-pressed={activeTab === 'assinantes'}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.7rem 1.1rem', background: 'transparent', border: 'none', borderBottom: activeTab === 'assinantes' ? '3px solid var(--ds-primary)' : '3px solid transparent', color: activeTab === 'assinantes' ? 'var(--ds-primary)' : 'var(--ds-text-2)', fontWeight: activeTab === 'assinantes' ? 'bold' : 'normal', cursor: 'pointer', fontSize: '0.95rem' }}
         >
           <Users size={16} /> Assinantes
         </button>
@@ -487,7 +489,7 @@ function PlansManager() {
       <>
       <button
         type="button"
-        className="btn-primary clients-toolbar"
+        className="ds-btn ds-btn-primary clients-toolbar"
         onClick={() => {
           resetForm()
           setModalOpen(true)
@@ -504,9 +506,12 @@ function PlansManager() {
       >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="card modal-card plan-modal-card"
+        className="ds-card modal-card plan-modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="plan-modal-title"
       >
-        <h3 className="modal-title plan-modal-header">{editId ? 'Editar Plano' : 'Novo Plano'} — Etapa {step} de 3</h3>
+        <h3 className="modal-title plan-modal-header" id="plan-modal-title">{editId ? 'Editar Plano' : 'Novo Plano'} — Etapa {step} de 3</h3>
         <form onSubmit={handleSave} className="auth-form plan-modal-form" style={{ marginTop: '1rem' }}>
           <div className="plan-modal-body">
           <div
@@ -519,28 +524,40 @@ function PlansManager() {
             >
               {/* Etapa 1 — dados básicos */}
               <div className="plan-wizard-panel" ref={(el) => { wizardPanelRefs.current[0] = el }}>
-                <input
-                  type="text"
-                  placeholder="Nome do Plano (ex: Plano Barba & Cabelo)"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-                <textarea
-                  placeholder="Descrição / vantagens do plano (opcional)"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="plan-wizard-textarea"
-                />
-                <input
-                  type="number"
-                  placeholder="Preço mensal (R$)"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  min="0"
-                  step="0.01"
-                />
+                <div className="plan-wizard-field">
+                  <label className="plan-wizard-label" htmlFor="plan-name">Nome do plano</label>
+                  <input
+                    id="plan-name"
+                    type="text"
+                    placeholder="Ex: Plano Barba & Cabelo"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="plan-wizard-field">
+                  <label className="plan-wizard-label" htmlFor="plan-description">Descrição / vantagens (opcional)</label>
+                  <textarea
+                    id="plan-description"
+                    placeholder="Descreva as vantagens do plano"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="plan-wizard-textarea"
+                  />
+                </div>
+                <div className="plan-wizard-field">
+                  <label className="plan-wizard-label" htmlFor="plan-price">Preço mensal (R$)</label>
+                  <input
+                    id="plan-price"
+                    type="number"
+                    placeholder="Ex: 99.90"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    required
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
               </div>
 
               {/* Etapa 2 — serviços + dias */}
@@ -629,12 +646,12 @@ function PlansManager() {
                   return (
                     <div className="plan-preview">
                       <p className="plan-preview-hint">Assim o cliente verá seu plano:</p>
-                      <h4 style={{ color: 'var(--dark-green)' }}>{name || 'Nome do plano'}</h4>
-                      <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                      <h4 style={{ color: 'var(--ds-primary)' }}>{name || 'Nome do plano'}</h4>
+                      <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--ds-text)', marginTop: '0.2rem' }}>
                         R$ {(parseFloat(price) || 0).toFixed(2).replace('.', ',')} / mês
                       </p>
                       {description && (
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.3rem' }}>{description}</p>
+                        <p style={{ color: 'var(--ds-text-2)', fontSize: '0.9rem', marginTop: '0.3rem' }}>{description}</p>
                       )}
                       <p className="plan-services-label" style={{ marginTop: '0.6rem' }}><strong>Serviços:</strong></p>
                       {previewServices.length === 0 ? (
@@ -648,7 +665,7 @@ function PlansManager() {
                           ))}
                         </ul>
                       )}
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--ds-text-2)', marginTop: '0.4rem' }}>
                         <strong>Dias válidos:</strong>{' '}
                         {selectedDays.length === 0
                           ? 'Todos os dias'
@@ -660,7 +677,7 @@ function PlansManager() {
                         </p>
                       )}
                       {savingsData.fullValue > savingsData.planPrice && (
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)', marginTop: '0.2rem' }}>
                           Valor total avulso: R$ {Number(savingsData.fullValue).toFixed(2).replace('.', ',')}
                         </p>
                       )}
@@ -679,12 +696,12 @@ function PlansManager() {
               </button>
             )}
             {step < 3 && (
-              <button type="button" onClick={goNext} className="btn-primary">
+              <button type="button" onClick={goNext} className="ds-btn ds-btn-primary">
                 Avançar
               </button>
             )}
             {step === 3 && (
-              <button type="submit" disabled={saving} className="btn-primary">
+              <button type="submit" disabled={saving} className="ds-btn ds-btn-primary">
                 {saving ? 'Salvando...' : (editId ? 'Atualizar Plano' : 'Confirmar')}
               </button>
             )}
@@ -703,10 +720,10 @@ function PlansManager() {
       </div>
       )}
 
-      <div className="card">
+      <div className="ds-card">
         <h3>Seus Planos</h3>
         {plans.length === 0 ? (
-          <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Nenhum plano cadastrado ainda.</p>
+          <p style={{ marginTop: '1rem', color: 'var(--ds-text-2)' }}>Nenhum plano cadastrado ainda.</p>
         ) : (
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {plans.map(plan => {
@@ -733,7 +750,7 @@ function PlansManager() {
                       onClick={() => handleToggleActive(plan)}
                       title={plan.is_active ? 'Desativar plano' : 'Ativar plano'}
                       className="plan-card-action-toggle"
-                      style={{ color: plan.is_active ? 'var(--primary-green)' : 'var(--text-secondary)' }}
+                      style={{ color: plan.is_active ? 'var(--ds-primary)' : 'var(--ds-text-2)' }}
                     >
                       {plan.is_active ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
                     </button>
@@ -746,11 +763,11 @@ function PlansManager() {
                   </div>
                 </div>
                 {plan.description && <PlanDescription text={plan.description} />}
-                <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.4rem' }}>
+                <p style={{ fontSize: '1rem', fontWeight: 'bold', color: 'var(--ds-text)', marginTop: '0.4rem' }}>
                   R$ {Number(plan.price).toFixed(2).replace('.', ',')} / mês
                 </p>
                 <PlanServicesList services={plan.subscription_plan_services} />
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--ds-text-2)', marginTop: '0.2rem' }}>
                   <strong>Dias:</strong> {formatDays(plan.subscription_plan_days)}
                 </p>
                 {savings > 0 && (
@@ -759,7 +776,7 @@ function PlansManager() {
                   </p>
                 )}
                 {fullValue > planPrice && (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)', marginTop: '0.2rem' }}>
                     Valor total avulso: R$ {Number(fullValue).toFixed(2).replace('.', ',')}
                   </p>
                 )}
@@ -773,16 +790,16 @@ function PlansManager() {
       )}
 
       {activeTab === 'assinantes' && (
-        <div className="card">
+        <div className="ds-card">
           <h3>Assinantes</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
             Assinaturas dos seus clientes. Para pagamentos combinados diretamente com você, confirme o pagamento para ativar o plano.
           </p>
 
           {subsLoading ? (
-            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Carregando assinantes...</p>
+            <p style={{ marginTop: '1rem', color: 'var(--ds-text-2)' }}>Carregando assinantes...</p>
           ) : subscriptions.length === 0 ? (
-            <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Nenhum assinante ainda.</p>
+            <p style={{ marginTop: '1rem', color: 'var(--ds-text-2)' }}>Nenhum assinante ainda.</p>
           ) : (
             <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {subscriptions.map(sub => {
@@ -790,22 +807,22 @@ function PlansManager() {
                 const isPaid = sub.payment_status === 'approved'
                 const canConfirm = sub.payment_status === 'pending' && sub.payment_method === 'external' && !isCanceled
                 return (
-                  <div key={sub.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', opacity: isCanceled ? 0.6 : 1 }}>
+                  <div key={sub.id} style={{ padding: '1rem', border: '1px solid var(--ds-surface-2)', borderRadius: 'var(--ds-radius-md)', opacity: isCanceled ? 0.6 : 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: '180px' }}>
-                        <h4 style={{ color: 'var(--dark-green)' }}>{sub.clients?.full_name || 'Cliente'}</h4>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                        <h4 style={{ color: 'var(--ds-text)' }}>{sub.clients?.full_name || 'Cliente'}</h4>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--ds-text)', marginTop: '0.2rem' }}>
                           {sub.subscription_plans?.name || 'Plano'}
                         </p>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--ds-text-2)', marginTop: '0.3rem' }}>
                           Pagamento: {PAYMENT_METHOD_LABELS[sub.payment_method] || 'Não informado'}
                         </p>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px', backgroundColor: isPaid ? 'var(--light-green)' : '#fff3cd', color: isPaid ? 'var(--dark-green)' : '#8a6d00' }}>
+                          <span className={`ds-badge ${isPaid ? 'ds-badge-success' : 'ds-badge-warning'}`}>
                             {PAYMENT_STATUS_LABELS[sub.payment_status] || sub.payment_status || 'Sem status'}
                           </span>
                           {isCanceled && (
-                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '0.15rem 0.5rem', borderRadius: '4px', backgroundColor: '#ffebee', color: '#d32f2f' }}>
+                            <span className="ds-badge ds-badge-danger">
                               Cancelada
                             </span>
                           )}
@@ -816,8 +833,8 @@ function PlansManager() {
                           <button
                             onClick={() => handleMarkAsPaid(sub)}
                             disabled={subBusy === sub.id}
-                            className="btn-primary"
-                            style={{ width: 'auto', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                            className="ds-btn ds-btn-primary"
+                            style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                           >
                             <CheckCircle size={16} /> {subBusy === sub.id ? 'Salvando...' : 'Marcar como pago'}
                           </button>
@@ -826,7 +843,8 @@ function PlansManager() {
                           <button
                             onClick={() => handleCancelSubscription(sub)}
                             disabled={subBusy === sub.id}
-                            style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #d32f2f', color: '#d32f2f', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: '500', fontSize: '0.9rem' }}
+                            className="ds-btn ds-btn-danger"
+                            style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
                           >
                             Cancelar
                           </button>

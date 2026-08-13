@@ -16,9 +16,9 @@ function AppointmentActionsModal({ appointment, onClose, onReschedule, onWhatsAp
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="appt-actions-modal-title">
         <div className="modal-head">
-          <h2 className="modal-title">Agendamento</h2>
+          <h2 className="modal-title" id="appt-actions-modal-title">Agendamento</h2>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Fechar">
             <X size={20} />
           </button>

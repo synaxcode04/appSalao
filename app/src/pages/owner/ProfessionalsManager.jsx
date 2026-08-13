@@ -112,7 +112,7 @@ function ProfessionalsManager() {
     <div className="page-content">
       <header className="page-header professionals-header">
         <h1 className="professionals-title">
-          <Users size={28} color="var(--primary-green)" />
+          <Users size={28} color="var(--ds-primary)" />
           Gerenciar Profissionais
         </h1>
         <p className="subtitle">Cadastro de profissionais para agendas independentes</p>
@@ -120,7 +120,7 @@ function ProfessionalsManager() {
 
       <button
         type="button"
-        className="btn-primary professionals-toolbar"
+        className="ds-btn ds-btn-primary professionals-toolbar"
         onClick={() => {
           resetForm()
           setModalOpen(true)
@@ -137,14 +137,14 @@ function ProfessionalsManager() {
         {loading ? (
           <p>Carregando profissionais...</p>
         ) : professionals.length === 0 ? (
-          <div className="card professionals-empty">
+          <div className="ds-card professionals-empty">
             <p className="professionals-empty-title">Nenhum profissional cadastrado.</p>
             <p className="professionals-empty-hint">Adicione o primeiro profissional usando o botão acima.</p>
           </div>
         ) : (
           <div className="professionals-grid">
             {professionals.map(prof => (
-              <div key={prof.id} className="card professional-card" style={{ opacity: prof.is_active ? 1 : 0.6 }}>
+              <div key={prof.id} className="ds-card professional-card" style={{ opacity: prof.is_active ? 1 : 0.6 }}>
                 <div>
                   <h3 className="professional-card-name">{prof.name}</h3>
                 </div>
@@ -154,8 +154,8 @@ function ProfessionalsManager() {
                     onClick={() => toggleActive(prof)}
                     className="professional-toggle"
                     style={{
-                      backgroundColor: prof.is_active ? 'var(--light-green)' : '#ffebee',
-                      color: prof.is_active ? 'var(--dark-green)' : '#d32f2f'
+                      backgroundColor: prof.is_active ? 'var(--ds-primary-soft)' : 'var(--ds-danger-soft)',
+                      color: prof.is_active ? 'var(--ds-primary)' : 'var(--ds-danger)'
                     }}
                   >
                     {prof.is_active ? <><CheckCircle size={16} /> Ativo</> : <><XCircle size={16} /> Inativo</>}
@@ -192,16 +192,21 @@ function ProfessionalsManager() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="card modal-card"
+            className="ds-card modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="professional-modal-title"
           >
-            <h3 className="modal-title">{editId ? 'Editar Profissional' : 'Novo Profissional'}</h3>
+            <h3 className="modal-title" id="professional-modal-title">{editId ? 'Editar Profissional' : 'Novo Profissional'}</h3>
 
             <form onSubmit={handleSave} className="auth-form">
-              <div>
-                <label className="professional-form-label">
+              <div className="ds-field">
+                <label className="ds-label" htmlFor="professional-name">
                   Nome do Profissional
                 </label>
                 <input
+                  id="professional-name"
+                  className="ds-input"
                   type="text"
                   placeholder="Ex: João Silva"
                   value={name}
@@ -209,7 +214,7 @@ function ProfessionalsManager() {
                   required
                 />
               </div>
-              <button type="submit" disabled={isSubmitting} className="btn-primary">
+              <button type="submit" disabled={isSubmitting} className="ds-btn ds-btn-primary ds-btn-full">
                 {isSubmitting ? 'Salvando...' : (editId ? 'Atualizar Profissional' : 'Adicionar Profissional')}
               </button>
             </form>

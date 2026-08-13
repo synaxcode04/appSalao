@@ -65,9 +65,9 @@ function BlockSlotModal({ salonId, professionals, prefill, onClose, onSaved }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="block-slot-modal-title">
         <div className="modal-head">
-          <h2 className="modal-title">Bloquear horário</h2>
+          <h2 className="modal-title" id="block-slot-modal-title">Bloquear horário</h2>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Fechar">
             <X size={20} />
           </button>

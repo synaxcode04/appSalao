@@ -110,28 +110,28 @@ function WorkingHoursManager() {
         <p className="subtitle">Defina dias e horários de funcionamento</p>
       </header>
 
-      <div className="card">
+      <div className="ds-card">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {hours.map((day, index) => (
-            <div key={index} style={{ 
-              padding: '1rem', 
-              border: '1px solid var(--border-color)', 
-              borderRadius: 'var(--radius-md)',
+            <div key={index} style={{
+              padding: '1rem',
+              border: '1px solid var(--ds-surface-2)',
+              borderRadius: 'var(--ds-radius-md)',
               opacity: day.isOpen ? 1 : 0.6,
-              background: day.isOpen ? 'transparent' : '#f9fafb'
+              background: day.isOpen ? 'transparent' : 'var(--ds-surface-2)'
             }}>
-              
+
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: day.isOpen ? '1rem' : '0' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem' }}>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={day.isOpen}
                     onChange={(e) => handleDayChange(index, 'isOpen', e.target.checked)}
-                    style={{ width: '20px', height: '20px', accentColor: 'var(--primary-green)' }}
+                    style={{ width: '20px', height: '20px', accentColor: 'var(--ds-primary)' }}
                   />
                   {DAYS_OF_WEEK[index]}
                 </label>
-                <span style={{ fontSize: '0.9rem', color: day.isOpen ? 'var(--primary-green)' : 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '0.9rem', color: day.isOpen ? 'var(--ds-primary)' : 'var(--ds-text-2)' }}>
                   {day.isOpen ? 'Aberto' : 'Fechado'}
                 </span>
               </div>
@@ -141,9 +141,10 @@ function WorkingHoursManager() {
                   {/* Expediente */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '120px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Abertura</label>
-                      <input 
-                        type="time" 
+                      <label htmlFor={`wh-start-${index}`} style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Abertura</label>
+                      <input
+                        id={`wh-start-${index}`}
+                        type="time"
                         value={day.start_time}
                         onChange={(e) => handleDayChange(index, 'start_time', e.target.value)}
                         className="auth-form input"
@@ -151,9 +152,10 @@ function WorkingHoursManager() {
                       />
                     </div>
                     <div style={{ flex: 1, minWidth: '120px' }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fechamento</label>
-                      <input 
-                        type="time" 
+                      <label htmlFor={`wh-end-${index}`} style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Fechamento</label>
+                      <input
+                        id={`wh-end-${index}`}
+                        type="time"
                         value={day.end_time}
                         onChange={(e) => handleDayChange(index, 'end_time', e.target.value)}
                         className="auth-form input"
@@ -163,13 +165,13 @@ function WorkingHoursManager() {
                   </div>
 
                   {/* Pausa para almoço (opcional por dia) */}
-                  <div style={{ borderTop: '1px dashed var(--border-color)', paddingTop: '1rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ borderTop: '1px dashed var(--ds-surface-2)', paddingTop: '1rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: 'var(--ds-text-2)' }}>
                       <input
                         type="checkbox"
                         checked={day.has_lunch_break}
                         onChange={(e) => handleDayChange(index, 'has_lunch_break', e.target.checked)}
-                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary-green)' }}
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--ds-primary)' }}
                       />
                       Configurar pausa para almoço
                     </label>
@@ -177,8 +179,9 @@ function WorkingHoursManager() {
                     {day.has_lunch_break ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
                         <div style={{ flex: 1, minWidth: '120px' }}>
-                          <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Início Pausa / Almoço</label>
+                          <label htmlFor={`wh-break-start-${index}`} style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Início Pausa / Almoço</label>
                           <input
+                            id={`wh-break-start-${index}`}
                             type="time"
                             value={day.break_start_time}
                             onChange={(e) => handleDayChange(index, 'break_start_time', e.target.value)}
@@ -187,8 +190,9 @@ function WorkingHoursManager() {
                           />
                         </div>
                         <div style={{ flex: 1, minWidth: '120px' }}>
-                          <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Fim Pausa / Almoço</label>
+                          <label htmlFor={`wh-break-end-${index}`} style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Fim Pausa / Almoço</label>
                           <input
+                            id={`wh-break-end-${index}`}
                             type="time"
                             value={day.break_end_time}
                             onChange={(e) => handleDayChange(index, 'break_end_time', e.target.value)}
@@ -198,7 +202,7 @@ function WorkingHoursManager() {
                         </div>
                       </div>
                     ) : (
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)', marginTop: '0.5rem', fontStyle: 'italic' }}>
                         Sem pausa: disponível o dia todo dentro do expediente.
                       </p>
                     )}
@@ -209,11 +213,11 @@ function WorkingHoursManager() {
           ))}
         </div>
 
-        <button 
-          onClick={handleSave} 
-          disabled={saving} 
-          className="btn-primary" 
-          style={{ width: '100%', marginTop: '2rem', padding: '1rem', fontSize: '1.1rem' }}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="ds-btn ds-btn-primary ds-btn-full"
+          style={{ marginTop: '2rem', padding: '1rem', fontSize: '1.1rem' }}
         >
           {saving ? 'Salvando Horários...' : 'Salvar Todos os Horários'}
         </button>

@@ -169,7 +169,8 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
                 ))}
 
                 {colAppts.map(appt => (
-                  <div
+                  <button
+                    type="button"
                     key={appt.id}
                     className={`tl-appt${statusClass(appt.status)}`}
                     style={posStyle(appt.start_time, appt.end_time)}
@@ -180,7 +181,7 @@ function DayTimeline({ appointments, professionals, timeBlocks, workingHours, da
                       <span className="tl-appt-client">{appt.clients?.full_name || 'Cliente'}</span>
                     </div>
                     <span className="tl-appt-service">{getAppointmentServices(appt).map(s => s.name).join(', ')}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             )

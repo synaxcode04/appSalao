@@ -141,13 +141,14 @@ function TimeBlocksManager() {
       </header>
 
       {/* Formulário de novo bloqueio */}
-      <div className="card">
+      <div className="ds-card">
         <h2 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Novo bloqueio</h2>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '140px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Data</label>
+              <label htmlFor="block-date" style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Data</label>
               <input
+                id="block-date"
                 type="date"
                 value={form.block_date}
                 onChange={(e) => handleChange('block_date', e.target.value)}
@@ -157,8 +158,9 @@ function TimeBlocksManager() {
               />
             </div>
             <div style={{ flex: 1, minWidth: '120px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Hora início</label>
+              <label htmlFor="block-start" style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Hora início</label>
               <input
+                id="block-start"
                 type="time"
                 value={form.start_time}
                 onChange={(e) => handleChange('start_time', e.target.value)}
@@ -168,8 +170,9 @@ function TimeBlocksManager() {
               />
             </div>
             <div style={{ flex: 1, minWidth: '120px' }}>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Hora fim</label>
+              <label htmlFor="block-end" style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Hora fim</label>
               <input
+                id="block-end"
                 type="time"
                 value={form.end_time}
                 onChange={(e) => handleChange('end_time', e.target.value)}
@@ -181,8 +184,9 @@ function TimeBlocksManager() {
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Profissional</label>
+            <label htmlFor="block-professional" style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Profissional</label>
             <select
+              id="block-professional"
               value={form.professional_id}
               onChange={(e) => handleChange('professional_id', e.target.value)}
               className="auth-form input"
@@ -196,8 +200,9 @@ function TimeBlocksManager() {
           </div>
 
           <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Motivo (opcional)</label>
+            <label htmlFor="block-reason" style={{ fontSize: '0.8rem', color: 'var(--ds-text-2)' }}>Motivo (opcional)</label>
             <input
+              id="block-reason"
               type="text"
               value={form.reason}
               onChange={(e) => handleChange('reason', e.target.value)}
@@ -210,7 +215,7 @@ function TimeBlocksManager() {
           <button
             type="submit"
             disabled={saving}
-            className="btn-primary"
+            className="ds-btn ds-btn-primary ds-btn-full"
             style={{ padding: '0.8rem', fontSize: '1rem' }}
           >
             {saving ? 'Salvando...' : 'Adicionar bloqueio'}
@@ -219,11 +224,11 @@ function TimeBlocksManager() {
       </div>
 
       {/* Lista de bloqueios existentes */}
-      <div className="card" style={{ marginTop: '1.5rem' }}>
+      <div className="ds-card" style={{ marginTop: '1.5rem' }}>
         <h2 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Bloqueios cadastrados</h2>
 
         {blocks.length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p style={{ color: 'var(--ds-text-2)', fontSize: '0.9rem' }}>
             Nenhum bloqueio cadastrado.
           </p>
         ) : (
@@ -237,8 +242,8 @@ function TimeBlocksManager() {
                   justifyContent: 'space-between',
                   gap: '1rem',
                   padding: '1rem',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--ds-surface-2)',
+                  borderRadius: 'var(--ds-radius-md)',
                   flexWrap: 'wrap'
                 }}
               >
@@ -246,14 +251,14 @@ function TimeBlocksManager() {
                   <p style={{ margin: 0, fontWeight: 'bold' }}>
                     {formatDate(block.block_date)} · {block.start_time.substring(0, 5)} — {block.end_time.substring(0, 5)}
                   </p>
-                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--ds-text-2)' }}>
                     {professionalName(block.professional_id)}
                     {block.reason ? ` · ${block.reason}` : ''}
                   </p>
                 </div>
                 <button
                   onClick={() => handleDelete(block.id)}
-                  className="btn-secondary"
+                  className="ds-btn ds-btn-secondary"
                   style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
                 >
                   Excluir

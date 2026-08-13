@@ -3,13 +3,13 @@ import React from 'react'
 function SuspendedScreen({ variant }) {
   if (variant === 'owner') {
     return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', backgroundColor: '#fff', padding: '2rem' }}>
-        <h2 style={{ color: '#ef4444', fontSize: '2rem', marginBottom: '1rem' }}>Acesso Suspenso</h2>
-        <p style={{ color: '#475569', fontSize: '1.1rem', maxWidth: '500px', marginBottom: '2rem' }}>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', backgroundColor: 'var(--ds-surface)', padding: '32px' }}>
+        <h2 style={{ color: 'var(--ds-danger)', fontSize: '1.75rem', fontWeight: 600, marginBottom: '16px' }}>Acesso Suspenso</h2>
+        <p style={{ color: 'var(--ds-text-2)', fontSize: '1rem', lineHeight: 1.5, maxWidth: '500px', marginBottom: '24px' }}>
           Sua licença expirou ou foi suspensa. Entre em contato com o suporte para regularizar o seu plano e reativar os agendamentos online.
         </p>
         <button
-          className="btn-primary"
+          className="ds-btn ds-btn-primary"
           onClick={() => window.open('https://wa.me/5511999999999', '_blank')}
         >
           Falar com o Suporte
@@ -19,9 +19,9 @@ function SuspendedScreen({ variant }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', padding: '2rem', textAlign: 'center' }}>
-      <h1 style={{ fontSize: '2.5rem', color: '#ef4444', marginBottom: '1rem' }}>Página Indisponível</h1>
-      <p style={{ color: '#475569', fontSize: '1.2rem', maxWidth: '400px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--ds-bg)', padding: '32px', textAlign: 'center' }}>
+      <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--ds-danger)', marginBottom: '16px' }}>Página Indisponível</h1>
+      <p style={{ color: 'var(--ds-text-2)', fontSize: '1rem', lineHeight: 1.5, maxWidth: '400px' }}>
         Este estabelecimento está temporariamente indisponível para novos agendamentos.
       </p>
     </div>
