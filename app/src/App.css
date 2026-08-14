@@ -1523,8 +1523,10 @@
 }
 
 .modal-btn {
+  flex: 1 1 calc(50% - 0.3rem);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
   padding: 0.6rem 1rem;
   border-radius: 8px;
